@@ -1,0 +1,532 @@
+// TFS+ Smart Ledger — core data model (starting point; extend per phase)
+// Money: Decimal(18,2) for amounts, Decimal(18,6) for FX rates. Never Float for money.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────── Tenancy & identity ─────────────
+model Firm {
+  id            String             @id @default(uuid())
+  name          String
+  ftaAgentNo    String? // FTA tax agency registration
+  organizations FirmClientAccess[]
+  memberships   Membership[]
+  createdAt     DateTime           @default(now())
+}
+
+model Organization {
+  id               String         @id @default(uuid())
+  legalNameEn      String
+  legalNameAr      String?
+  tradeLicenceNo   String?
+  licenceAuthority String? // e.g. ADDED, DET, ADGM, DMCC, KEZAD
+  licenceExpiry    DateTime?
+  jurisdiction     Jurisdiction   @default(MAINLAND)
+  emirate          Emirate
+  vatTrn           String? // 15 digits
+  ctTrn            String?
+  baseCurrency     String         @default("AED")
+  fsFramework      FsFramework    @default(IFRS_FOR_SMES)
+  financialYearEnd String         @default("12-31") // MM-DD
+  ctRegime         CtRegime       @default(STANDARD)
+  einvoiceCohort   EinvoiceCohort @default(REVENUE_BELOW_50M)
+  aspProvider      String? // adapter key
+  aiDataSharing    AiDataSharing  @default(ANONYMISED)
+  createdAt        DateTime       @default(now())
+
+  memberships  Membership[]
+  firmAccess   FirmClientAccess[]
+  accounts     Account[]
+  periods      AccountingPeriod[]
+  journals     JournalEntry[]
+  contacts     Contact[]
+  invoices     SalesDocument[]
+  bills        PurchaseDocument[]
+  vatPeriods   VatPeriod[]
+  ctPeriods    CtPeriod[]
+  deadlines    ComplianceEvent[]
+  bankAccounts BankAccount[]
+  fixedAssets  FixedAsset[]
+  documents    StoredDocument[]
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  name        String
+  locale      String       @default("en")
+  mfaEnabled  Boolean      @default(false)
+  memberships Membership[]
+}
+
+model Membership {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  firmId         String?
+  firm           Firm?         @relation(fields: [firmId], references: [id])
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  role           Role
+  postingLimit   Decimal?      @db.Decimal(18, 2)
+
+  @@unique([userId, firmId, organizationId])
+}
+
+model FirmClientAccess {
+  id             String       @id @default(uuid())
+  firmId         String
+  firm           Firm         @relation(fields: [firmId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  grantedAt      DateTime     @default(now())
+  revokedAt      DateTime?
+  engagementType String // BOOKKEEPING | VAT | CT | FULL
+
+  @@unique([firmId, organizationId])
+}
+
+// ───────────── General ledger ─────────────
+model Account {
+  id             String        @id @default(uuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  code           String
+  nameEn         String
+  nameAr         String?
+  type           AccountType
+  subType        String // e.g. TRADE_RECEIVABLES, VAT_OUTPUT
+  fsLine         String // mapping key for FS templates
+  parentId       String?
+  isControl      Boolean       @default(false) // AR/AP/VAT control: no manual posting
+  ctTag          CtTag? // default CT treatment
+  isActive       Boolean       @default(true)
+  lines          JournalLine[]
+
+  @@unique([organizationId, code])
+}
+
+model AccountingPeriod {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  startDate      DateTime     @db.Date
+  endDate        DateTime     @db.Date
+  status         PeriodStatus @default(OPEN)
+  closedById     String?
+  closedAt       DateTime?
+
+  @@unique([organizationId, startDate])
+}
+
+model JournalEntry {
+  id             String        @id @default(uuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  number         String
+  date           DateTime      @db.Date
+  description    String
+  source         JournalSource
+  sourceId       String? // id of invoice/bill/payment etc.
+  currency       String        @default("AED")
+  fxRate         Decimal       @default(1) @db.Decimal(18, 6)
+  status         JournalStatus @default(DRAFT)
+  preparedById   String?
+  approvedById   String?
+  postedAt       DateTime?
+  reversalOfId   String?       @unique
+  aiEventId      String? // set if AI proposed this entry
+  lines          JournalLine[]
+  createdAt      DateTime      @default(now())
+
+  @@unique([organizationId, number])
+  @@index([organizationId, date])
+}
+
+model JournalLine {
+  id             String       @id @default(uuid())
+  journalId      String
+  journal        JournalEntry @relation(fields: [journalId], references: [id])
+  organizationId String
+  accountId      String
+  account        Account      @relation(fields: [accountId], references: [id])
+  debit          Decimal      @default(0) @db.Decimal(18, 2) // txn currency
+  credit         Decimal      @default(0) @db.Decimal(18, 2)
+  debitAed       Decimal      @default(0) @db.Decimal(18, 2)
+  creditAed      Decimal      @default(0) @db.Decimal(18, 2)
+  taxCode        String? // VAT code key
+  vatBox         String? // resolved VAT 201 box
+  emirate        Emirate?
+  ctTag          CtTag?
+  contactId      String?
+  costCentre     String?
+  project        String?
+  memo           String?
+
+  @@index([organizationId, accountId])
+}
+
+// ───────────── Contacts, sales, purchases ─────────────
+model Contact {
+  id                String       @id @default(uuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  kind              ContactKind
+  nameEn            String
+  nameAr            String?
+  trn               String?
+  country           String       @default("AE")
+  emirate           Emirate?
+  inDesignatedZone  Boolean      @default(false)
+  isRelatedParty    Boolean      @default(false)
+  isConnectedPerson Boolean      @default(false)
+  peppolId          String? // e-invoicing endpoint
+  paymentTermsDays  Int          @default(30)
+}
+
+model SalesDocument {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  type           SalesDocType
+  number         String
+  contactId      String
+  issueDate      DateTime     @db.Date
+  supplyDate     DateTime?    @db.Date
+  dueDate        DateTime     @db.Date
+  currency       String       @default("AED")
+  fxRate         Decimal      @default(1) @db.Decimal(18, 6)
+  netTotal       Decimal      @db.Decimal(18, 2)
+  vatTotal       Decimal      @db.Decimal(18, 2)
+  grossTotal     Decimal      @db.Decimal(18, 2)
+  amountPaid     Decimal      @default(0) @db.Decimal(18, 2)
+  status         DocStatus    @default(DRAFT)
+  originalDocId  String? // for credit notes
+  journalId      String?
+  lines          Json // [{desc, qty, unitPrice, taxCode, accountId, emirate}]
+  einvoice       EInvoice?
+
+  @@unique([organizationId, type, number])
+}
+
+model PurchaseDocument {
+  id             String          @id @default(uuid())
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  type           PurchaseDocType
+  supplierRef    String
+  contactId      String
+  issueDate      DateTime        @db.Date
+  dueDate        DateTime        @db.Date
+  currency       String          @default("AED")
+  fxRate         Decimal         @default(1) @db.Decimal(18, 6)
+  netTotal       Decimal         @db.Decimal(18, 2)
+  vatTotal       Decimal         @db.Decimal(18, 2)
+  grossTotal     Decimal         @db.Decimal(18, 2)
+  amountPaid     Decimal         @default(0) @db.Decimal(18, 2)
+  status         DocStatus       @default(DRAFT)
+  source         String          @default("MANUAL") // MANUAL | OCR | EINVOICE_INBOUND
+  journalId      String?
+  lines          Json
+  documentId     String?
+}
+
+// ───────────── E-invoicing ─────────────
+model EInvoice {
+  id              String         @id @default(uuid())
+  organizationId  String
+  salesDocumentId String         @unique
+  salesDocument   SalesDocument  @relation(fields: [salesDocumentId], references: [id])
+  aspProvider     String
+  aspMessageId    String?
+  idempotencyKey  String         @unique
+  xmlStorageKey   String? // UAE-region object storage
+  status          EInvoiceStatus @default(PENDING)
+  lastError       String?
+  submittedAt     DateTime?
+  acknowledgedAt  DateTime?
+}
+
+// ───────────── Bank ─────────────
+model BankAccount {
+  id             String            @id @default(uuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  name           String
+  iban           String?
+  currency       String            @default("AED")
+  glAccountId    String
+  transactions   BankTransaction[]
+}
+
+model BankTransaction {
+  id                 String      @id @default(uuid())
+  organizationId     String
+  bankAccountId      String
+  bankAccount        BankAccount @relation(fields: [bankAccountId], references: [id])
+  date               DateTime    @db.Date
+  description        String
+  amount             Decimal     @db.Decimal(18, 2) // + inflow / - outflow
+  reference          String?
+  matchedJournalId   String?
+  suggestedAccountId String?
+  aiConfidence       Float?
+  status             String      @default("UNMATCHED")
+}
+
+// ───────────── Tax ─────────────
+model VatPeriod {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  startDate      DateTime     @db.Date
+  endDate        DateTime     @db.Date
+  dueDate        DateTime     @db.Date
+  status         ReturnStatus @default(NOT_STARTED)
+  boxes          Json? // VAT 201 output from tax-engine
+  configVersion  String?
+  ftaReference   String?
+  preparedById   String?
+  approvedById   String?
+}
+
+model CtPeriod {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  startDate      DateTime     @db.Date
+  endDate        DateTime     @db.Date
+  dueDate        DateTime     @db.Date
+  revenue        Decimal?     @db.Decimal(18, 2)
+  regime         CtRegime
+  computation    Json? // CT bridge output from tax-engine
+  configVersion  String?
+  lossCf         Decimal      @default(0) @db.Decimal(18, 2)
+  interestCf     Decimal      @default(0) @db.Decimal(18, 2)
+  status         ReturnStatus @default(NOT_STARTED)
+}
+
+model ComplianceEvent {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  kind           String // VAT_RETURN | CT_RETURN | EINV_ASP | EINV_GOLIVE | LICENCE | ...
+  title          String
+  dueDate        DateTime     @db.Date
+  status         String       @default("OPEN")
+  assigneeId     String?
+  legalReference String?
+}
+
+// ───────────── Assets & documents ─────────────
+model FixedAsset {
+  id               String       @id @default(uuid())
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  name             String
+  category         String
+  acquisitionDate  DateTime     @db.Date
+  cost             Decimal      @db.Decimal(18, 2)
+  residualValue    Decimal      @default(0) @db.Decimal(18, 2)
+  usefulLifeMonths Int
+  method           String       @default("STRAIGHT_LINE")
+  disposedAt       DateTime?
+}
+
+model StoredDocument {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  storageKey     String
+  mimeType       String
+  extractedJson  Json?
+  uploadedById   String
+  createdAt      DateTime     @default(now())
+}
+
+// ───────────── Audit & AI ─────────────
+model AuditLog {
+  id             BigInt   @id @default(autoincrement())
+  organizationId String?
+  userId         String?
+  action         String
+  entity         String
+  entityId       String
+  before         Json?
+  after          Json?
+  aiEventId      String?
+  ip             String?
+  at             DateTime @default(now())
+
+  @@index([organizationId, entity, entityId])
+}
+
+model AiEvent {
+  id             String   @id @default(uuid())
+  organizationId String
+  feature        String // CATEGORISE | EXTRACT | ASK | PROPOSE_JOURNAL | ANOMALY
+  model          String
+  promptHash     String
+  toolsCalled    Json?
+  output         Json
+  confidence     Float?
+  decision       String? // ACCEPTED | EDITED | REJECTED
+  decidedById    String?
+  at             DateTime @default(now())
+}
+
+// ───────────── Enums ─────────────
+enum Role {
+  FIRM_ADMIN
+  FIRM_PARTNER
+  FIRM_MANAGER
+  FIRM_ACCOUNTANT
+  CLIENT_OWNER
+  CLIENT_FINANCE
+  CLIENT_VIEWER
+  EXTERNAL_AUDITOR
+}
+
+enum Jurisdiction {
+  MAINLAND
+  FREE_ZONE
+  DESIGNATED_ZONE
+}
+
+enum Emirate {
+  AUH
+  DXB
+  SHJ
+  AJM
+  UAQ
+  RAK
+  FUJ
+}
+
+enum FsFramework {
+  IFRS
+  IFRS_FOR_SMES
+  CASH_BASIS
+}
+
+enum CtRegime {
+  STANDARD
+  SBR
+  QFZP
+  EXEMPT
+}
+
+enum EinvoiceCohort {
+  REVENUE_50M_PLUS
+  REVENUE_BELOW_50M
+  GOVERNMENT
+  OUT_OF_SCOPE
+}
+
+enum AiDataSharing {
+  OFF
+  ANONYMISED
+  FULL
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum PeriodStatus {
+  OPEN
+  SOFT_CLOSED
+  LOCKED
+}
+
+enum JournalSource {
+  MANUAL
+  SALES
+  PURCHASE
+  PAYMENT
+  RECEIPT
+  BANK
+  DEPRECIATION
+  PAYROLL
+  FX_REVAL
+  VAT
+  CT
+  CLOSING
+  OPENING
+  AI_PROPOSED
+}
+
+enum JournalStatus {
+  DRAFT
+  PENDING_APPROVAL
+  POSTED
+  REVERSED
+}
+
+enum ContactKind {
+  CUSTOMER
+  SUPPLIER
+  BOTH
+}
+
+enum SalesDocType {
+  INVOICE
+  CREDIT_NOTE
+}
+
+enum PurchaseDocType {
+  BILL
+  DEBIT_NOTE
+}
+
+enum DocStatus {
+  DRAFT
+  APPROVED
+  ISSUED
+  PART_PAID
+  PAID
+  VOID
+}
+
+enum EInvoiceStatus {
+  PENDING
+  VALIDATED
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  FAILED
+}
+
+enum ReturnStatus {
+  NOT_STARTED
+  IN_PREPARATION
+  IN_REVIEW
+  APPROVED
+  FILED
+  PAID
+}
+
+enum CtTag {
+  EXEMPT_INCOME
+  ENTERTAINMENT_50
+  FINES_PENALTIES
+  DONATION_NON_QPBE
+  NON_DEDUCTIBLE
+  RELATED_PARTY
+  INTEREST_EXPENSE
+  INTEREST_INCOME
+  DEPRECIATION
+  CT_EXPENSE
+  RECOVERABLE_VAT
+  DIVIDEND_PAID
+}

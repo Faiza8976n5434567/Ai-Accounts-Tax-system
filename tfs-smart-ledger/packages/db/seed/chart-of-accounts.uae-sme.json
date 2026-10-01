@@ -1,0 +1,617 @@
+{
+ "name": "UAE SME default chart of accounts (IFRS / IFRS for SMEs aligned)",
+ "version": "2026.09",
+ "note": "Arabic names are draft translations - have them reviewed. fsLine keys map to FS templates.",
+ "accounts": [
+  {
+   "code": "1000",
+   "nameEn": "Cash on hand",
+   "nameAr": "النقد في الصندوق",
+   "type": "ASSET",
+   "subType": "CASH",
+   "fsLine": "CASH_AND_EQUIVALENTS",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "1010",
+   "nameEn": "Bank - current account (AED)",
+   "nameAr": "البنك - حساب جاري",
+   "type": "ASSET",
+   "subType": "BANK",
+   "fsLine": "CASH_AND_EQUIVALENTS",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "1100",
+   "nameEn": "Trade receivables",
+   "nameAr": "الذمم المدينة التجارية",
+   "type": "ASSET",
+   "subType": "TRADE_RECEIVABLES",
+   "fsLine": "TRADE_AND_OTHER_RECEIVABLES",
+   "isControl": true,
+   "ctTag": null
+  },
+  {
+   "code": "1105",
+   "nameEn": "Allowance for expected credit losses",
+   "nameAr": "مخصص الخسائر الائتمانية المتوقعة",
+   "type": "ASSET",
+   "subType": "ECL_ALLOWANCE",
+   "fsLine": "TRADE_AND_OTHER_RECEIVABLES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "1110",
+   "nameEn": "Unbilled revenue / contract assets",
+   "nameAr": "إيرادات غير مفوترة",
+   "type": "ASSET",
+   "subType": "CONTRACT_ASSET",
+   "fsLine": "TRADE_AND_OTHER_RECEIVABLES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "1120",
+   "nameEn": "Due from related parties",
+   "nameAr": "مستحق من أطراف ذات علاقة",
+   "type": "ASSET",
+   "subType": "RELATED_PARTY_RECEIVABLE",
+   "fsLine": "DUE_FROM_RELATED_PARTIES",
+   "isControl": false,
+   "ctTag": "RELATED_PARTY"
+  },
+  {
+   "code": "1150",
+   "nameEn": "Prepayments and deposits",
+   "nameAr": "مصروفات مدفوعة مقدماً وودائع",
+   "type": "ASSET",
+   "subType": "PREPAYMENTS",
+   "fsLine": "TRADE_AND_OTHER_RECEIVABLES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "1200",
+   "nameEn": "Inventory",
+   "nameAr": "المخزون",
+   "type": "ASSET",
+   "subType": "INVENTORY",
+   "fsLine": "INVENTORIES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "1300",
+   "nameEn": "VAT input (recoverable)",
+   "nameAr": "ضريبة القيمة المضافة - مدخلات",
+   "type": "ASSET",
+   "subType": "VAT_INPUT",
+   "fsLine": "TRADE_AND_OTHER_RECEIVABLES",
+   "isControl": true,
+   "ctTag": null
+  },
+  {
+   "code": "1310",
+   "nameEn": "VAT input - reverse charge",
+   "nameAr": "ضريبة المدخلات - احتساب عكسي",
+   "type": "ASSET",
+   "subType": "VAT_INPUT_RCM",
+   "fsLine": "TRADE_AND_OTHER_RECEIVABLES",
+   "isControl": true,
+   "ctTag": null
+  },
+  {
+   "code": "1500",
+   "nameEn": "Property, plant and equipment - cost",
+   "nameAr": "الممتلكات والمعدات - التكلفة",
+   "type": "ASSET",
+   "subType": "PPE_COST",
+   "fsLine": "PROPERTY_PLANT_EQUIPMENT",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "1510",
+   "nameEn": "PPE - accumulated depreciation",
+   "nameAr": "الممتلكات والمعدات - الاستهلاك المتراكم",
+   "type": "ASSET",
+   "subType": "PPE_ACC_DEP",
+   "fsLine": "PROPERTY_PLANT_EQUIPMENT",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "1550",
+   "nameEn": "Right-of-use assets",
+   "nameAr": "أصول حق الاستخدام",
+   "type": "ASSET",
+   "subType": "ROU_ASSET",
+   "fsLine": "RIGHT_OF_USE_ASSETS",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "1600",
+   "nameEn": "Intangible assets",
+   "nameAr": "الأصول غير الملموسة",
+   "type": "ASSET",
+   "subType": "INTANGIBLES",
+   "fsLine": "INTANGIBLE_ASSETS",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "1700",
+   "nameEn": "Deferred tax asset",
+   "nameAr": "أصل ضريبي مؤجل",
+   "type": "ASSET",
+   "subType": "DEFERRED_TAX_ASSET",
+   "fsLine": "DEFERRED_TAX",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "2000",
+   "nameEn": "Trade payables",
+   "nameAr": "الذمم الدائنة التجارية",
+   "type": "LIABILITY",
+   "subType": "TRADE_PAYABLES",
+   "fsLine": "TRADE_AND_OTHER_PAYABLES",
+   "isControl": true,
+   "ctTag": null
+  },
+  {
+   "code": "2010",
+   "nameEn": "Accruals",
+   "nameAr": "المستحقات",
+   "type": "LIABILITY",
+   "subType": "ACCRUALS",
+   "fsLine": "TRADE_AND_OTHER_PAYABLES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "2020",
+   "nameEn": "Deferred revenue / contract liabilities",
+   "nameAr": "إيرادات مؤجلة",
+   "type": "LIABILITY",
+   "subType": "CONTRACT_LIABILITY",
+   "fsLine": "TRADE_AND_OTHER_PAYABLES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "2030",
+   "nameEn": "Due to related parties",
+   "nameAr": "مستحق لأطراف ذات علاقة",
+   "type": "LIABILITY",
+   "subType": "RELATED_PARTY_PAYABLE",
+   "fsLine": "DUE_TO_RELATED_PARTIES",
+   "isControl": false,
+   "ctTag": "RELATED_PARTY"
+  },
+  {
+   "code": "2100",
+   "nameEn": "VAT output",
+   "nameAr": "ضريبة القيمة المضافة - مخرجات",
+   "type": "LIABILITY",
+   "subType": "VAT_OUTPUT",
+   "fsLine": "TRADE_AND_OTHER_PAYABLES",
+   "isControl": true,
+   "ctTag": null
+  },
+  {
+   "code": "2110",
+   "nameEn": "VAT output - reverse charge",
+   "nameAr": "ضريبة المخرجات - احتساب عكسي",
+   "type": "LIABILITY",
+   "subType": "VAT_OUTPUT_RCM",
+   "fsLine": "TRADE_AND_OTHER_PAYABLES",
+   "isControl": true,
+   "ctTag": null
+  },
+  {
+   "code": "2120",
+   "nameEn": "VAT payable / (refundable) - settlement",
+   "nameAr": "تسوية ضريبة القيمة المضافة",
+   "type": "LIABILITY",
+   "subType": "VAT_SETTLEMENT",
+   "fsLine": "TRADE_AND_OTHER_PAYABLES",
+   "isControl": true,
+   "ctTag": null
+  },
+  {
+   "code": "2200",
+   "nameEn": "Corporate tax payable",
+   "nameAr": "ضريبة الشركات المستحقة",
+   "type": "LIABILITY",
+   "subType": "CT_PAYABLE",
+   "fsLine": "CURRENT_TAX_LIABILITY",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "2300",
+   "nameEn": "Lease liabilities",
+   "nameAr": "التزامات الإيجار",
+   "type": "LIABILITY",
+   "subType": "LEASE_LIABILITY",
+   "fsLine": "LEASE_LIABILITIES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "2400",
+   "nameEn": "Bank borrowings",
+   "nameAr": "القروض البنكية",
+   "type": "LIABILITY",
+   "subType": "BORROWINGS",
+   "fsLine": "BORROWINGS",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "2500",
+   "nameEn": "Provision for employees' end-of-service benefits",
+   "nameAr": "مخصص مكافأة نهاية الخدمة",
+   "type": "LIABILITY",
+   "subType": "EOSB_PROVISION",
+   "fsLine": "EMPLOYEE_BENEFITS",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "2600",
+   "nameEn": "Deferred tax liability",
+   "nameAr": "التزام ضريبي مؤجل",
+   "type": "LIABILITY",
+   "subType": "DEFERRED_TAX_LIABILITY",
+   "fsLine": "DEFERRED_TAX",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "3000",
+   "nameEn": "Share capital",
+   "nameAr": "رأس المال",
+   "type": "EQUITY",
+   "subType": "SHARE_CAPITAL",
+   "fsLine": "SHARE_CAPITAL",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "3100",
+   "nameEn": "Statutory reserve",
+   "nameAr": "الاحتياطي القانوني",
+   "type": "EQUITY",
+   "subType": "STATUTORY_RESERVE",
+   "fsLine": "RESERVES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "3200",
+   "nameEn": "Retained earnings",
+   "nameAr": "الأرباح المحتجزة",
+   "type": "EQUITY",
+   "subType": "RETAINED_EARNINGS",
+   "fsLine": "RETAINED_EARNINGS",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "3300",
+   "nameEn": "Shareholder current account",
+   "nameAr": "الحساب الجاري للشريك",
+   "type": "EQUITY",
+   "subType": "SHAREHOLDER_CURRENT",
+   "fsLine": "RESERVES",
+   "isControl": false,
+   "ctTag": "RELATED_PARTY"
+  },
+  {
+   "code": "3400",
+   "nameEn": "Dividends / drawings",
+   "nameAr": "توزيعات الأرباح / المسحوبات",
+   "type": "EQUITY",
+   "subType": "DIVIDENDS",
+   "fsLine": "RETAINED_EARNINGS",
+   "isControl": false,
+   "ctTag": "DIVIDEND_PAID"
+  },
+  {
+   "code": "4000",
+   "nameEn": "Revenue - sale of goods",
+   "nameAr": "الإيرادات - بيع البضائع",
+   "type": "REVENUE",
+   "subType": "REVENUE_GOODS",
+   "fsLine": "REVENUE",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "4010",
+   "nameEn": "Revenue - services",
+   "nameAr": "الإيرادات - الخدمات",
+   "type": "REVENUE",
+   "subType": "REVENUE_SERVICES",
+   "fsLine": "REVENUE",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "4100",
+   "nameEn": "Interest income",
+   "nameAr": "إيرادات الفوائد",
+   "type": "REVENUE",
+   "subType": "INTEREST_INCOME",
+   "fsLine": "FINANCE_INCOME",
+   "isControl": false,
+   "ctTag": "INTEREST_INCOME"
+  },
+  {
+   "code": "4200",
+   "nameEn": "Dividend income",
+   "nameAr": "إيرادات توزيعات الأرباح",
+   "type": "REVENUE",
+   "subType": "DIVIDEND_INCOME",
+   "fsLine": "OTHER_INCOME",
+   "isControl": false,
+   "ctTag": "EXEMPT_INCOME"
+  },
+  {
+   "code": "4300",
+   "nameEn": "Other income",
+   "nameAr": "إيرادات أخرى",
+   "type": "REVENUE",
+   "subType": "OTHER_INCOME",
+   "fsLine": "OTHER_INCOME",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "4400",
+   "nameEn": "Foreign exchange gain / (loss)",
+   "nameAr": "أرباح / خسائر فروقات العملة",
+   "type": "REVENUE",
+   "subType": "FX",
+   "fsLine": "OTHER_INCOME",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "5000",
+   "nameEn": "Cost of goods sold",
+   "nameAr": "تكلفة البضاعة المباعة",
+   "type": "EXPENSE",
+   "subType": "COGS",
+   "fsLine": "COST_OF_SALES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "5010",
+   "nameEn": "Direct costs - subcontractors",
+   "nameAr": "تكاليف مباشرة - مقاولون من الباطن",
+   "type": "EXPENSE",
+   "subType": "DIRECT_COSTS",
+   "fsLine": "COST_OF_SALES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6000",
+   "nameEn": "Salaries and wages",
+   "nameAr": "الرواتب والأجور",
+   "type": "EXPENSE",
+   "subType": "STAFF_COSTS",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6010",
+   "nameEn": "End-of-service benefits expense",
+   "nameAr": "مصروف مكافأة نهاية الخدمة",
+   "type": "EXPENSE",
+   "subType": "EOSB_EXPENSE",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6020",
+   "nameEn": "Staff entertainment and welfare",
+   "nameAr": "رعاية وترفيه الموظفين",
+   "type": "EXPENSE",
+   "subType": "STAFF_WELFARE",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6100",
+   "nameEn": "Rent - short-term / low-value leases",
+   "nameAr": "الإيجار - قصير الأجل",
+   "type": "EXPENSE",
+   "subType": "RENT",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6110",
+   "nameEn": "Utilities and telecom",
+   "nameAr": "المرافق والاتصالات",
+   "type": "EXPENSE",
+   "subType": "UTILITIES",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6120",
+   "nameEn": "Licences, visas and government fees",
+   "nameAr": "الرخص والتأشيرات والرسوم الحكومية",
+   "type": "EXPENSE",
+   "subType": "GOVT_FEES",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6130",
+   "nameEn": "Professional fees",
+   "nameAr": "الأتعاب المهنية",
+   "type": "EXPENSE",
+   "subType": "PROFESSIONAL_FEES",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6140",
+   "nameEn": "Client entertainment",
+   "nameAr": "ضيافة العملاء",
+   "type": "EXPENSE",
+   "subType": "CLIENT_ENTERTAINMENT",
+   "fsLine": "SELLING_EXPENSES",
+   "isControl": false,
+   "ctTag": "ENTERTAINMENT_50"
+  },
+  {
+   "code": "6150",
+   "nameEn": "Marketing and advertising",
+   "nameAr": "التسويق والإعلان",
+   "type": "EXPENSE",
+   "subType": "MARKETING",
+   "fsLine": "SELLING_EXPENSES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6160",
+   "nameEn": "Fines and penalties",
+   "nameAr": "الغرامات والجزاءات",
+   "type": "EXPENSE",
+   "subType": "FINES",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": "FINES_PENALTIES"
+  },
+  {
+   "code": "6170",
+   "nameEn": "Donations",
+   "nameAr": "التبرعات",
+   "type": "EXPENSE",
+   "subType": "DONATIONS",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": "DONATION_NON_QPBE"
+  },
+  {
+   "code": "6200",
+   "nameEn": "Depreciation - PPE",
+   "nameAr": "الاستهلاك - الممتلكات والمعدات",
+   "type": "EXPENSE",
+   "subType": "DEPRECIATION",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": "DEPRECIATION"
+  },
+  {
+   "code": "6210",
+   "nameEn": "Depreciation - right-of-use assets",
+   "nameAr": "استهلاك أصول حق الاستخدام",
+   "type": "EXPENSE",
+   "subType": "DEPRECIATION_ROU",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": "DEPRECIATION"
+  },
+  {
+   "code": "6220",
+   "nameEn": "Amortisation",
+   "nameAr": "الإطفاء",
+   "type": "EXPENSE",
+   "subType": "AMORTISATION",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": "DEPRECIATION"
+  },
+  {
+   "code": "6300",
+   "nameEn": "Expected credit losses / bad debts",
+   "nameAr": "الخسائر الائتمانية المتوقعة / الديون المعدومة",
+   "type": "EXPENSE",
+   "subType": "ECL_EXPENSE",
+   "fsLine": "IMPAIRMENT_LOSSES",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6400",
+   "nameEn": "Bank charges",
+   "nameAr": "الرسوم البنكية",
+   "type": "EXPENSE",
+   "subType": "BANK_CHARGES",
+   "fsLine": "FINANCE_COSTS",
+   "isControl": false,
+   "ctTag": null
+  },
+  {
+   "code": "6410",
+   "nameEn": "Interest expense",
+   "nameAr": "مصروف الفوائد",
+   "type": "EXPENSE",
+   "subType": "INTEREST_EXPENSE",
+   "fsLine": "FINANCE_COSTS",
+   "isControl": false,
+   "ctTag": "INTEREST_EXPENSE"
+  },
+  {
+   "code": "6420",
+   "nameEn": "Interest on lease liabilities",
+   "nameAr": "فوائد التزامات الإيجار",
+   "type": "EXPENSE",
+   "subType": "LEASE_INTEREST",
+   "fsLine": "FINANCE_COSTS",
+   "isControl": false,
+   "ctTag": "INTEREST_EXPENSE"
+  },
+  {
+   "code": "6500",
+   "nameEn": "Non-deductible expenses",
+   "nameAr": "مصروفات غير قابلة للخصم",
+   "type": "EXPENSE",
+   "subType": "NON_DEDUCTIBLE",
+   "fsLine": "GENERAL_ADMIN_EXPENSES",
+   "isControl": false,
+   "ctTag": "NON_DEDUCTIBLE"
+  },
+  {
+   "code": "7000",
+   "nameEn": "Corporate tax expense - current",
+   "nameAr": "مصروف ضريبة الشركات - الحالية",
+   "type": "EXPENSE",
+   "subType": "CT_CURRENT",
+   "fsLine": "INCOME_TAX_EXPENSE",
+   "isControl": false,
+   "ctTag": "CT_EXPENSE"
+  },
+  {
+   "code": "7010",
+   "nameEn": "Corporate tax expense - deferred",
+   "nameAr": "مصروف ضريبة الشركات - المؤجلة",
+   "type": "EXPENSE",
+   "subType": "CT_DEFERRED",
+   "fsLine": "INCOME_TAX_EXPENSE",
+   "isControl": false,
+   "ctTag": "CT_EXPENSE"
+  }
+ ]
+}
