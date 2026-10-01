@@ -162,7 +162,7 @@ export function Dashboard({ org, go }: { org: Org; go: (p: Page) => void }) {
             {d.ct.warnings.map((w) => <RiskRow key={w} icon={<AlertTriangle size={15} />} tone="amber" label={t(w)} onClick={() => go("ct")} />)}
           </ul>
         </Card>
-        <Card title={t("Receivables ageing")} sub={`${t("Open AR")} ${fmt(d.ageing.reduce((s, a) => s + a.amount, 0), { aed: true, dp0: true })}`} hover icon={<Receipt size={16} />}>
+        <Card title={t("Receivables ageing")} sub={`${t("Open AR")} ${fmt(d.ageing.reduce((s, a) => s + a.amount, 0), { aed: true, dp0: true })}`} hover icon={<Receipt size={16} />} actions={<button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => go("ar")}>{t("View AR")} <ChevronRight size={13} className="rtl:rotate-180" /></button>}>
           <div className="h-52">
             <ResponsiveContainer>
               <BarChart data={d.buckets.map((b) => ({ ...b, label: t(b.label), v: b.v / 100 }))} margin={{ left: -15, top: 8 }}>

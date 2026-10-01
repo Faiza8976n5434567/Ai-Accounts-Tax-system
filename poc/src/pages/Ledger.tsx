@@ -28,7 +28,7 @@ export function Ledger({ org }: { org: Org }) {
 
   return (
     <>
-      <PageHeader eyebrow={t("Accounting")} title={t("General ledger")} sub={t("Single source of truth. Posted journals are immutable — corrections by reversal only.")}
+      <PageHeader eyebrow={t("Accounting")} title={t("Accounts")} sub={t("General ledger — single source of truth. Posted journals are immutable — corrections by reversal only.")}
         actions={<><Tabs value={tab} onChange={setTab} items={[{ id: "journals", label: t("Journals") }, { id: "account", label: t("Account ledger") }]} /><button className="btn-primary" onClick={() => setManual(true)}><Plus size={15} />{t("Manual journal")}</button></>} />
       <KpiGrid>
         <Stat label={t("Journals")} value={<Num v={js.length} f={String} />} icon={<BookOpen size={16} />} tone="sky" hint={t("{n} posted", { n: js.filter((j) => j.status === "POSTED").length })} />

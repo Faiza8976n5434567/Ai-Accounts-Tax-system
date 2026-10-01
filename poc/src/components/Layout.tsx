@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Menu, X, Building2, LayoutDashboard, ScanLine, Receipt, BookOpen, FileBarChart, Landmark, Calculator, Banknote, CalendarClock, Sparkles, ShieldCheck, Settings, ChevronDown, Languages, CheckCircle2, AlertTriangle, Info, Search, Bell, CornerDownLeft, ArrowRight } from "lucide-react";
+import { Menu, X, HandCoins, Wallet, Building2, LayoutDashboard, ScanLine, Receipt, BookOpen, FileBarChart, Landmark, Calculator, Banknote, CalendarClock, Sparkles, ShieldCheck, Settings, ChevronDown, Languages, CheckCircle2, AlertTriangle, Info, Search, Bell, CornerDownLeft, ArrowRight } from "lucide-react";
 import { useStore, USERS } from "../lib/store";
 import type { Role } from "../lib/types";
 import { cx } from "./ui";
 
-export type Page = "firm" | "dashboard" | "capture" | "sales" | "ledger" | "reports" | "vat" | "ct" | "bank" | "calendar" | "ask" | "audit" | "settings";
+export type Page = "firm" | "dashboard" | "capture" | "sales" | "ledger" | "ar" | "ap" | "reports" | "vat" | "ct" | "bank" | "calendar" | "ask" | "audit" | "settings";
 
 const NAV: { section: string; items: { id: Page; label: string; icon: ReactNode; client?: boolean; firmOnly?: boolean }[] }[] = [
   { section: "Workspace", items: [
@@ -16,7 +16,9 @@ const NAV: { section: string; items: { id: Page; label: string; icon: ReactNode;
     { id: "capture", label: "Capture invoices", icon: <ScanLine size={17} />, client: true },
     { id: "sales", label: "Sales & e-invoicing", icon: <Receipt size={17} />, client: true },
     { id: "bank", label: "Bank reconciliation", icon: <Banknote size={17} />, client: true },
-    { id: "ledger", label: "General ledger", icon: <BookOpen size={17} />, client: true },
+    { id: "ledger", label: "Accounts", icon: <BookOpen size={17} />, client: true },
+    { id: "ar", label: "Accounts Receivable (AR)", icon: <HandCoins size={17} />, client: true },
+    { id: "ap", label: "Accounts Payable (AP)", icon: <Wallet size={17} />, client: true },
     { id: "reports", label: "Reports", icon: <FileBarChart size={17} />, client: true },
   ] },
   { section: "Tax", items: [
@@ -86,7 +88,7 @@ export function Layout({ page, go, children }: { page: Page; go: (p: Page) => vo
                       <span className={cx("transition-colors", active ? "text-emerald-400" : "text-slate-500 group-hover:text-slate-300")}>{i.icon}</span>
                       <span className="flex-1 text-start">{t(i.label)}</span>
                       {i.id === "capture" && pendingCount > 0 && <span className="text-[10px] font-semibold bg-amber-400/15 text-amber-300 ring-1 ring-amber-300/20 rounded-full px-1.5 py-0.5">{pendingCount}</span>}
-                      {i.id === "ask" && <span className="text-[9px] font-semibold uppercase tracking-wide bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-full px-1.5 py-0.5">{t("AI")}</span>}
+                      {i.id === "ask" && <span className="text-[9px] font-semibold uppercase tracking-wide bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-full px-1.5 py-0.5">AI</span>}
                     </button>
                   );
                 })}

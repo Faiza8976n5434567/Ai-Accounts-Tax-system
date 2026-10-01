@@ -25,7 +25,7 @@ export function Bank({ org }: { org: Org }) {
       <PageHeader eyebrow={t("Accounting")} title={t("Bank reconciliation")} sub={t("Bank — current account (AED) · September 2026 statement")}
         actions={<><button className="btn-ghost" onClick={() => setImp(true)}><Upload size={15} />{t("Import CSV")}</button><button className="btn-primary" onClick={() => store.autoMatch(org.id)} disabled={!open.length}><Wand2 size={15} />{t("Auto-match")}</button></>} />
       <KpiGrid>
-        <div className="card card-hover p-4 flex items-center gap-4"><Ring value={pct} size={68} stroke={8}>{pct}%</Ring><div><div className="text-xs text-slate-500">{t("Reconciled")}</div><div className="text-[22px] font-semibold num">{lines.length - open.length} / {lines.length}</div><div className="text-xs text-slate-400">{t("lines matched to ledger")}</div></div></div>
+        <div className="card card-hover p-3.5 sm:p-4 flex items-center gap-3 sm:gap-4 min-w-0"><Ring value={pct} size={56} stroke={7}>{pct}%</Ring><div><div className="text-xs text-slate-500">{t("Reconciled")}</div><div className="text-[22px] font-semibold num">{lines.length - open.length} / {lines.length}</div><div className="text-xs text-slate-400">{t("lines matched to ledger")}</div></div></div>
         <Stat label={t("Money in")} value={compact(lines.filter((b) => b.amount > 0).reduce((s, b) => s + b.amount, 0))} icon={<ArrowDownLeft size={16} />} tone="emerald" />
         <Stat label={t("Money out")} value={compact(-lines.filter((b) => b.amount < 0).reduce((s, b) => s + b.amount, 0))} icon={<ArrowUpRight size={16} />} tone="amber" />
         <Stat label={t("To review")} value={String(open.length)} icon={<ListChecks size={16} />} tone="rose" hint={t("AI suggestions ready")} />

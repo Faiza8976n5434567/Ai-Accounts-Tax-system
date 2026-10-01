@@ -3,7 +3,7 @@ import { useStore } from "./store";
 import { posted, profitAndLoss, balanceSheet, monthly, trialBalance } from "./ledger";
 import { buildVat201, quarters } from "./vat";
 import { computeCt } from "./ct";
-import { invoiceTotals } from "./einvoice";
+import { subledger } from "./subledger";
 import type { AppState, Org } from "./types";
 
 export const TODAY = "2026-10-01";
@@ -24,15 +24,10 @@ export function orgData(state: AppState, org: Org) {
   const cash = tb.find((r) => r.code === "1010")?.balance ?? 0;
   const ar = tb.find((r) => r.code === "1100")?.balance ?? 0;
   const ap = tb.find((r) => r.code === "2000")?.balance ?? 0;
-  const open = state.sales.filter((s) => s.orgId === org.id && s.status === "POSTED");
-  const ageing = open.map((s) => ({ id: s.id, name: s.customer, inv: s.invNo, days: Math.max(0, daysBetween(s.dueDate, TODAY)), amount: invoiceTotals(s).total }));
-  const buckets = [
-    { label: "Current", v: ageing.filter((a) => a.days === 0).reduce((x, a) => x + a.amount, 0) },
-    { label: "1–30", v: ageing.filter((a) => a.days > 0 && a.days <= 30).reduce((x, a) => x + a.amount, 0) },
-    { label: "31–60", v: ageing.filter((a) => a.days > 30 && a.days <= 60).reduce((x, a) => x + a.amount, 0) },
-    { label: "61–90", v: ageing.filter((a) => a.days > 60 && a.days <= 90).reduce((x, a) => x + a.amount, 0) },
-    { label: "90+", v: ageing.filter((a) => a.days > 90).reduce((x, a) => x + a.amount, 0) },
-  ];
+  const arL = subledger(all, "1100", TODAY);
+  const apL = subledger(all, "2000", TODAY);
+  const ageing = arL.items.map((i) => ({ id: i.jid, name: i.party, inv: i.ref, days: i.overdueDays, amount: i.open }));
+  const buckets = arL.buckets.map((b) => ({ label: b.label, v: b.v }));
   const docs = state.purchases.filter((p) => p.orgId === org.id && p.status !== "REJECTED" && p.status !== "POSTED");
   const missingTrn = docs.filter((p) => p.checks.some((c) => c.id === "trn" && !c.ok));
   const vatAtRisk = docs.filter((p) => p.checks.some((c) => !c.ok && c.severity === "error")).reduce((s, p) => s + p.vat, 0);
@@ -51,7 +46,7 @@ export function orgData(state: AppState, org: Org) {
     pending: state.purchases.filter((p) => p.orgId === org.id && p.status === "PENDING").length,
     journals: all.length,
   };
-  return { cashSeries, counts, all, ytd, pl, bs, tb, mon, vat, curQ, ct, cash, ar, ap, ageing, buckets, docs, missingTrn, vatAtRisk, ctAdj, unmatched, pendingJ, ytdRevenueAnnualised };
+  return { arL, apL, cashSeries, counts, all, ytd, pl, bs, tb, mon, vat, curQ, ct, cash, ar, ap, ageing, buckets, docs, missingTrn, vatAtRisk, ctAdj, unmatched, pendingJ, ytdRevenueAnnualised };
 }
 
 export function useOrgData(org: Org | null) {

@@ -27,6 +27,30 @@ npm run dev      # http://localhost:5180
 - "AI" classification & Q&A: deterministic keyword rules — swap for Claude API calls in `src/lib/ai.ts`.
 - ASP transmission: timed status updates; no network.
 
+## Accounts, AR and AP
+- **Accounts** (formerly "General ledger") — journals and account ledgers.
+- **Accounts Receivable / Payable** are sub-ledgers computed live from the GL control accounts
+  1100 (Trade receivables) and 2000 (Trade payables) — `src/lib/subledger.ts`. Each journal carries a `party`
+  (customer/supplier); receipts and payments are allocated oldest-first. A reconciliation card proves
+  sub-ledger total = GL balance. Receiving/paying posts a normal journal, so the GL, AR/AP, dashboard and
+  reports all move together. Storage key bumped to `v2` (old browser data is reseeded).
+
+## UI system
+- Shared components in `src/components/ui.tsx`: `DataTable` (search, filter chips, sortable headers, pagination),
+  `Field`/`Input`/`Select`/`Toggle`, accessible `Modal` (portal, focus trap, Esc), `Stat`, `Gauge`, `Ring`, `Sparkline`.
+- Every page follows the same pattern: `PageHeader` (eyebrow + title + actions) → `KpiGrid` → charts → `DataTable`.
+- ⌘K / Ctrl+K opens quick navigation. Browser back/forward works (hash routing).
+- Responsive: sidebar becomes a drawer below 1024px; tables scroll inside their card.
+
+## Arabic / RTL
+- Toggle in the top bar, or open `/?lang=ar`. All UI text goes through `t()` (`src/lib/i18n.ts`) with Arabic strings
+  in `src/lib/ar.ts` (draft — have a native finance reviewer check them). Charts, sparklines and the flow diagram
+  mirror so time runs right-to-left. In dev, untranslated keys are listed in `window.__i18nMissing`.
+
+## SEO & icons
+`index.html` has description, Open Graph/Twitter cards, JSON-LD; `public/` holds the favicon (SVG + PNG),
+apple-touch icon, PWA manifest, `og-image.png` and `robots.txt`. Add a canonical URL + hreflang once the domain is known.
+
 ## Where the logic lives
 `src/lib/` — `ledger.ts` (posting + TB/P&L/BS), `vat.ts` (VAT 201), `ct.ts` (CT bridge), `ai.ts`
 (classifier, Art 59 checks, risk, Q&A), `einvoice.ts` (PINT AE), `config.ts` (versioned tax params).

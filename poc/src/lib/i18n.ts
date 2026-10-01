@@ -11,7 +11,8 @@ export function t(lang: Lang, s: string, p?: Record<string, string | number>) {
     if (hit === undefined && import.meta.env.DEV) { missing.add(s); (window as unknown as { __i18nMissing: string[] }).__i18nMissing = [...missing]; }
     out = hit ?? s;
   }
-  if (p) for (const [k, v] of Object.entries(p)) out = out.split(`{${k}}`).join(String(v));
+  // In Arabic, isolate each inserted value (amounts, refs, names) so mixed-direction text never reorders.
+  if (p) for (const [k, v] of Object.entries(p)) out = out.split(`{${k}}`).join(lang === "ar" ? `\u2068${v}\u2069` : String(v));
   return out;
 }
 

@@ -72,6 +72,9 @@ export function buildSeed(): AppState {
     ob.lines[4].credit = dr - cr;
 
     let invSeq = 1000;
+    const sup = org.id === "gulffresh" ? "Al Islami Foods LLC" : org.id === "brightpath" ? "Talent Hub FZE" : "Gulf Wholesale Trading LLC";
+    const apOpen: { ref: string; party: string; amt: number }[] = [];
+    const bill = (j: Journal, party: string) => { j.party = party; apOpen.push({ ref: j.ref, party, amt: j.lines.find((l) => l.account === "2000")!.credit }); };
     const revAcc = org.id === "brightpath" ? "4010" : "4000";
     for (let m = 1; m <= 9; m++) {
       const mm = `2026-${pad(m)}`;
@@ -95,21 +98,28 @@ export function buildSeed(): AppState {
           { account: revAcc, debit: 0, credit: price, taxCode: tc, vat, emirate: c.emirate },
           ...(vat ? [{ account: "2100", debit: 0, credit: vat }] : []),
         ]);
-        inv.journalId = jj.id;
+        inv.journalId = jj.id; jj.party = c.name;
         const paid = m <= 6 || (m === 7 && k > 0) || (m === 8 && k === 0);
         if (paid) {
           inv.status = "PAID";
           const pd = new Date(inv.date); pd.setDate(pd.getDate() + between(15, 40));
           const pds = pd.toISOString().slice(0, 10) > "2026-09-30" ? "2026-09-29" : pd.toISOString().slice(0, 10);
           const rj = J(org.id, pds, `RCPT-${inv.invNo}`, `Receipt — ${c.name}`, "BANK", [{ account: "1010", debit: price + vat, credit: 0 }, { account: "1100", debit: 0, credit: price + vat }]);
+          rj.party = c.name;
           if (pds.startsWith("2026-09")) bank.push({ id: id("b"), orgId: org.id, date: pds, desc: `INWARD TT ${c.name.toUpperCase().slice(0, 22)}`, amount: price + vat, journalId: org.id === "alnoor" ? undefined : rj.id });
         }
         sales.push(inv);
       }
       // costs
-      if (org.id !== "brightpath") exp(org.id, `${mm}-05`, `PO-${m}01`, org.id === "gulffresh" ? "Food supplies — Al Islami Foods" : "Purchase of trading goods — Gulf Wholesale", "5000", between(120_000, 150_000) * scale * dip, "SR", true);
-      else exp(org.id, `${mm}-07`, `SUB-${m}`, "Subcontracted consultants — Talent Hub FZE", "5010", between(40_000, 55_000), "SR");
-      if (org.id !== "brightpath") J(org.id, `${mm}-20`, `PAY-AP-${m}`, "Supplier payment — trade payables", "BANK", [{ account: "2000", debit: toFils(130_000 * scale), credit: 0 }, { account: "1010", debit: 0, credit: toFils(130_000 * scale) }]);
+      // AP: last month's supplier bills are paid on the 10th (Al Noor pays only 60% of August stock → overdue balance)
+      for (const b of apOpen.splice(0)) {
+        const amt = org.id === "alnoor" && m === 9 && b.party === sup ? Math.round(b.amt * 0.6) : b.amt;
+        const pj = J(org.id, `${mm}-10`, `PAY-${b.ref}`, `Supplier payment — ${b.party}`, "BANK", [{ account: "2000", debit: amt, credit: 0 }, { account: "1010", debit: 0, credit: amt }]);
+        pj.party = b.party;
+      }
+      if (org.id !== "brightpath") bill(exp(org.id, `${mm}-05`, `PO-${m}01`, org.id === "gulffresh" ? "Food supplies — Al Islami Foods" : "Purchase of trading goods — Gulf Wholesale", "5000", between(120_000, 150_000) * scale * dip, "SR", true), sup);
+      else bill(exp(org.id, `${mm}-07`, `SUB-${m}`, "Subcontracted consultants — Talent Hub FZE", "5010", between(40_000, 55_000), "SR", true), sup);
+      if (m === 7) { bill(exp(org.id, `${mm}-20`, "AUD-H1-2026", "Half-year review fee — Al Masar Audit & Advisory", "6130", 18_000, "SR", true), "Al Masar Audit & Advisory"); apOpen.pop(); }
       const sal = toFils(between(62_000, 66_000) * scale + (org.id === "alnoor" && m >= 8 ? 18_000 : 0));
       const sj = J(org.id, `${mm}-28`, `WPS-${mm}`, `Salaries ${mm} — WPS run`, "BANK", [{ account: "6000", debit: sal, credit: 0 }, { account: "1010", debit: 0, credit: sal }]);
       if (m === 9) bank.push({ id: id("b"), orgId: org.id, date: sj.date, desc: "WPS SALARY TRANSFER", amount: -sal, journalId: org.id === "alnoor" ? undefined : sj.id });
@@ -117,7 +127,8 @@ export function buildSeed(): AppState {
       const rent = org.id === "alnoor" && m === 9 ? 38_000 : 22_000 * Math.max(scale, 0.6);
       const rj = exp(org.id, `${mm}-01`, `RENT-${mm}`, "Office / warehouse rent — Aldar Properties", "6100", rent, "SR");
       if (m === 9) bank.push({ id: id("b"), orgId: org.id, date: rj.date, desc: "DD ALDAR PROPERTIES PJSC", amount: -rj.lines[rj.lines.length - 1].credit, journalId: org.id === "alnoor" ? undefined : rj.id });
-      exp(org.id, `${mm}-12`, `UTIL-${mm}`, org.emirate === "SHJ" ? "SEWA electricity & water" : org.emirate === "DXB" ? "DEWA electricity & water" : "ADDC electricity & water", "6110", between(3_500, 6_000) * scale, "SR");
+      const util = org.emirate === "SHJ" ? "SEWA" : org.emirate === "DXB" ? "DEWA" : "ADDC";
+      bill(exp(org.id, `${mm}-12`, `UTIL-${mm}`, `${util} electricity & water`, "6110", between(3_500, 6_000) * scale, "SR", true), util);
       exp(org.id, `${mm}-15`, `FUEL-${mm}`, "ADNOC fuel card — fleet", "6060", between(1_800, 3_200) * scale, "SR");
       exp(org.id, `${mm}-17`, `TRV-${mm}`, "Uber / Careem business travel", "6050", between(900, 2_400), "SR");
       exp(org.id, `${mm}-19`, `MKT-${mm}`, "Google Ads & Meta marketing", "6150", between(4_000, 9_000) * scale, "SR");

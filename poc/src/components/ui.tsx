@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode, type InputHTMLAttributes, type SelectHTMLAttributes } from "react";
 import { X, Search, ChevronDown, ChevronUp, ChevronsUpDown, ChevronLeft, ChevronRight, Inbox, SlidersHorizontal } from "lucide-react";
+import { createPortal } from "react-dom";
 import { useStore } from "../lib/store";
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
@@ -97,13 +98,13 @@ export function Sparkline({ data, color, h = 36 }: { data: number[]; color: stri
 export function Stat({ label, value, delta, icon, tone = "emerald", hint, spark, onClick }: { label: string; value: ReactNode; delta?: { v: string; up: boolean; good?: boolean }; icon?: ReactNode; tone?: string; hint?: ReactNode; spark?: number[]; onClick?: () => void }) {
   const g = TONE_GRAD[tone] ?? TONE_GRAD.emerald;
   return (
-    <div onClick={onClick} className={cx("card card-hover relative overflow-hidden p-4 group", onClick && "cursor-pointer")}>
+    <div onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} onKeyDown={onClick ? (e) => e.key === "Enter" && onClick() : undefined} className={cx("card card-hover relative overflow-hidden p-3.5 sm:p-4 group min-w-0", onClick && "cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-500")}>
       <div className="pointer-events-none absolute -top-12 -end-12 size-36 rounded-full blur-2xl opacity-70 transition-opacity group-hover:opacity-100" style={{ background: g.glow }} />
       <div className="relative flex items-center justify-between">
         <span className="text-xs font-medium text-slate-500">{label}</span>
         {icon && <span className={cx("grid place-items-center size-8 rounded-xl text-white shadow-sm bg-gradient-to-br transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3", g.bg)}>{icon}</span>}
       </div>
-      <div className="relative mt-2 text-[22px] font-semibold tracking-tight text-slate-900 num">{value}</div>
+      <div className="relative mt-2 text-lg sm:text-[22px] font-semibold tracking-tight text-slate-900 num truncate">{value}</div>
       <div className="relative mt-1 flex items-center gap-2 text-xs min-h-4">
         {delta && <span className={cx("inline-flex items-center gap-0.5 font-medium rounded-full px-1.5 py-0.5", (delta.good ?? delta.up) ? "text-emerald-700 bg-emerald-50" : "text-rose-700 bg-rose-50")}>{delta.up ? "↑" : "↓"} {delta.v}</span>}
         {hint && <span className="text-slate-400 truncate">{hint}</span>}
@@ -172,8 +173,8 @@ export function Modal({ open, onClose, title, children, wide, footer }: { open: 
     return () => { window.removeEventListener("keydown", k); document.body.style.overflow = ""; prev?.focus?.(); };
   }, [open, onClose]);
   if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/45 backdrop-blur-md sm:p-4 fade-in" onClick={onClose}>
+  return createPortal(
+    <div dir={document.documentElement.dir} className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-slate-950/45 backdrop-blur-md sm:p-4 fade-in" onClick={onClose}>
       <div ref={ref} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} className={cx("card w-full max-h-[92vh] flex flex-col page-enter !bg-white shadow-2xl outline-none rounded-b-none sm:rounded-b-2xl", wide ? "sm:max-w-5xl" : "sm:max-w-lg")} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-slate-100 shrink-0">
           <h2 className="font-semibold text-slate-900">{title}</h2>
@@ -182,7 +183,8 @@ export function Modal({ open, onClose, title, children, wide, footer }: { open: 
         <div className="p-5 sm:p-6 overflow-auto">{children}</div>
         {footer && <div className="px-5 sm:px-6 py-3.5 border-t border-slate-100 bg-slate-50/70 flex flex-wrap items-center justify-end gap-2 shrink-0 rounded-b-2xl">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -271,7 +273,7 @@ export function SearchInput({ value, onChange, placeholder, className }: { value
 
 /* ───────────── KPI strip & section header ───────────── */
 export function KpiGrid({ children, cols = 4 }: { children: ReactNode; cols?: 3 | 4 }) {
-  return <div className={cx("grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 stagger", cols === 4 ? "xl:grid-cols-4" : "lg:grid-cols-3")}>{children}</div>;
+  return <div className={cx("grid grid-cols-2 gap-3 sm:gap-4 mb-5 stagger", cols === 4 ? "xl:grid-cols-4" : "lg:grid-cols-3")}>{children}</div>;
 }
 
 /* ───────────── DataTable ───────────── */
@@ -365,7 +367,7 @@ export function DataTable<T>({ rows, cols, rowKey, search, filters = [], pageSiz
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3 border-t border-slate-100 bg-slate-50/50 text-xs text-slate-500">
           <div className="flex items-center gap-2">
             <span>{t("Rows per page")}</span>
-            <div className="relative"><select aria-label={t("Rows per page")} value={ps} onChange={(e) => { setPs(Number(e.target.value)); setPage(0); }} className="appearance-none rounded-lg border border-slate-200 bg-white ps-2 pe-6 py-1 outline-none cursor-pointer">{[10, 25, 50].map((n) => <option key={n}>{n}</option>)}</select><ChevronDown size={12} className="absolute end-1.5 top-1/2 -translate-y-1/2 pointer-events-none" /></div>
+            <div className="relative"><select aria-label={t("Rows per page")} value={ps} onChange={(e) => { setPs(Number(e.target.value)); setPage(0); }} className="appearance-none rounded-lg border border-slate-200 bg-white ps-2 pe-6 py-1 outline-none cursor-pointer">{[...new Set([10, ps0, 25, 50])].sort((a, b) => a - b).map((n) => <option key={n}>{n}</option>)}</select><ChevronDown size={12} className="absolute end-1.5 top-1/2 -translate-y-1/2 pointer-events-none" /></div>
             <span className="num">{t("{a}–{b} of {n}", { a: pg * ps + 1, b: Math.min(filtered.length, pg * ps + ps), n: filtered.length })}</span>
           </div>
           <nav className="flex items-center gap-1" aria-label={t("Pagination")}>

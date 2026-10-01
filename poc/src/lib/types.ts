@@ -26,6 +26,8 @@ export interface Journal {
   source: "PURCHASE" | "SALE" | "MANUAL" | "BANK" | "OPENING" | "REVERSAL";
   status: JStatus; lines: JLine[]; preparedBy: string; approvedBy?: string; postedAt?: string;
   ai?: { confidence: number; reasoning: string }; docId?: string; reversalOf?: string;
+  /** Customer (AR) or supplier (AP) — drives the sub-ledgers. */
+  party?: string;
 }
 
 export interface Check { id: string; label: string; ok: boolean; severity: "error" | "warn" | "info"; detail?: string; dp?: Record<string, string> }

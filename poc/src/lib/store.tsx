@@ -7,7 +7,7 @@ import { invoiceTotals, validatePint } from "./einvoice";
 import { t as tr, type Lang } from "./i18n";
 import type { AppState, Journal, JLine, PurchaseDoc, Role, SalesInvoice, Session } from "./types";
 
-const KEY = "tfs-smart-ledger-poc-v1";
+const KEY = "tfs-smart-ledger-poc-v2"; // v2: journals carry customer/supplier (party) for AR/AP
 export const USERS: Record<Role, { user: string; label: string; firm: boolean; canApprove: boolean }> = {
   FIRM_PARTNER: { user: "Faizan (Partner)", label: "Firm Partner", firm: true, canApprove: true },
   FIRM_ACCOUNTANT: { user: "Aisha (Accountant)", label: "Firm Accountant", firm: true, canApprove: false },
@@ -16,8 +16,11 @@ export const USERS: Record<Role, { user: string; label: string; firm: boolean; c
 };
 
 function load(): AppState {
-  try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch { /* ignore */ }
-  return buildSeed();
+  let st: AppState;
+  try { const raw = localStorage.getItem(KEY); st = raw ? JSON.parse(raw) : buildSeed(); } catch { st = buildSeed(); }
+  const qp = new URLSearchParams(location.search).get("lang");
+  if (qp === "ar" || qp === "en") st.session.lang = qp;
+  return st;
 }
 
 export type Toast = { id: number; tone: "ok" | "err" | "info"; msg: string };
@@ -56,7 +59,7 @@ function useStoreImpl() {
     const lines = purchaseLines(p);
     const errs = validateJournal(lines);
     if (errs.length) throw new Error(errs.join(" "));
-    const j: Journal = { id: nid(d, "j"), orgId: p.orgId, date: p.date, ref: p.invNo, memo: `${p.supplier} — ${p.description}`, source: "PURCHASE", status: "POSTED", lines, preparedBy: p.createdBy, approvedBy: approver, postedAt: new Date().toISOString(), ai: { confidence: p.confidence, reasoning: p.reasoning }, docId: p.id };
+    const j: Journal = { id: nid(d, "j"), orgId: p.orgId, date: p.date, ref: p.invNo, memo: `${p.supplier} — ${p.description}`, source: "PURCHASE", status: "POSTED", lines, preparedBy: p.createdBy, approvedBy: approver, postedAt: new Date().toISOString(), ai: { confidence: p.confidence, reasoning: p.reasoning }, docId: p.id, party: p.supplier };
     d.journals.push(j); p.status = "POSTED"; p.journalId = j.id;
     return j;
   };
@@ -119,7 +122,7 @@ function useStoreImpl() {
       for (const l of tot.lines) lines.push({ account: l.account, debit: 0, credit: l.net, taxCode: l.taxCode, vat: l.vat, emirate: inv.emirate });
       if (tot.vat) lines.push({ account: "2100", debit: 0, credit: tot.vat });
       const errs = validateJournal(lines); if (errs.length) { toast(errs[0], "err"); return; }
-      const j: Journal = { id: nid(d, "j"), orgId: inv.orgId, date: inv.date, ref: inv.invNo, memo: `Sales invoice — ${inv.customer}`, source: "SALE", status: "POSTED", lines, preparedBy: d.session.user, approvedBy: "Posting rule (sales)", postedAt: new Date().toISOString() };
+      const j: Journal = { id: nid(d, "j"), orgId: inv.orgId, date: inv.date, ref: inv.invNo, memo: `Sales invoice — ${inv.customer}`, source: "SALE", status: "POSTED", lines, preparedBy: d.session.user, approvedBy: "Posting rule (sales)", postedAt: new Date().toISOString(), party: inv.customer };
       d.journals.push(j);
       d.sales.unshift({ ...inv, id: nid(d, "s"), status: "POSTED", journalId: j.id, einv: "NOT_SENT", einvLog: [] });
       log(d, inv.orgId, "Sales invoice issued", `${inv.invNo} — ${inv.customer} AED ${(tot.total / 100).toFixed(2)}`);
@@ -128,9 +131,23 @@ function useStoreImpl() {
     receivePayment: (id: string) => mutate((d) => {
       const s = d.sales.find((x) => x.id === id); if (!s) return;
       const tot = invoiceTotals(s).total;
-      d.journals.push({ id: nid(d, "j"), orgId: s.orgId, date: "2026-09-30", ref: `RCPT-${s.invNo}`, memo: `Receipt — ${s.customer}`, source: "BANK", status: "POSTED", lines: [{ account: "1010", debit: tot, credit: 0 }, { account: "1100", debit: 0, credit: tot }], preparedBy: d.session.user, approvedBy: "Posting rule (receipts)" });
+      d.journals.push({ id: nid(d, "j"), orgId: s.orgId, date: "2026-09-30", ref: `RCPT-${s.invNo}`, memo: `Receipt — ${s.customer}`, source: "BANK", status: "POSTED", lines: [{ account: "1010", debit: tot, credit: 0 }, { account: "1100", debit: 0, credit: tot }], preparedBy: d.session.user, approvedBy: "Posting rule (receipts)", party: s.customer, postedAt: new Date().toISOString() });
       s.status = "PAID"; log(d, s.orgId, "Receipt", `${s.invNo} marked paid`); toast(T("Receipt recorded for {ref}", { ref: s.invNo }));
     }),
+    /** Settle an AR invoice (customer receipt) or AP bill (supplier payment) — posts to the GL control account. */
+    settle: (orgId: string, account: "1100" | "2000", items: { jid: string; ref: string; party: string; open: number }[]) => {
+      if (!USERS[state.session.role].canApprove) { toast(T("Your role cannot approve. Switch to Partner or Owner."), "err"); return; }
+      mutate((d) => {
+        for (const it of items) {
+          const ar = account === "1100";
+          const lines: JLine[] = ar ? [{ account: "1010", debit: it.open, credit: 0 }, { account: "1100", debit: 0, credit: it.open }] : [{ account: "2000", debit: it.open, credit: 0 }, { account: "1010", debit: 0, credit: it.open }];
+          d.journals.push({ id: nid(d, "j"), orgId, date: "2026-09-30", ref: `${ar ? "RCPT" : "PAY"}-${it.ref}`, memo: `${ar ? "Receipt" : "Supplier payment"} — ${it.party}`, source: "BANK", status: "POSTED", lines, preparedBy: d.session.user, approvedBy: d.session.user, postedAt: new Date().toISOString(), party: it.party });
+          if (ar) { const sale = d.sales.find((x) => x.journalId === it.jid); if (sale) sale.status = "PAID"; }
+          log(d, orgId, ar ? "Receipt" : "Supplier payment", `${it.ref} — ${it.party} AED ${(it.open / 100).toFixed(2)}`);
+        }
+      });
+      toast(T(account === "1100" ? "{n} receipt(s) posted to the ledger" : "{n} payment(s) posted to the ledger", { n: items.length }));
+    },
     sendEinvoice: (id: string) => {
       let ok = false;
       mutate((d) => {
