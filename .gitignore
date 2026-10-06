@@ -22,3 +22,8 @@ pnpm-debug.log*
 # OS / editor
 .DS_Store
 ~$*
+
+# Test output
+test-results/
+playwright-report/
+blob-report/
