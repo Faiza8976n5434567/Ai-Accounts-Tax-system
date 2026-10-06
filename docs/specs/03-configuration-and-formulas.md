@@ -54,6 +54,8 @@ Every calculation the app performs. **Editable** = parameter on the Tax Rules / 
 | **F-21** | Depreciation (straight-line) = (cost − residual) ÷ useful life, monthly | per asset | — | IAS 16 | *Phase 5* |
 | **F-22** | E-invoicing dates (ASP appointment, go-live) | `einvoicing.asp_by`, `einvoicing.go_live` | 2027-03-31, 2027-07-01 (VERIFY) | MD 244/2025 | *Phase 4* |
 | **F-23** | Dashboard ratios (annualised revenue, DSO, collection %) | — (fixed, display only) | — | — | E2E |
+| **F-24** | USD → AED: line AED amount = round-half-up(USD amount × rate); VAT then calculated on the AED line (F-01); a USD payment that exactly matches a USD invoice settles its full AED total | `fx.usd_aed` | 3.6725 | CBUAE peg; D-21 | FX-01 → 06 |
+| **F-25** | Document number = `{PREFIX}-{YYYY}-{MM}-{SEQ:4}`, counter per client / type / month, assigned at posting | `numbering_format`, prefixes | `INV-2026-10-0001` | FTA sequential numbering; D-22 | NUM-01 → 07 |
 
 ---
 
@@ -81,6 +83,7 @@ Rules:
 
 | Section | Settings | Stored in | Who |
 |---|---|---|---|
+| **Platform** (D-20) | App name (may change — used in titles, emails, exports), logo, email sender (`onboarding@resend.dev` in development, D-24), support email; list of firms using the platform; add a firm + its first Firm Admin | `platform_settings`, `firms` | Super Admin |
 | **Tax rules** | Every editable parameter in §1 (versioned); tax code → box mapping; CT tags & add-back %; compliance rules | `config_*`, `tax_codes`, `ct_tags`, `compliance_rules` | Super Admin |
 | **Users & invites** | Invite users (role, client, end date for read-only); resend/revoke invites; suspend/reactivate; invite expiry days; allowed email domains for firm staff (e.g. `@tfsplus.ae`) | `invitations`, `profiles`, `firm_settings` | Super Admin; Firm Admin (limited, see Spec 02) |
 | **Email** | Sender name, from-address, reply-to, which alerts are on, reminder lead days (e.g. 14 / 7 / 1 days before deadlines), daily digest on/off, **templates** (invite, reminder, approval waiting, integrity alert) with preview + "send test email" | `firm_settings`, `email_templates` | Super Admin |
@@ -137,3 +140,6 @@ Vercel environment variables / the Supabase dashboard — see [OWNER-ACTIONS.md]
 | CFG-11 | Firm-staff invite to a non-allowed email domain | Rejected |
 | CFG-12 | "Send test email" from template screen | Email received; `email_log` row with provider id |
 | CFG-13 | Every config change | Audit row with before/after, user, reason |
+| CFG-14 | Change the app name | New name in page titles, emails and exports; no code change |
+| CFG-15 | Change `numbering_format` | Next posted document uses the new format; existing numbers unchanged |
+| CFG-16 | Tax-rule change when a backup Super Admin exists | Needs the other Super Admin's approval (D-23) |

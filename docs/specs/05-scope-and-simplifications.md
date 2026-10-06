@@ -32,7 +32,7 @@ lost — "Defer" items stay on the list for after the pilot.
 
 | Item | Verdict | Why | Alternative |
 |---|---|---|---|
-| Multi-currency with CBUAE rates & FX revaluation (IAS 21) | 🔁 | Most pilot SMEs invoice in AED; FX revaluation is complex | v1: AED books; foreign-currency invoices recorded at the AED amount with the rate noted. Full FX ⏸ after pilot |
+| Multi-currency with CBUAE rates & FX revaluation (IAS 21) | 🔁 | FX revaluation is complex; AED is pegged to USD | **v1: AED + USD at the fixed 3.6725 peg (D-21)** — no revaluation needed. Other currencies & revaluation ⏸ after pilot |
 | Recurring journals | 🔁 | | "Copy journal" button (one click, still needs approval) |
 | Soft-close **and** hard-close | 🔁 | Two lock types confuse users | One lock per month; reopen by Firm Admin with reason |
 | Quotes / proforma invoices | ⏸ | Not needed for compliance | Later |

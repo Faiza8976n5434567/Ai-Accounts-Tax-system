@@ -123,11 +123,17 @@ erDiagram
 
 ### 4.1 Platform, people and access
 
-**`firms`** — the practice (TFS Plus). One row today; the column exists so the design never blocks a second firm.
+**`platform_settings`** — platform-wide settings owned by TFS Plus (D-20): `app_name` (default "TFS+ Smart Ledger" — the name may change, so the UI and emails always read it from here), `logo_path`, `email_from` (`onboarding@resend.dev` in development, D-24), `email_reply_to`, `support_email`. Key/value rows, Super Admin only.
+
+**`currencies`** — `code` (PK: `AED`, `USD`), `name`, `minor_units` (2). Only these two in v1 (D-21).
+
+**`firms`** — tax firms using the platform. **TFS Plus** is the platform owner (`is_platform_owner = true`); other tax firms can be added later as customers (D-20). Firms are fully separated from each other.
 | Column | Type | Rules |
 |---|---|---|
 | id | uuid | PK |
 | legal_name | text | NN |
+| is_platform_owner | boolean | exactly one firm can be `true` (partial unique index) |
+| status | enum `active`/`suspended` | |
 | trn | text | CK 15 digits starting with 1 |
 | tax_agent_number | text | FTA tax agency number |
 | emirate_code | text | FK → emirates |
@@ -139,7 +145,7 @@ erDiagram
 | id | uuid | PK, FK → auth.users |
 | full_name | text | NN |
 | email | text | NN, U (copy of auth email) |
-| is_super_admin | boolean | default false — only changeable by another super admin |
+| is_super_admin | boolean | default false — only changeable by another super admin; **only allowed for members of the platform-owner firm** (trigger) |
 | status | enum `active`/`suspended` | |
 | last_sign_in_at | timestamptz | |
 
@@ -178,6 +184,8 @@ Firm Admins see every client of their firm without a row here. Firm Accountants 
 | expires_at | timestamptz | from setting `invite_expiry_days` |
 | accepted_at | timestamptz | |
 
+**`firm_support_grants`** *(built when the first outside firm joins)* — a firm's Firm Admin lets a named Super Admin see that firm's data for support: firm_id, granted_to (FK → profiles), granted_by, reason, valid_to (NN). Every use is audit-logged.
+
 ### 4.2 Reference data (shared by all clients, edited only by Super Admin)
 
 | Table | Key columns | Purpose |
@@ -201,7 +209,7 @@ Firm Admins see every client of their firm without a row here. Firm Accountants 
 | licence_no / licence_authority / licence_expiry | text/text/date | |
 | emirate_code | text | FK → emirates (head office — default for invoices, D-10) |
 | industry | text | |
-| base_currency | char(3) | default `AED` |
+| base_currency | char(3) | FK → currencies; always `AED` (books are in AED, D-21) |
 | fy_start_month | smallint | 1–12 |
 | vat_registered | boolean | |
 | vat_period | enum `quarterly`/`monthly` | |
@@ -289,7 +297,10 @@ Firm Admins see every client of their firm without a row here. Firm Accountants 
 | organization_id | uuid | FK; must equal the journal's (trigger) |
 | line_no | smallint | U (journal_id, line_no) |
 | account_id | uuid | FK → accounts; must belong to same org (trigger) |
-| debit / credit | bigint | CK ≥ 0; CK exactly one of them > 0 |
+| debit / credit | bigint | **AED fils**; CK ≥ 0; CK exactly one of them > 0 — reports always use these |
+| currency | char(3) | FK → currencies; default AED |
+| fx_rate | numeric(12,6) | 1 for AED; from `fx.usd_aed` for USD (D-21) |
+| amount_fcy | bigint | original amount in document currency (cents); equals debit/credit for AED |
 | tax_code | text | FK → tax_codes |
 | vat_amount | bigint | CK ≥ 0 |
 | supply_emirate | text | FK → emirates (D-10) |
@@ -300,14 +311,16 @@ Firm Admins see every client of their firm without a row here. Firm Accountants 
 - A journal can only become `posted` through `post_journal(id)`, which checks: ≥ 2 lines, Σ debit = Σ credit, all accounts active and in the same client, period open, approver ≠ preparer, approver has permission.
 - Once `posted`, the journal and its lines cannot be updated or deleted (trigger raises an error). `reverse_journal(id, date, reason)` creates the mirror journal.
 
-**`number_sequences`** — gap-free numbering.
+**`number_sequences`** — gap-free numbering per client, document type **and month** (D-22).
 | Column | Type | Rules |
 |---|---|---|
 | organization_id | uuid | FK |
-| doc_type | enum `journal`/`sales_invoice`/`credit_note`/`receipt`/`payment` | |
-| prefix | text | e.g. `INV-2026-` (configurable per client) |
+| doc_type | enum `journal`/`sales_invoice`/`credit_note`/`receipt`/`payment` | prefixes JV / INV / CN / RCPT / PAY |
+| period_year / period_month | smallint | from the **document date** |
 | next_value | bigint | taken with a row lock inside the posting transaction |
-| PK (organization_id, doc_type) | | |
+| PK (organization_id, doc_type, period_year, period_month) | | |
+
+Number = format setting `numbering_format` (default `{PREFIX}-{YYYY}-{MM}-{SEQ:4}`), e.g. `INV-2026-10-0001`. Numbers are assigned at posting, so deleted drafts never leave gaps.
 
 ### 4.6 Sales (receivables)
 
@@ -322,10 +335,12 @@ Firm Admins see every client of their firm without a row here. Firm Accountants 
 | contact_id | uuid | FK → contacts (customer) |
 | issue_date / due_date / supply_date | date | |
 | supply_emirate | text | FK → emirates; pre-filled from org (D-10) |
-| currency | char(3) | AED in v1 |
+| currency | char(3) | FK → currencies: AED or USD (D-21) |
+| fx_rate | numeric(12,6) | fixed from `fx.usd_aed` (3.6725) for USD; 1 for AED; not editable per document |
 | status | enum `draft`/`pending`/`posted`/`void` | |
 | journal_id | uuid | FK → journals, U |
-| net_total / vat_total / gross_total | bigint | computed by function, stored at posting |
+| net_total / vat_total / gross_total | bigint | AED fils, computed by function (line → AED → VAT), stored at posting |
+| gross_total_fcy | bigint | total in document currency (for USD invoices) |
 | einvoice_status | enum | *later* (Phase 4) |
 
 **`sales_invoice_lines`**: id, sales_invoice_id (FK), organization_id, line_no, description, quantity numeric(18,4) CK > 0, unit_price bigint, account_id (FK revenue account), tax_code (FK), net bigint, vat bigint.
@@ -351,7 +366,8 @@ Firm Admins see every client of their firm without a row here. Firm Accountants 
 | contact_id | uuid | FK |
 | bank_account_id | uuid | FK → bank_accounts |
 | payment_date | date | |
-| amount | bigint | CK > 0 |
+| amount | bigint | AED fils; CK > 0 |
+| currency / fx_rate / amount_fcy | | as on invoices (D-21) |
 | is_advance_for_supply | boolean | true → output VAT due on receipt (D-11 §2.1) |
 | status | enum `draft`/`posted`/`void` | |
 | journal_id | uuid | FK → journals |
@@ -447,3 +463,6 @@ Approving a return freezes it (no update/delete trigger) and locks the accountin
 | DM-10 | Every table in `public` has RLS enabled | Security advisor: 0 findings |
 | DM-11 | Approved VAT return has a row for **every** box | 100% of `vat_boxes` present, empty = 0 |
 | DM-12 | Read-only membership without an end date | Rejected (check) |
+| DM-13 | Set `is_super_admin` on a user from a non-owner firm | Rejected (trigger) |
+| DM-14 | Second firm marked as platform owner | Rejected (unique) |
+| DM-15 | Invoice in EUR | Rejected (FK → currencies) |

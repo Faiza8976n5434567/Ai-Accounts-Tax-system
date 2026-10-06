@@ -14,7 +14,12 @@ work is done. Domain rules: `tfs-smart-ledger/docs/UAE_COMPLIANCE_RULES.md` and 
 (the stack sections of those older docs are superseded by this file).
 
 ## 1. What we are building
-- Firm (TFS Plus) runs the books for client organisations (UAE SMEs, revenue < AED 20m).
+- **TFS Plus is the platform owner** (Super Admins are TFS Plus staff). Other tax firms may
+  become customers, each fully separated (D-20). The app name may change: always read it
+  from `platform_settings.app_name`, never hard-code it.
+- Each firm runs the books for its client organisations (UAE SMEs, revenue < AED 20m).
+- Currencies: AED books; USD documents at the versioned rate `fx.usd_aed` = 3.6725 (D-21).
+  Document numbers: `INV-YYYY-MM-0001`, monthly counter (D-22).
 - Launch firm-only; client logins arrive at the pilot (PLAN.md Phase 3).
 - Scope in order: ledger → AR/AP/bank → reports → VAT 201 → alerts → e-invoicing (PINT AE
   via an Accredited Service Provider) → Corporate Tax & year-end.

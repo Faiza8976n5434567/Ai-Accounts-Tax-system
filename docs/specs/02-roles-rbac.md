@@ -22,7 +22,7 @@ rules apply to everyone, including you:
 
 | Role | Level | Who | Purpose |
 |---|---|---|---|
-| **Super Admin** | Platform | Faizan (+1 backup person recommended) | Owns the system: tax rules, email settings, invites, firm settings, user suspension. A *flag on top of* Firm Admin. |
+| **Super Admin** | Platform (TFS Plus staff only) | Faizan (+1 backup, Q-16) | Owns the platform: app name & branding, tax rules, email settings, adding other tax firms, user suspension. A *flag on top of* Firm Admin of TFS Plus. |
 | **Firm Admin** | Firm | Partners / managers | Runs the practice: clients, staff assignment, approvals, period locks, VAT return approval |
 | **Firm Accountant** | Firm, per assigned client | TFS staff | Prepares: bills, invoices, journals, bank matching, draft VAT returns |
 | **Client Owner** | One client | Client director | Sees own company; approves own bills/invoices; can invite own staff |
@@ -31,6 +31,12 @@ rules apply to everyone, including you:
 
 **Why Super Admin is a flag, not a separate login:** you need to do accounting work *and*
 administer the system. One login with an extra power is simpler and safer than sharing two accounts.
+
+### 1.1 Platform and firms (D-20)
+- **TFS Plus is the platform owner.** Only TFS Plus staff can be Super Admins.
+- **Other tax firms can be customers.** Each gets its own Firm Admins, Firm Accountants and clients. Firms can never see each other's data.
+- **Super Admins run the platform, not other firms' books:** they can see a list of firms and their status, but **cannot open another firm's client data** unless that firm's Firm Admin grants time-limited, logged support access.
+- Tax rules, VAT box mapping and the app name are **platform-wide** (set by Super Admin); each firm keeps its own settings (payment terms, ageing, onboarding defaults).
 
 **Why only 6 roles:** each extra role multiplies testing. These six cover every person in
 PLAN.md. A "Firm Manager / Reviewer" role can be added later in one migration if needed.
@@ -67,7 +73,10 @@ PLAN.md. A "Firm Manager / Reviewer" role can be added later in one migration if
 ### 2.3 Administration
 | Action | Super Admin | Firm Admin | Firm Accountant | Client Owner | Client Staff | Read-only |
 |---|---|---|---|---|---|---|
-| Create / archive clients | ✔ | ✔ | — | — | — | — |
+| Add another tax firm to the platform (+ its first Firm Admin) | ✔ | — | — | — | — | — |
+| Grant support access to Super Admin (own firm) | n/a | ✔ | — | — | — | — |
+| Change app name / logo / email sender | ✔ | — | — | — | — | — |
+| Create / archive clients | ✔ (own firm) | ✔ | — | — | — | — |
 | Assign staff to clients | ✔ | ✔ | — | — | — | — |
 | Invite firm staff | ✔ | ✔ (accountants only) | — | — | — | — |
 | Invite client users | ✔ | ✔ | — | ✔° (staff & read-only) | — | — |
@@ -162,3 +171,7 @@ Each is a database test run as a real test user on the temporary CI database (Ga
 | RBAC-18 | Client Staff | Download another client's attachment by guessing the path | Denied (storage policy) |
 | RBAC-19 | Any user | Call `app.*` helper functions via the API | Not exposed |
 | RBAC-20 | Each role | Full matrix sweep: every action in §2 × every role | Matches the matrix exactly (generated test) |
+| RBAC-21 | Super Admin | Read a client of another firm without a support grant | 0 rows |
+| RBAC-22 | Super Admin | Same, with a valid grant | Allowed until `valid_to`; every read audit-logged |
+| RBAC-23 | Firm Admin of firm B | Read any data of firm A (TFS Plus) | 0 rows |
+| RBAC-24 | Super Admin | Make a firm-B user a Super Admin | Rejected (owner-firm members only) |

@@ -118,6 +118,8 @@ Excel is perfect. Send in chat or save into `docs/golden/` (Claude will create t
 
 ### OA-09 · Resend account + verified domain
 **Why:** alerts and invites must come from your own domain (e.g. `no-reply@tfsplus.ae`), not land in spam.
+
+> **For now (D-24):** we use Resend's test sender `onboarding@resend.dev`. It only delivers to the email address that owns your Resend account — enough for you to test, but **invites to staff won't arrive** until the steps below are done (Q-19).
 1. Sign up at resend.com (free tier: about 3,000 emails/month — check current limits).
 2. **Domains → Add domain**: use a sub-domain such as `mail.tfsplus.ae`.
 3. Resend shows DNS records (TXT for SPF/DKIM, MX). Add them at your domain registrar/DNS provider (or send them to whoever manages your website).
