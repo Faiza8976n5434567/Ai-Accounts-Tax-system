@@ -2,7 +2,7 @@
 
 > **This is the single source of truth for what we are building, in what order, and how we
 > prove it is correct.** Claude Code updates it as work progresses. Faizan signs off phases.
-> Supersedes `ROADMAP.md` and `tfs-smart-ledger/docs/ROADMAP.md` (kept for reference only).
+> Supersedes the old roadmaps (kept in `docs/archive/` for reference only).
 > **Specs:** [docs/specs](docs/specs/README.md) · **Your to-dos:** [docs/OWNER-ACTIONS.md](docs/OWNER-ACTIONS.md) · **Branch:** `faizan`
 
 | | |
@@ -69,7 +69,7 @@
 | Q-17 | Monthly restart? → **No: one running counter, month shown in the number (D-22).** | Phase 2 | ✅ |
 | Q-18 | USD rounding: line → AED first, then VAT → **Agreed (D-21).** | Phase 2 | ✅ |
 | Q-19 | Email domain → **use Resend default for now (D-24).** | Phase 1 | ✅ |
-| Q-20 | Should the running counter **restart at 0001 each new year** (`INV-2027-01-0001`), or continue forever (`INV-2027-01-1245`)? Default if no answer: **continue**. | Phase 2 | 🔍 |
+| Q-20 | Yearly reset of the counter? → **No: continues across years** (`INV-2027-01-1245`, D-22). | Phase 2 | ✅ |
 
 ### 2.1 Customer overpayments & credits — agreed rule (D-11)
 
@@ -96,7 +96,7 @@ in GitHub Actions); Faizan does G-10.
 | # | Gate | Tool | Pass rule |
 |---|---|---|---|
 | G-1 | Type check | `tsc --noEmit` (strict) | 0 errors |
-| G-2 | Lint | ESLint (typescript-eslint + react-hooks + security rules) | 0 errors, 0 warnings |
+| G-2 | Lint | **oxlint** (correctness + suspicious + react-hooks + no-eval/no-danger) — ESLint doesn't support TypeScript 7 | 0 errors, 0 warnings |
 | G-3 | Finance lint | `npm run check:finance` (see 3.1) | 0 findings |
 | G-4 | **Build** | `vite build` + scan of `dist/` for secret keys | Build succeeds; no secrets in the bundle |
 | G-5 | Unit tests | Vitest | 100% pass; tax & ledger code ≥ 95% line coverage |
@@ -159,11 +159,11 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 - [x] Faizan approved specs 01–05 and answered Q-09 → Q-19 (OA-01)
 - [ ] Drop the 7 leftover tables + 2 functions created on 2026-10-06 in Supabase
 - [ ] Rename local folder to remove `&` (OA-03)
-- [ ] Move useful docs (`PRD.md`, `UAE_COMPLIANCE_RULES.md`) to `/docs`; archive the unused `tfs-smart-ledger/` scaffold
-- [ ] Tooling: ESLint, Vitest, Playwright, `check:finance`, `npm run check`, gitleaks, npm audit, GitHub Actions CI running G-1 → G-9
-- [ ] Unit tests for the **existing** POC logic (VAT, CT, ledger) — fixes found become Phase 1 items
-- [ ] Remove AI features from the UI: "Ask your books", simulated OCR, "AI" badges/insights (keep rule-based checks, relabelled)
-- [ ] Fix known POC defects: fixed date `2026-09-30` on receipts/payments/reversals; hard-coded 5% in reverse charge and bank split; VAT emirate box taken silently from the customer — replace with an editable emirate field on the invoice (D-10)
+- [x] Moved `PRD.md`, `UAE_COMPLIANCE_RULES.md` to `/docs`; old scaffold and roadmaps archived in `docs/archive/`
+- [x] Tooling: oxlint, Vitest (+ 95% coverage gate), Playwright, `check:finance`, `check:bundle`, `npm run check`, gitleaks, npm audit, GitHub Actions CI (`.github/workflows/ci.yml`) running G-1 → G-5, G-8, G-9 (G-6/G-7 need the database — Phase 1)
+- [x] Unit tests for the existing POC logic — **63 tests**, 98.8% line coverage of tax & ledger code; 4 browser (E2E) tests. All calculations matched the expected answers
+- [x] AI removed: "Ask your books" page, simulated OCR, auto-approve thresholds, AI badges/labels. Capture → **Purchase bills** (manual entry + attachment); defaults from the supplier's last bill or a keyword rule; profit insight relabelled "Profit movement"
+- [x] Fixed POC defects: all fixed dates now from today's date or config (receipts, payments, reversals, deadlines, quarters, financial year); every hard-coded 5% / 1.05 / AED 375,000 now from `TAX_CONFIG`; emirate already an editable "Place of supply" field defaulting to head office (D-10). Finance lint: 0 findings
 - [x] Local `.env.local` created with Supabase & Resend keys; keys verified working (OA-05)
 - [ ] 🔍 Rotate the secret key and Resend key that were shared in chat (OA-16)
 - [ ] Owner actions started: OA-02 (2FA everywhere), OA-04 (Supabase auth settings — public sign-up is still **on**)
@@ -200,6 +200,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P1-15 | Trial balance & general ledger from database functions | LED-13 | ⬜ |
 | P1-16 | Security headers (CSP, HSTS) in `vercel.json`; Basic Auth removed once logins work | SEC-12 | ⬜ |
 | P1-17 | End-to-end: log in → create client → journal → approve → trial balance | G-9 | ⬜ |
+| P1-18 | Re-enable the React style/performance lint rules switched off in Phase 0 (`poc/.oxlintrc.json`) as screens are rebuilt | G-2 | ⬜ |
 
 **Exit:** all LED, RBAC-01→14, DM, CFG-01→05 tests green; Faizan can log in with MFA, create a client, post and approve journals, and cannot break the rules on purpose.
 
@@ -404,7 +405,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | NUM-05 | Two users post invoices at the same moment | Different numbers, no gaps, no duplicates | D | ⬜ |
 | NUM-06 | Draft invoice deleted before posting | No number used (numbers assigned at posting) | D | ⬜ |
 | NUM-07 | Two different clients | Each has its own counter starting at 0001 | D | ⬜ |
-| NUM-08 | First invoice of a new year | Per Q-20 (default: counter continues) | D | 🔍 |
+| NUM-08 | First invoice of a new year | Counter continues (e.g. `INV-2027-01-1245`) | D | ⬜ |
 
 ### 6.11 Suites defined in the specs
 
@@ -447,3 +448,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-06 | D-18 single Supabase project (becomes production; CI tests on a temporary Supabase); D-19 Vercel address; OA-05 done; OA-12 removed; OA-16 key rotation added; P3-12 production cut-over added. |
 | 2026-10-06 | Faizan's answers: D-20 TFS Plus platform owner / other firms as customers / app name configurable; D-21 AED + USD at 3.6725; D-22 `INV-YYYY-MM-0001` numbering; D-23 two-person rule; D-24 dev sender `onboarding@resend.dev`. Added Q-16 → Q-19, FX-* and NUM-* tests, RBAC-21 → 24. |
 | 2026-10-06 | **Specs 01–05 approved.** D-13 → D-17 approved; D-22 revised (running counter, no monthly reset); D-23 single admin for now; D-24 invite link sharing; D-25 break-glass recovery. Q-20 (yearly reset?) added. |
+| 2026-10-06 | Q-20 → counter continues across years. **Phase 0 build work:** AI features removed; hard-coded dates/rates fixed; new `rules.ts`, `posting.ts`, `dates.ts`, `insights.ts`; 63 unit tests + 4 E2E tests; oxlint, finance lint, bundle secret scan, coverage gate, GitHub Actions CI; docs reorganised. Remaining Phase 0: drop leftover Supabase tables (needs `supabase-tax` MCP in a new session), owner actions. |

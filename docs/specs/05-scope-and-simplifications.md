@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | ✅ Approved by Faizan, 2026-10-06 |
-| **Source reviewed** | `tfs-smart-ledger/docs/PRD.md`, `ARCHITECTURE.md`, old `ROADMAP.md`, the POC |
+| **Source reviewed** | `docs/PRD.md`, `docs/archive/` (old architecture & roadmap), the POC |
 
 ## In plain words
 

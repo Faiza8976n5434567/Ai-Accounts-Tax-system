@@ -317,7 +317,7 @@ Firm Admins see every client of their firm without a row here. Firm Accountants 
 | organization_id | uuid | FK |
 | doc_type | enum `journal`/`sales_invoice`/`credit_note`/`receipt`/`payment` | prefixes JV / INV / CN / RCPT / PAY |
 | next_value | bigint | taken with a row lock inside the posting transaction |
-| PK (organization_id, doc_type) | | (add `year` to the key only if Q-20 = yearly reset) |
+| PK (organization_id, doc_type) | | (never resets — Q-20) |
 
 Number = format setting `numbering_format` (default `{PREFIX}-{YYYY}-{MM}-{SEQ:4}`, year-month from the document date), e.g. January ends `INV-2026-01-0100` → February starts `INV-2026-02-0101`. Numbers are assigned at posting, so deleted drafts never leave gaps. The counter grows beyond 4 digits automatically (`…-10000`).
 

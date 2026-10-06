@@ -10,7 +10,7 @@ When accounting or tax logic is ambiguous, STOP and ask Faizan — never guess a
 
 **`PLAN.md` is the source of truth** for phases, to-dos, quality gates and test cases.
 Read it at the start of every task and update its checkboxes, statuses and change log when
-work is done. Domain rules: `tfs-smart-ledger/docs/UAE_COMPLIANCE_RULES.md` and `PRD.md`
+work is done. Domain rules: `docs/UAE_COMPLIANCE_RULES.md` and `docs/PRD.md`
 (the stack sections of those older docs are superseded by this file).
 
 ## 1. What we are building
