@@ -13,17 +13,18 @@ PLAN.md as you go. Screen names in Supabase/Vercel/GitHub may differ slightly ov
 | OA-02 | Turn on two-factor login on all admin accounts | Phase 1 start | 20 min |
 | OA-03 | Rename the project folder | Phase 1 start | 5 min |
 | OA-04 | Supabase: authentication settings | Phase 1 | 15 min |
-| OA-05 | Local `.env.local` file for development | Phase 1 | 10 min |
+| OA-05 | Local `.env.local` file for development — ✅ done by Claude | Phase 1 | — |
 | OA-06 | Vercel environment variables | Phase 1 | 15 min |
-| OA-07 | GitHub: protect the `main` branch + CI secrets | Phase 1 | 15 min |
+| OA-07 | GitHub: protect the `main` branch | Phase 1 | 10 min |
 | OA-08 | Provide golden test examples (VAT & CT) | Phase 1 | 2–3 hrs |
 | OA-09 | Resend: account + verify your email domain | Phase 3 (earlier is fine) | 30 min + DNS wait |
 | OA-10 | Supabase: send auth emails through Resend (SMTP) | Phase 3 | 10 min |
 | OA-11 | Choose the app web address (domain) | Phase 3 | 15 min |
-| OA-12 | Create the separate **Live** Supabase project | Before pilot | 15 min |
+| ~~OA-12~~ | ~~Separate Live project~~ — not needed (D-18) | — | — |
 | OA-13 | Backups & plan upgrades before real client data | Before pilot | 15 min + cost |
 | OA-14 | Engagement-letter clause on data hosting | Before pilot | legal |
 | OA-15 | Book the independent security review | Before pilot | — |
+| **OA-16** | **Rotate the secret key and Resend key shared in chat** | **Now** | 10 min |
 
 ---
 
@@ -56,7 +57,7 @@ In the Supabase dashboard → project **Ai Accounting & Tax System**:
 1. **Authentication → Sign In / Providers → Email:** turn **off** "Allow new users to sign up". Keep email provider on.
 2. **Authentication → Multi-Factor:** enable **TOTP (authenticator app)**.
 3. **Authentication → Policies / Passwords:** minimum length **12**; enable leaked-password protection if your plan offers it.
-4. **Authentication → URL Configuration:** Site URL `http://localhost:5180` for now; add redirect URL `http://localhost:5180/**`, plus your Vercel preview address pattern (Claude will give you the exact text once the Vercel project is checked). Add your real domain later (OA-11).
+4. **Authentication → URL Configuration:** Site URL `https://ai-accounts-tax-system.vercel.app`; add redirect URLs `https://ai-accounts-tax-system.vercel.app/**` and `http://localhost:5180/**`. Add your own domain later (OA-11).
 
 **Done when:** a sign-up attempt from the app login page is refused.
 
@@ -71,6 +72,8 @@ In the Supabase dashboard → project **Ai Accounting & Tax System**:
    ```
 3. Save. This file is ignored by git and never uploaded.
 
+**Status:** ✅ Done — Claude created `poc/.env.local` (git-ignored) and verified both Supabase keys work. After OA-16, replace the two rotated values in that file.
+
 **Done when:** the app shows the login screen instead of demo data.
 
 ### OA-06 · Vercel environment variables
@@ -79,12 +82,14 @@ Vercel → your project → **Settings → Environment Variables**. Add each, ch
 
 | Name | Value | Environments |
 |---|---|---|
-| `VITE_SUPABASE_URL` | Test project URL | Preview, Development |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Test publishable key | Preview, Development |
-| `SUPABASE_SECRET_KEY` | Test secret key | Preview, Development |
-| `RESEND_API_KEY` | from OA-09 | Preview, Production |
-| `APP_BASE_URL` | your site address | each |
-| *(Production values point to the **Live** project after OA-12)* | | Production |
+| `VITE_SUPABASE_URL` | `https://mmsdgyvaxxsyzsowongx.supabase.co` | Production, Preview, Development |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | your publishable key (`sb_publishable_…`) | Production, Preview, Development |
+| `SUPABASE_URL` | same URL as above | Production, Preview |
+| `SUPABASE_SECRET_KEY` | the **new** secret key after OA-16 | Production, Preview |
+| `RESEND_API_KEY` | the **new** Resend key after OA-16 | Production, Preview |
+| `APP_BASE_URL` | `https://ai-accounts-tax-system.vercel.app` | Production |
+
+Note: this is a Vite app, so browser variables start with `VITE_` — not `NEXT_PUBLIC_` (that prefix is for Next.js).
 
 Never add a `VITE_` prefix to a secret (anything with `VITE_` becomes visible in the browser).
 Remove `SITE_PASSWORD` once real logins are live (Claude will tell you when).
@@ -95,7 +100,7 @@ Remove `SITE_PASSWORD` once real logins are live (Claude will tell you when).
 **Why:** nothing reaches the live site without passing the checks.
 1. GitHub repo → **Settings → Branches → Add branch ruleset** (or protection rule) for `main`:
    require a pull request; require status checks "CI" to pass; block force pushes.
-2. **Settings → Secrets and variables → Actions → New repository secret**: `SUPABASE_TEST_URL`, `SUPABASE_TEST_SECRET_KEY` (Test project only — never Live).
+2. No database secrets are needed in GitHub: automated tests start their own temporary Supabase inside GitHub Actions (D-18).
 3. **Settings → Code security:** enable Dependabot alerts.
 
 **Done when:** a pull request shows the CI checks running.
@@ -135,14 +140,11 @@ sender = `no-reply@mail.tfsplus.ae`, sender name `TFS+ Smart Ledger`.
 2. Vercel → project → **Settings → Domains → Add** → it shows a CNAME record → add it at your DNS provider.
 3. Add the address to Supabase URL Configuration (OA-04 step 4) and to `APP_BASE_URL` (OA-06).
 
-### OA-12 · Separate Live Supabase project
-**Why:** testing must never touch real client data.
-1. Supabase → **New project** `tfs-ledger-live` (free plan allows 2 projects).
-2. Repeat OA-04 for it.
-3. Tell Claude — it applies the same migrations, then you put its keys into Vercel **Production** variables.
+### ~~OA-12~~ · Separate Live project — not needed
+Decision D-18: the current project becomes production. Its safety comes from tests running on a temporary database and the production cut-over step (PLAN P3-12).
 
 ### OA-13 · Backups & plans before real client data
-1. **Supabase Free has no restorable backups and pauses after a week of inactivity.** Before real data: upgrade the Live project to **Pro** (daily backups), or approve the nightly encrypted export Claude sets up (PLAN Phase 3).
+1. **Supabase Free has no restorable backups and pauses after a week of inactivity.** Before real data: upgrade the project to **Pro** (daily backups), or approve the nightly encrypted export Claude sets up (PLAN Phase 3).
 2. **Vercel Hobby is for non-commercial use** — upgrade to Pro before charging clients.
 
 ### OA-14 · Engagement-letter clause
@@ -152,6 +154,16 @@ Until Phase 6 (UAE self-hosting) data is stored in Singapore. Add a clause to pi
 Book a freelance senior developer/security reviewer for 2–3 days near the end of Phase 3 (Q-03). Claude will prepare a reviewer pack (architecture, specs, test results).
 
 ---
+
+### OA-16 · Rotate the keys shared in chat (do this now)
+**Why:** the Supabase **secret** key and the Resend API key were pasted into the chat, so they now sit in a conversation log. Treat them as exposed. (The publishable key and project URL are public by design — no action needed.)
+1. **Supabase** → Project Settings → **API Keys** → *Secret keys* → create a new secret key, then delete the old one (starts `sb_secret_1ShA…`).
+2. **Resend** → **API Keys** → delete the old key (starts `re_Pmew…`) → create a new one with **Sending access** (as before — that restriction is good).
+3. Open `poc/.env.local` in Notepad and replace the two values. Save.
+4. Later, use the new values in Vercel (OA-06).
+5. Tell Claude "keys rotated" — it will re-check they work, without you pasting them.
+
+**Done when:** the old keys are deleted and the app still connects.
 
 ## Runbook: if a key leaks
 1. Supabase → API Keys → **rotate** the leaked key (or Resend → revoke API key).

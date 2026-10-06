@@ -37,6 +37,8 @@
 | D-15 | **Formulas:** the numbers in formulas (rates, thresholds, days, %, box mapping) are editable by Super Admin, versioned with effective dates; formula logic stays in tested code ([Spec 03](docs/specs/03-configuration-and-formulas.md)). *(Proposed.)* | 2026-10-06 |
 | D-16 | **Scope simplifications** per [Spec 05](docs/specs/05-scope-and-simplifications.md) (e.g. one Excel import template, AED books in v1, one ASP first, no direct EmaraTax filing). *(Proposed.)* | 2026-10-06 |
 | D-17 | **Invites and alert emails** are sent by the app through Resend using templates editable in the Admin area; password-reset emails go through Supabase via Resend SMTP. *(Proposed.)* | 2026-10-06 |
+| D-18 | **One Supabase project** (`mmsdgyvaxxsyzsowongx`) — used for development now and **becomes production** once mature; no separate Live project. To keep testing safe, automated database tests run on a **temporary Supabase started inside GitHub Actions** (deleted after each run). Before go-live the project is cleaned of demo/test data (P3-12). | 2026-10-06 |
+| D-19 | Current web address: **https://ai-accounts-tax-system.vercel.app** (Vercel). Own domain later (Q-13). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
 
@@ -54,7 +56,7 @@
 | Q-10 | Tax-rule changes: require a **second** Super Admin to approve? Suggested: yes once a backup Super Admin exists; until then single approval with a written reason. | Phase 1 | ⬜ |
 | Q-11 | OK to keep books in **AED only** for v1 (foreign-currency invoices recorded at their AED amount)? Full multi-currency after the pilot. | Phase 2 | ⬜ |
 | Q-12 | Who is the **backup Super Admin** (so you're never locked out)? | Phase 1 | ⬜ |
-| Q-13 | App address and email sender domain (e.g. `ledger.tfsplus.ae`, `mail.tfsplus.ae`)? | Phase 3 | ⬜ |
+| Q-13 | Email sender domain for Resend (e.g. `mail.tfsplus.ae`), and a custom app address later? *(App currently at ai-accounts-tax-system.vercel.app — D-19.)* | Phase 3 | ⬜ |
 | Q-14 | Invoice numbering: is `INV-2026-0001` per client fine, or must some pilot clients continue their existing series? | Phase 2 | ⬜ |
 | Q-15 | Approve specs 01–05 (or send changes). | Phase 1 start | 🔍 |
 
@@ -87,7 +89,7 @@ in GitHub Actions); Faizan does G-10.
 | G-3 | Finance lint | `npm run check:finance` (see 3.1) | 0 findings |
 | G-4 | **Build** | `vite build` + scan of `dist/` for secret keys | Build succeeds; no secrets in the bundle |
 | G-5 | Unit tests | Vitest | 100% pass; tax & ledger code ≥ 95% line coverage |
-| G-6 | Database tests | Vitest against the **Test** Supabase project, signed in as real test users per role | 100% pass |
+| G-6 | Database tests | Vitest against a **temporary Supabase** (GitHub Actions; local Docker optional), signed in as real test users per role — never against real client data (D-18) | 100% pass |
 | G-7 | Supabase advisors | Security + performance advisors | 0 errors, 0 warnings |
 | G-8 | Security scans | `gitleaks` (secrets in git) + `npm audit --audit-level=high` | 0 findings |
 | G-9 | End-to-end | Playwright: log in (with MFA) → create invoice → approve → TB → VAT box | 100% pass |
@@ -104,7 +106,7 @@ One command runs the fast gates locally: `npm run check` (G-1, G-2, G-3, G-4, G-
 
 ### 3.2 How a change flows (spec-first)
 1. **Spec** — the feature's spec in `docs/specs/` is approved (or updated and re-approved).
-2. **Database** — migration file in `supabase/migrations/`, applied to the **Test** project; advisors run (G-7).
+2. **Database** — migration file in `supabase/migrations/`, proven on the temporary CI database, then applied to the Supabase project; advisors run (G-7).
 3. **Database tests** — written from the spec's test IDs (G-6).
 4. **Screens & logic** — built against the tests (G-1 → G-5).
 5. **End-to-end** — Playwright journey (G-9); security scans (G-8).
@@ -151,7 +153,9 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 - [ ] Unit tests for the **existing** POC logic (VAT, CT, ledger) — fixes found become Phase 1 items
 - [ ] Remove AI features from the UI: "Ask your books", simulated OCR, "AI" badges/insights (keep rule-based checks, relabelled)
 - [ ] Fix known POC defects: fixed date `2026-09-30` on receipts/payments/reversals; hard-coded 5% in reverse charge and bank split; VAT emirate box taken silently from the customer — replace with an editable emirate field on the invoice (D-10)
-- [ ] Owner actions started: OA-02 (2FA everywhere), OA-04 (Supabase auth settings)
+- [x] Local `.env.local` created with Supabase & Resend keys; keys verified working (OA-05)
+- [ ] 🔍 Rotate the secret key and Resend key that were shared in chat (OA-16)
+- [ ] Owner actions started: OA-02 (2FA everywhere), OA-04 (Supabase auth settings — public sign-up is still **on**)
 
 **Exit:** specs approved; CI runs green on the current code; Faizan has supplied Q-06 examples (OA-08).
 
@@ -213,7 +217,8 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P3-06 | Client logins: Client Owner, Client Staff, Read-only (time-boxed) | RBAC-15, RBAC-16, RBAC-20, SEC-16 | ⬜ |
 | P3-07 | Firm overview dashboard on live data | — | ⬜ |
 | P3-08 | Nightly encrypted database export (until Pro / self-hosted) + restore test | — | ⬜ |
-| P3-09 | Live Supabase project (OA-12), Resend (OA-09/10), domain (OA-11) | — | ⬜ |
+| P3-09 | Resend domain & SMTP (OA-09/10), custom domain if wanted (OA-11) | — | ⬜ |
+| P3-12 | **Production cut-over** (D-18): remove demo/test data, confirm schema & advisors, rotate keys, enable backups (OA-13), set Vercel production variables | DM-10, SEC-18 | ⬜ |
 | P3-10 | Independent security review (OA-15) and fixes | SEC-11 → 21 | ⬜ |
 | P3-11 | Go-live checklist (§7) | — | ⬜ |
 
@@ -252,7 +257,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 ## 6. Test case catalogue
 
 Expected values are in AED. Rounding rule: **half-up to 2 dp at line level** for VAT.
-Type: **U** = unit (Vitest), **D** = database (Test project), **E** = end-to-end (Playwright).
+Type: **U** = unit (Vitest), **D** = database (temporary CI Supabase), **E** = end-to-end (Playwright).
 Cases marked 🔍 need Faizan to confirm the expected answer.
 
 ### 6.1 Ledger (LED)
@@ -383,7 +388,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 - [ ] All quality gates G-1 → G-10 green on the release
 - [ ] All LED, SEC, RBAC, DM, CFG, ARAP, BANK, VAT, RPT tests green; all 🔍 cases confirmed by Faizan
 - [ ] Parallel-run results signed off for each pilot client
-- [ ] Separate **Live** Supabase project (never used for testing); Test project holds dummy data only
+- [ ] Production cut-over P3-12 done: demo/test data removed; automated tests only ever run on the temporary CI database
 - [ ] Backups confirmed (Supabase Free has no automatic backups → upgrade or scheduled export before real data)
 - [ ] Supabase Free projects pause after inactivity → confirm plan for pilot uptime
 - [ ] MFA on for all firm users; public sign-up off
@@ -404,3 +409,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-06 | D-12 added: empty VAT/tax figures shown as 0.00 (FTA format). POC VAT page fixed (dash → 0.00); test VAT-18 added. |
 | 2026-10-06 | D-10 revised: emirate chosen manually on each invoice (pre-filled with head office); no automatic allocation by establishment; branches table dropped from Phase 1. |
 | 2026-10-06 | Specs 01–05 and OWNER-ACTIONS added; gates expanded to G-1 → G-10 (build, security scans); phases rewritten as spec-linked steps; Super Admin role; D-13 → D-17 proposed; Q-09 → Q-15 added. Work moved to branch `faizan`. |
+| 2026-10-06 | D-18 single Supabase project (becomes production; CI tests on a temporary Supabase); D-19 Vercel address; OA-05 done; OA-12 removed; OA-16 key rotation added; P3-12 production cut-over added. |

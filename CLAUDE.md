@@ -71,8 +71,8 @@ work is done. Domain rules: `tfs-smart-ledger/docs/UAE_COMPLIANCE_RULES.md` and 
 - Work on branch `faizan`; merge to `main` via pull request after the quality gates.
 
 ## 5. How to work
-- Database changes = numbered SQL files in `supabase/migrations/`, applied to the Test
-  project first. Forward-only. Run Supabase security + performance advisors after every
+- Database changes = numbered SQL files in `supabase/migrations/`, proven on a temporary
+  Supabase in GitHub Actions first, then applied to the single project (D-18). Forward-only. Run Supabase security + performance advisors after every
   schema change (must be 0 findings).
 - Domain logic in `poc/src/lib/` (pure, tested) or in Postgres functions — never inside
   React components.

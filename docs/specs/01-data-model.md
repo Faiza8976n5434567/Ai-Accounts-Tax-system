@@ -25,7 +25,7 @@ Every hard-coded item found in `poc/src`, and its new home. Nothing is dropped s
 
 | # | POC source | What it is today | New home | Notes |
 |---|---|---|---|---|
-| 1 | `seed.ts` `ORGS` | 3 demo clients | `organizations` | Demo rows only in the **Test** project |
+| 1 | `seed.ts` `ORGS` | 3 demo clients | `organizations` | Demo rows only until production cut-over (PLAN P3-12) |
 | 2 | `seed.ts` `CUSTOMERS`, supplier names in memos | Customers/suppliers as free text | `contacts` | Free-text party names become proper records with TRN |
 | 3 | `seed.ts` journals, `JLine` | Generated ledger | `journals` + `journal_lines` | |
 | 4 | `seed.ts` sales, `SalesInvoice`, `SaleLine` | Sales invoices | `sales_invoices` + `sales_invoice_lines` | Credit notes use the same tables (`doc_type`) |

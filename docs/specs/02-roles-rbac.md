@@ -138,7 +138,7 @@ create policy mfa on public.<table> as restrictive to authenticated
 
 ## 4. Test cases (RBAC-*)
 
-Each is a database test run as a real test user on the **Test** project (Gate G-5).
+Each is a database test run as a real test user on the temporary CI database (Gate G-6).
 
 | ID | As | Try to | Expected |
 |---|---|---|---|

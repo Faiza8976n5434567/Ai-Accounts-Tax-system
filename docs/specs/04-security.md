@@ -71,13 +71,13 @@ can only ever reach their own client's data, and nobody can change posted figure
 | S-4.6 | Helper functions: `security definer` + `set search_path = ''`; private `app` schema **not exposed** to the API | Supabase "exposed schemas" = `public` only |
 | S-4.7 | Data-integrity constraints (balance, FKs, uniques, checks) | Spec 01 |
 | S-4.8 | Supabase security & performance advisors = 0 findings | Gate G-6 after every migration |
-| S-4.9 | Migrations are files in git, applied Test → Live, forward-only | `supabase/migrations/` |
+| S-4.9 | Migrations are files in git, proven on a temporary CI database, then applied; forward-only | `supabase/migrations/` |
 
 ## 5. Hosting & operations
 
 | ID | Control | How |
 |---|---|---|
-| S-5.1 | Separate **Test** and **Live** Supabase projects; Vercel preview builds use Test only | Env vars per environment (owner action) |
+| S-5.1 | One Supabase project (D-18): automated tests never touch it — they run on a temporary Supabase in GitHub Actions; demo data removed at production cut-over | CI + PLAN P3-12 |
 | S-5.2 | Two-factor on every admin account: GitHub, Vercel, Supabase, Resend, domain registrar | Owner action |
 | S-5.3 | Backups: Free plan has none you can restore from → nightly encrypted database export (GitHub Action) until moving to Pro/self-hosted; monthly restore test | PLAN Phase 3 / 6 |
 | S-5.4 | Nightly integrity checks + email alert | Spec 03 |
