@@ -7,12 +7,12 @@
 
 | | |
 |---|---|
-| **Current phase** | Phase 0 — Setup, specs & clean-up |
+| **Current phase** | Phase 1 — Foundation (database built & tested locally; awaiting CI + apply) |
 | **Overall status** | 🟡 In progress |
-| **Last updated** | 2026-10-06 |
-| **Next milestone** | Phase 0 build work (tooling, tests, clean-up) |
+| **Last updated** | 2026-10-07 |
+| **Next milestone** | Push → CI proves the database (G-6) → apply to Supabase → advisors (G-7) → types (P1-08) |
 
-**Status legend:** ⬜ Not started · 🟡 In progress · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
+**Status legend:** ⬜ Not started · 🟡 In progress (for tests: written and passing locally, awaiting CI) · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
 
 ---
 
@@ -70,6 +70,9 @@
 | Q-18 | USD rounding: line → AED first, then VAT → **Agreed (D-21).** | Phase 2 | ✅ |
 | Q-19 | Email domain → **use Resend default for now (D-24).** | Phase 1 | ✅ |
 | Q-20 | Yearly reset of the counter? → **No: continues across years** (`INV-2027-01-1245`, D-22). | Phase 2 | ✅ |
+| Q-21 | **Reversing a posted journal:** built so a Firm Admin reverses in one step (reason required, audit-logged, reversal posted immediately — the original was already approved by two people). Alternative: the reversal waits for a second person's approval. Which do you want? | Phase 1 | 🔍 |
+| Q-22 | **Bank account (1010) as a control account:** Spec 01 lists bank with AR/AP/VAT as control accounts, so manual journals can't touch it (bank entries come from the bank module, opening balances from the opening journal). OK, or allow manual journals on bank (e.g. bank charges)? | Phase 1 | 🔍 |
+| Q-23 | Firm-staff email domain for invites (e.g. `@tfsplus.ae`) and invite expiry (set to **7 days** for now). | Phase 1 (P1-10) | 🔍 |
 
 ### 2.1 Customer overpayments & credits — agreed rule (D-11)
 
@@ -100,7 +103,7 @@ in GitHub Actions); Faizan does G-10.
 | G-3 | Finance lint | `npm run check:finance` (see 3.1) | 0 findings |
 | G-4 | **Build** | `vite build` + scan of `dist/` for secret keys | Build succeeds; no secrets in the bundle |
 | G-5 | Unit tests | Vitest | 100% pass; tax & ledger code ≥ 95% line coverage |
-| G-6 | Database tests | Vitest against a **temporary Supabase** (GitHub Actions; local Docker optional), signed in as real test users per role — never against real client data (D-18) | 100% pass |
+| G-6 | Database tests | **pgTAP** (`supabase test db`) on a **temporary Supabase** in GitHub Actions, signed in as test users per role — never against real client data (D-18). Quick local check without Docker: `npm run test:db:local` (PGlite) | 100% pass |
 | G-7 | Supabase advisors | Security + performance advisors | 0 errors, 0 warnings |
 | G-8 | Security scans | `gitleaks` (secrets in git) + `npm audit --audit-level=high` | 0 findings |
 | G-9 | End-to-end | Playwright: log in (with MFA) → create invoice → approve → TB → VAT box | 100% pass |
@@ -157,7 +160,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 - [x] Specs written: [01 Data model](docs/specs/01-data-model.md), [02 Roles](docs/specs/02-roles-rbac.md), [03 Configuration & formulas](docs/specs/03-configuration-and-formulas.md), [04 Security](docs/specs/04-security.md), [05 Scope review](docs/specs/05-scope-and-simplifications.md)
 - [x] Owner-actions guide written ([docs/OWNER-ACTIONS.md](docs/OWNER-ACTIONS.md))
 - [x] Faizan approved specs 01–05 and answered Q-09 → Q-19 (OA-01)
-- [ ] Drop the 7 leftover tables + 2 functions created on 2026-10-06 in Supabase
+- [ ] Drop the 7 leftover tables + 2 functions created on 2026-10-06 in Supabase — 🟡 written as the first Phase 1 migration (`20261007100000_foundation.sql`); done when applied
 - [ ] Rename local folder to remove `&` (OA-03)
 - [x] Moved `PRD.md`, `UAE_COMPLIANCE_RULES.md` to `/docs`; old scaffold and roadmaps archived in `docs/archive/`
 - [x] Tooling: oxlint, Vitest (+ 95% coverage gate), Playwright, `check:finance`, `check:bundle`, `npm run check`, gitleaks, npm audit, GitHub Actions CI (`.github/workflows/ci.yml`) running G-1 → G-5, G-8, G-9 (G-6/G-7 need the database — Phase 1)
@@ -170,18 +173,18 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 
 **Exit:** specs approved; CI runs green on the current code; Faizan has supplied Q-06 examples (OA-08).
 
-### Phase 1 — Foundation: database, logins, roles, admin · ⬜ · target 13 Nov 2026
+### Phase 1 — Foundation: database, logins, roles, admin · 🟡 In progress · target 13 Nov 2026
 
 **1A · Database foundation** (Spec 01 §4.1–4.5, 4.11–4.12 · Spec 02 §3)
 | ID | Step | Tests | Status |
 |---|---|---|---|
-| P1-01 | Migration: reference data — emirates, VAT boxes (incl. 2, 6, 7), tax codes + box mapping, CT tags, CoA template (adds 2150 Customer Credits) | DM-11 | ⬜ |
-| P1-02 | Migration: platform settings (app name, sender), firms (TFS Plus = platform owner), profiles, firm_members, org_memberships, invitations | DM-12, RBAC-23, RBAC-24 | ⬜ |
-| P1-03 | Migration: currencies (AED, USD), organizations (VAT stagger, CT TRN), accounts, accounting & tax periods, monthly number sequences (D-22) | DM-01, DM-03, NUM-05 | ⬜ |
-| P1-04 | Migration: journals + lines with guards; `post_journal`, `reverse_journal`, `lock_period`, `reopen_period` | LED-01 → LED-14 | ⬜ |
-| P1-05 | Migration: config versions/values (seeded from current `TAX_CONFIG`), firm settings, email templates, compliance rules | CFG-01 → CFG-05 | ⬜ |
-| P1-06 | Migration: audit log + generic audit trigger (append-only) | LED-14, SEC-17 | ⬜ |
-| P1-07 | RLS on every table, `app.*` helpers, MFA restrictive policy, private storage bucket | RBAC-01 → RBAC-14, RBAC-17 → 19 | ⬜ |
+| P1-01 | Migration: reference data — emirates, VAT boxes (incl. 2, 6, 7), tax codes + box mapping, CT tags, CoA template (adds 2150 Customer Credits) | DM-11 | 🟡 built, tests pass locally; awaiting CI + apply — `20261007100100_reference_data.sql` |
+| P1-02 | Migration: platform settings (app name, sender), firms (TFS Plus = platform owner), profiles, firm_members, org_memberships, invitations | DM-12, RBAC-23, RBAC-24 | 🟡 built, tests pass locally; awaiting CI + apply — `20261007100200_platform_firms_people.sql` (also creates `organizations`) |
+| P1-03 | Migration: currencies (AED, USD), organizations (VAT stagger, CT TRN), accounts, accounting & tax periods, monthly number sequences (D-22) | DM-01, DM-03, NUM-05 | 🟡 built, tests pass locally; awaiting CI + apply — accounts/periods/numbering in `20261007100300_ledger.sql`; currencies & organizations in earlier files |
+| P1-04 | Migration: journals + lines with guards; `post_journal`, `reverse_journal`, `lock_period`, `reopen_period` | LED-01 → LED-14 | 🟡 built, tests pass locally; awaiting CI + apply — `20261007100300_ledger.sql` |
+| P1-05 | Migration: config versions/values (seeded from current `TAX_CONFIG`), firm settings, email templates, compliance rules | CFG-01 → CFG-05 | 🟡 built, tests pass locally; awaiting CI + apply — `20261007100400_configuration.sql` |
+| P1-06 | Migration: audit log + generic audit trigger (append-only) | LED-14, SEC-17 | 🟡 built, tests pass locally; awaiting CI + apply — in `20261007100000_foundation.sql` |
+| P1-07 | RLS on every table, `app.*` helpers, MFA restrictive policy, private storage bucket | RBAC-01 → RBAC-14, RBAC-17 → 19 | 🟡 built, tests pass locally; awaiting CI + apply — `20261007100500_access_control.sql` |
 | P1-08 | Generated TypeScript types; advisors = 0 | DM-09, DM-10 | ⬜ |
 
 **1B · Logins & administration** (Spec 02 · Spec 03 §3)
@@ -276,30 +279,30 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 ### 6.1 Ledger (LED)
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
-| LED-01 | Dr Rent 1,000 / Cr Bank 1,000 | Posts | D | ⬜ |
-| LED-02 | Dr 1,000.00 / Cr 999.99 | Rejected by database (also via direct SQL) | D | ⬜ |
-| LED-03 | One line with both debit and credit | Rejected | D | ⬜ |
-| LED-04 | Negative amount | Rejected | D | ⬜ |
-| LED-05 | Single-line journal | Rejected | D | ⬜ |
-| LED-06 | Amount 10.005 (fraction of a fils) | Rejected | U+D | ⬜ |
-| LED-07 | Edit a posted journal | Rejected | D | ⬜ |
-| LED-08 | Delete a posted journal | Rejected | D | ⬜ |
-| LED-09 | Reverse a posted journal | Mirror entry created with today's date; net effect 0; original marked reversed | D | ⬜ |
-| LED-10 | Post into a locked period | Rejected | D | ⬜ |
-| LED-11 | Firm Admin reopens a period | Allowed; audit entry with reason | D | ⬜ |
-| LED-12 | Unknown or inactive account | Rejected | D | ⬜ |
+| LED-01 | Dr Rent 1,000 / Cr Bank 1,000 | Posts | D | 🟡 |
+| LED-02 | Dr 1,000.00 / Cr 999.99 | Rejected by database (also via direct SQL) | D | 🟡 |
+| LED-03 | One line with both debit and credit | Rejected | D | 🟡 |
+| LED-04 | Negative amount | Rejected | D | 🟡 |
+| LED-05 | Single-line journal | Rejected | D | 🟡 |
+| LED-06 | Amount 10.005 (fraction of a fils) | Rejected | U+D | 🟡 |
+| LED-07 | Edit a posted journal | Rejected | D | 🟡 |
+| LED-08 | Delete a posted journal | Rejected | D | 🟡 |
+| LED-09 | Reverse a posted journal | Mirror entry created with today's date; net effect 0; original marked reversed | D | 🟡 |
+| LED-10 | Post into a locked period | Rejected | D | 🟡 |
+| LED-11 | Firm Admin reopens a period | Allowed; audit entry with reason | D | 🟡 |
+| LED-12 | Unknown or inactive account | Rejected | D | 🟡 |
 | LED-13 | 1,000 random valid journals | TB total debits = total credits (property test) | U | ⬜ |
-| LED-14 | Every post/approve/reverse/lock | Audit row written; audit rows cannot be edited or deleted | D | ⬜ |
+| LED-14 | Every post/approve/reverse/lock | Audit row written; audit rows cannot be edited or deleted | D | 🟡 |
 
 ### 6.2 Security & access (SEC)
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
-| SEC-01 | Not logged in, call any table | 0 rows / denied | D | ⬜ |
-| SEC-02 | User of Client A reads Client B | 0 rows | D | ⬜ |
-| SEC-03 | Firm user without access grant to a client | 0 rows | D | ⬜ |
-| SEC-04 | Firm Accountant approves an entry | Rejected | D | ⬜ |
-| SEC-05 | Firm Admin approves **own** entry | Rejected (maker-checker) | D | ⬜ |
-| SEC-06 | Read-only user inserts a journal | Rejected | D | ⬜ |
+| SEC-01 | Not logged in, call any table | 0 rows / denied | D | 🟡 |
+| SEC-02 | User of Client A reads Client B | 0 rows | D | 🟡 |
+| SEC-03 | Firm user without access grant to a client | 0 rows | D | 🟡 |
+| SEC-04 | Firm Accountant approves an entry | Rejected | D | 🟡 |
+| SEC-05 | Firm Admin approves **own** entry | Rejected (maker-checker) | D | 🟡 |
+| SEC-06 | Read-only user inserts a journal | Rejected | D | 🟡 |
 | SEC-07 | Read-only access past its end date | Denied | D | ⬜ |
 | SEC-08 | Public sign-up attempt | Not possible (invite only) | E | ⬜ |
 | SEC-09 | Firm user logs in without MFA | Blocked until MFA set up | E | ⬜ |
@@ -398,14 +401,14 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 ### 6.10 Document numbering (NUM) — D-22
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
-| NUM-01 | First invoice dated October 2026 | `INV-2026-10-0001` | D | ⬜ |
-| NUM-02 | Second October invoice | `INV-2026-10-0002` | D | ⬜ |
-| NUM-03 | October ends at `INV-2026-10-0100`; first November invoice | `INV-2026-11-0101` (counter continues) | D | ⬜ |
-| NUM-04 | October invoice back-dated and posted after `INV-2026-11-0101` | `INV-2026-10-0102` (next counter, its own month) | D | ⬜ |
+| NUM-01 | First invoice dated October 2026 | `INV-2026-10-0001` | D | 🟡 |
+| NUM-02 | Second October invoice | `INV-2026-10-0002` | D | 🟡 |
+| NUM-03 | October ends at `INV-2026-10-0100`; first November invoice | `INV-2026-11-0101` (counter continues) | D | 🟡 |
+| NUM-04 | October invoice back-dated and posted after `INV-2026-11-0101` | `INV-2026-10-0102` (next counter, its own month) | D | 🟡 |
 | NUM-05 | Two users post invoices at the same moment | Different numbers, no gaps, no duplicates | D | ⬜ |
-| NUM-06 | Draft invoice deleted before posting | No number used (numbers assigned at posting) | D | ⬜ |
-| NUM-07 | Two different clients | Each has its own counter starting at 0001 | D | ⬜ |
-| NUM-08 | First invoice of a new year | Counter continues (e.g. `INV-2027-01-1245`) | D | ⬜ |
+| NUM-06 | Draft invoice deleted before posting | No number used (numbers assigned at posting) | D | 🟡 |
+| NUM-07 | Two different clients | Each has its own counter starting at 0001 | D | 🟡 |
+| NUM-08 | First invoice of a new year | Counter continues (e.g. `INV-2027-01-1245`) | D | 🟡 |
 
 ### 6.11 Suites defined in the specs
 
@@ -449,3 +452,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-06 | Faizan's answers: D-20 TFS Plus platform owner / other firms as customers / app name configurable; D-21 AED + USD at 3.6725; D-22 `INV-YYYY-MM-0001` numbering; D-23 two-person rule; D-24 dev sender `onboarding@resend.dev`. Added Q-16 → Q-19, FX-* and NUM-* tests, RBAC-21 → 24. |
 | 2026-10-06 | **Specs 01–05 approved.** D-13 → D-17 approved; D-22 revised (running counter, no monthly reset); D-23 single admin for now; D-24 invite link sharing; D-25 break-glass recovery. Q-20 (yearly reset?) added. |
 | 2026-10-06 | Q-20 → counter continues across years. **Phase 0 build work:** AI features removed; hard-coded dates/rates fixed; new `rules.ts`, `posting.ts`, `dates.ts`, `insights.ts`; 63 unit tests + 4 E2E tests; oxlint, finance lint, bundle secret scan, coverage gate, GitHub Actions CI; docs reorganised. Remaining Phase 0: drop leftover Supabase tables (needs `supabase-tax` MCP in a new session), owner actions. |
+| 2026-10-07 | **Phase 1 started — database foundation (P1-01 → P1-07).** Six migrations in `supabase/migrations/`: clean-up of the POC leftovers, locked-down default privileges, private `app` schema, append-only audit log; reference data (VAT boxes incl. 2/6/7, emirates, tax codes → boxes, CT tags, UAE SME chart with 2150 Customer Credits); platform settings, firms (TFS Plus = owner), profiles, memberships, invitations, clients; chart of accounts, periods, running document numbers, journals with `post_journal` / `reverse_journal` / `lock_period` / `reopen_period`; versioned tax rules seeded from the POC (`uae-2026.09`) with `approve_config_version` (D-23), firm settings, email templates, compliance rules; role permissions, RLS + MFA policy on every table, private `documents` bucket. **118 pgTAP database tests** (LED-01→14 except LED-13 (unit, later), NUM-01→04/06→08, DM-01/03/12/13/14, RBAC-01→14/17→19/21/23/24, SEC-01/16/17, CFG-01/03→05/13/16/17). CI job G-6 added. Local PGlite harness found and fixed 4 defects before CI. Not yet applied to Supabase. New questions Q-21 → Q-23; owner action OA-17. |

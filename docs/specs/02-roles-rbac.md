@@ -138,6 +138,9 @@ create policy mfa on public.<table> as restrictive to authenticated
 ```
 
 - `(select …)` wrapping makes Postgres evaluate the helper once per query (performance).
+- *As built (P1-07):* client tables use `organization_id in (select app.orgs_with('view'))` —
+  the same rule as `app.has_perm`, but the list of permitted clients is worked out once per
+  query instead of once per row. Permissions are seeded in `app.role_permissions`.
 - `anon` role has **no** grants on any business table.
 - Posted-row updates/deletes are blocked by triggers regardless of policy.
 - The role × permission table is **seeded by migration and read-only in the UI** — changing it is a code change with tests, not a settings click (see Spec 03 §4 on why).

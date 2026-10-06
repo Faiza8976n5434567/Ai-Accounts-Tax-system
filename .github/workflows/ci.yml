@@ -1,5 +1,5 @@
 # Quality gates (PLAN.md §3). Runs on every push and pull request.
-# G-6 (database tests on a temporary Supabase) and G-7 (advisors) are added in Phase 1.
+# G-6 runs the database tests on a temporary Supabase; G-7 (advisors) runs on the project after each migration.
 name: CI
 
 on:
@@ -51,6 +51,24 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  database:
+    name: G-6 Database tests (temporary Supabase)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+      # A throw-away Supabase inside the runner (D-18): migrations applied from scratch,
+      # then the pgTAP suites in supabase/tests run as real test users. Deleted after the run.
+      - name: Start temporary Supabase (database, auth, storage)
+        run: supabase start -x realtime,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: G-6 Database tests (pgTAP)
+        run: supabase test db
 
   e2e:
     name: G-9 End-to-end (Playwright)

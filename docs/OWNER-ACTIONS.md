@@ -25,6 +25,7 @@ PLAN.md as you go. Screen names in Supabase/Vercel/GitHub may differ slightly ov
 | OA-14 | Engagement-letter clause on data hosting | Before pilot | legal |
 | OA-15 | Book the independent security review | Before pilot | — |
 | **OA-16** | **Rotate the secret key and Resend key shared in chat** | **Now** | 10 min |
+| OA-17 | Create your own login (first Super Admin) | After the Phase 1 database is applied | 10 min |
 
 ---
 
@@ -166,6 +167,15 @@ Book a freelance senior developer/security reviewer for 2–3 days near the end 
 5. Tell Claude "keys rotated" — it will re-check they work, without you pasting them.
 
 **Done when:** the old keys are deleted and the app still connects.
+
+### OA-17 · Create your own login (first Super Admin)
+**Why:** the database only lets an existing Super Admin create another one, so the very first one is set up once by hand. Do this only after Claude confirms the Phase 1 database is live.
+1. **Supabase** → your project → **Authentication** → **Users** → **Add user** → **Send invitation** → enter your work email.
+2. Open the email and set a password (at least 12 characters).
+3. Tell Claude "my login is created" and the email you used. Claude runs the one-time step that makes you Super Admin and Firm Admin of TFS Plus (it refuses to run again once a Super Admin exists).
+4. Next time you sign in to the app you will be asked to set up two-factor login (authenticator app) — save the recovery codes offline.
+
+**Done when:** you can sign in with two-factor and see the Admin area.
 
 ## Runbook: locked out (break-glass, D-25)
 You are the only Super Admin, so keep this safe.

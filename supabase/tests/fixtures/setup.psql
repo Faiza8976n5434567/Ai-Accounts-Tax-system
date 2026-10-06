@@ -1,0 +1,114 @@
+-- Shared test fixtures (included by every test file with \ir; runs inside the test's
+-- transaction, so everything is rolled back). Never run against real client data (D-18).
+create extension if not exists pgtap with schema extensions;
+-- Migrations stop new functions being executable by default; the test users need pgTAP's.
+grant execute on all functions in schema extensions to authenticated, anon;
+
+create schema if not exists tests;
+grant usage on schema tests to authenticated, anon;
+
+-- Signs in as a user for the following statements, like the API does (JWT claims + role).
+create or replace function tests.login(p_email text, p_aal text default 'aal2') returns void
+language plpgsql as $$
+declare v_id uuid := tests.uid(p_email);
+begin
+  if v_id is null then raise exception 'test user % not found', p_email; end if;
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_id, 'role', 'authenticated', 'aal', p_aal, 'email', p_email)::text, true);
+  perform set_config('role', 'authenticated', true);
+end $$;
+
+create or replace function tests.anon() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  perform set_config('role', 'anon', true);
+end $$;
+
+create or replace function tests.uid(p_email text) returns uuid language sql stable security definer as $$
+  select id from auth.users where email = p_email
+$$;
+grant execute on all functions in schema tests to authenticated, anon;
+
+create or replace function tests.new_user(p_email text, p_name text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  insert into auth.users (instance_id, id, aud, role, email, raw_user_meta_data, created_at, updated_at)
+  values ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', p_email,
+          json_build_object('full_name', p_name)::jsonb, now(), now());
+  return v_id;
+end $$;
+
+-- Copies the default chart of accounts and creates monthly periods for a year.
+create or replace function tests.new_client(p_firm uuid, p_name text, p_year int default 2026) returns uuid
+language plpgsql as $$
+declare v_org uuid;
+begin
+  insert into public.organizations (firm_id, legal_name, emirate_code) values (p_firm, p_name, 'AUH')
+  returning id into v_org;
+  insert into public.accounts (organization_id, code, name, type, subtype, report_group, ct_tag, is_control)
+  select v_org, a.code, a.name, a.type, a.subtype, a.report_group, a.ct_tag, a.is_control
+  from public.coa_template_accounts a join public.coa_templates t on t.id = a.template_id and t.is_default;
+  insert into public.accounting_periods (organization_id, start_date, end_date)
+  select v_org, d::date, (d + interval '1 month - 1 day')::date
+  from generate_series(make_date(p_year, 1, 1), make_date(p_year + 1, 12, 1), interval '1 month') d;
+  return v_org;
+end $$;
+
+create or replace function tests.acct(p_org uuid, p_code text) returns uuid language sql stable security definer as $$
+  select id from public.accounts where organization_id = p_org and code = p_code
+$$;
+grant execute on all functions in schema tests to authenticated, anon;
+
+-- People (Spec 02 roles) ------------------------------------------------------------------
+select tests.new_user('super@test.local', 'Super Admin');
+select tests.new_user('admin2@test.local', 'Second Firm Admin');
+select tests.new_user('acct@test.local', 'Assigned Accountant');
+select tests.new_user('acct2@test.local', 'Unassigned Accountant');
+select tests.new_user('owner@test.local', 'Client Owner A');
+select tests.new_user('staff@test.local', 'Client Staff A');
+select tests.new_user('ro@test.local', 'Auditor (current)');
+select tests.new_user('ro_old@test.local', 'Auditor (expired)');
+select tests.new_user('badmin@test.local', 'Firm B Admin');
+
+select app.bootstrap_super_admin('super@test.local');
+
+insert into public.firms (legal_name) values ('Other Tax Firm B LLC');
+
+create temp table fx (k text primary key, id uuid) on commit drop;
+grant select on fx to authenticated, anon;
+insert into fx values
+  ('tfs', (select id from public.firms where is_platform_owner)),
+  ('firmb', (select id from public.firms where legal_name = 'Other Tax Firm B LLC'));
+
+insert into public.firm_members (firm_id, user_id, role) values
+  ((select id from fx where k = 'tfs'), tests.uid('admin2@test.local'), 'firm_admin'),
+  ((select id from fx where k = 'tfs'), tests.uid('acct@test.local'), 'firm_accountant'),
+  ((select id from fx where k = 'tfs'), tests.uid('acct2@test.local'), 'firm_accountant'),
+  ((select id from fx where k = 'firmb'), tests.uid('badmin@test.local'), 'firm_admin');
+
+insert into fx values
+  ('orgA', tests.new_client((select id from fx where k = 'tfs'), 'Client A LLC')),
+  ('orgB', tests.new_client((select id from fx where k = 'tfs'), 'Client B LLC')),
+  ('orgC', tests.new_client((select id from fx where k = 'firmb'), 'Firm B Client C LLC'));
+
+insert into public.org_memberships (organization_id, user_id, role, valid_from, valid_to) values
+  ((select id from fx where k = 'orgA'), tests.uid('acct@test.local'), 'firm_accountant', '2026-01-01', null),
+  ((select id from fx where k = 'orgA'), tests.uid('owner@test.local'), 'client_owner', '2026-01-01', null),
+  ((select id from fx where k = 'orgA'), tests.uid('staff@test.local'), 'client_staff', '2026-01-01', null),
+  ((select id from fx where k = 'orgA'), tests.uid('ro@test.local'), 'read_only', '2026-01-01', current_date + 30),
+  ((select id from fx where k = 'orgA'), tests.uid('ro_old@test.local'), 'read_only', '2025-01-01', current_date - 1);
+
+-- A posted journal in client A (Dr Rent 1,000 / Cr Accruals 1,000), prepared by the
+-- accountant and approved by the second Firm Admin, so every role has something to read.
+select tests.login('acct@test.local');
+insert into public.journals (organization_id, entry_date, memo)
+values ((select id from fx where k = 'orgA'), '2026-01-15', 'Fixture: January rent');
+insert into public.journal_lines (journal_id, organization_id, line_no, account_id, debit, credit)
+select j.id, j.organization_id, l.n, tests.acct(j.organization_id, l.code), l.dr, l.cr
+from public.journals j, (values (1, '6100', 100000, 0), (2, '2010', 0, 100000)) as l(n, code, dr, cr)
+where j.memo = 'Fixture: January rent';
+select tests.login('admin2@test.local');
+select public.post_journal((select id from public.journals where memo = 'Fixture: January rent'));
+reset role;
+insert into fx values ('jfix', (select id from public.journals where memo = 'Fixture: January rent'));
+select set_config('request.jwt.claims', '', true);
