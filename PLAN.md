@@ -3,13 +3,14 @@
 > **This is the single source of truth for what we are building, in what order, and how we
 > prove it is correct.** Claude Code updates it as work progresses. Faizan signs off phases.
 > Supersedes `ROADMAP.md` and `tfs-smart-ledger/docs/ROADMAP.md` (kept for reference only).
+> **Specs:** [docs/specs](docs/specs/README.md) · **Your to-dos:** [docs/OWNER-ACTIONS.md](docs/OWNER-ACTIONS.md) · **Branch:** `faizan`
 
 | | |
 |---|---|
-| **Current phase** | Phase 0 — Setup & clean-up |
+| **Current phase** | Phase 0 — Setup, specs & clean-up |
 | **Overall status** | 🟡 In progress |
 | **Last updated** | 2026-10-06 |
-| **Next milestone** | Phase 0 sign-off |
+| **Next milestone** | Faizan approves specs 01–05 (OA-01) |
 
 **Status legend:** ⬜ Not started · 🟡 In progress · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
 
@@ -31,6 +32,11 @@
 | D-10 | **VAT 201 emirate boxes (1a–1g):** the user **selects the emirate manually on each sales invoice**. The field is pre-filled with the client's head-office emirate and can be changed; there is no automatic allocation by establishment. Changes are audit-logged. *(Answers Q-04; revised 2026-10-06.)* | 2026-10-06 |
 | D-11 | **Customer overpayments** are held as a **Customer Credit** — a liability (IAS 1 / IFRS 15: payable to the customer or contract liability) — until applied to a future invoice or refunded. Details in §2.1. *(Answers Q-05.)* | 2026-10-06 |
 | D-12 | **FTA display format:** every VAT 201 box (amount, VAT and adjustment columns) and every figure in tax return packs shows **0.00** when there is no value — never blank, a dash or hidden. Applies on screen, in Excel/PDF exports and in frozen snapshots. | 2026-10-06 |
+| D-13 | **Spec-first delivery:** every feature is specified in `docs/specs/` and approved before it is coded; tests come from the spec. *(Proposed — confirm with OA-01.)* | 2026-10-06 |
+| D-14 | **Six roles**; Super Admin is a flag on top of Firm Admin; permission matrix fixed in code, not editable in the UI ([Spec 02](docs/specs/02-roles-rbac.md)). *(Proposed.)* | 2026-10-06 |
+| D-15 | **Formulas:** the numbers in formulas (rates, thresholds, days, %, box mapping) are editable by Super Admin, versioned with effective dates; formula logic stays in tested code ([Spec 03](docs/specs/03-configuration-and-formulas.md)). *(Proposed.)* | 2026-10-06 |
+| D-16 | **Scope simplifications** per [Spec 05](docs/specs/05-scope-and-simplifications.md) (e.g. one Excel import template, AED books in v1, one ASP first, no direct EmaraTax filing). *(Proposed.)* | 2026-10-06 |
+| D-17 | **Invites and alert emails** are sent by the app through Resend using templates editable in the Admin area; password-reset emails go through Supabase via Resend SMTP. *(Proposed.)* | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
 
@@ -44,6 +50,13 @@
 | Q-06 | Provide 3–5 real, anonymised worked examples (one VAT quarter, one CT computation) to become the golden test set. | Phase 1 | ⬜ |
 | Q-07 | Confirm every tax setting marked **VERIFY** in `poc/src/lib/config.ts` (VAT return due days, Art 59 threshold, SBR end date, e-invoicing dates). | Phase 3 | 🔍 |
 | Q-08 | Confirm the legal reference for the VAT treatment of advances in §2.1 (date-of-supply rules — Decree-Law Art 25–26 or the Executive Regulation?). The rule itself is agreed; only the citation shown in the app needs confirming. | Phase 2 | 🔍 |
+| Q-09 | Will other tax firms ever use this system, or only TFS Plus? (Design supports more firms either way; affects branding/billing only.) | Phase 1 | ⬜ |
+| Q-10 | Tax-rule changes: require a **second** Super Admin to approve? Suggested: yes once a backup Super Admin exists; until then single approval with a written reason. | Phase 1 | ⬜ |
+| Q-11 | OK to keep books in **AED only** for v1 (foreign-currency invoices recorded at their AED amount)? Full multi-currency after the pilot. | Phase 2 | ⬜ |
+| Q-12 | Who is the **backup Super Admin** (so you're never locked out)? | Phase 1 | ⬜ |
+| Q-13 | App address and email sender domain (e.g. `ledger.tfsplus.ae`, `mail.tfsplus.ae`)? | Phase 3 | ⬜ |
+| Q-14 | Invoice numbering: is `INV-2026-0001` per client fine, or must some pilot clients continue their existing series? | Phase 2 | ⬜ |
+| Q-15 | Approve specs 01–05 (or send changes). | Phase 1 start | 🔍 |
 
 ### 2.1 Customer overpayments & credits — agreed rule (D-11)
 
@@ -64,129 +77,163 @@
 
 ## 3. Quality gates — "Definition of Done" for every change
 
-Nothing reaches the live site unless **all** of these pass. Claude runs 1–6 automatically; Faizan does 7.
+Nothing reaches the live site unless **all** of these pass. Claude runs G-1 → G-9 (locally and
+in GitHub Actions); Faizan does G-10.
 
 | # | Gate | Tool | Pass rule |
 |---|---|---|---|
 | G-1 | Type check | `tsc --noEmit` (strict) | 0 errors |
-| G-2 | Lint | ESLint (typescript-eslint + react-hooks) | 0 errors, 0 warnings |
-| G-3 | Finance lint | `npm run check:finance` (custom script, see 3.1) | 0 findings |
-| G-4 | Unit tests | Vitest | 100% pass; tax & ledger logic ≥ 95% line coverage |
-| G-5 | Database tests | Vitest against the **Test** Supabase project (RLS, triggers, posting functions) | 100% pass |
-| G-6 | Supabase advisors | Security + performance advisors | 0 errors, 0 warnings |
-| G-7 | End-to-end smoke | Playwright: log in → invoice → post → TB → VAT box | 100% pass |
-| G-8 | Human check | Faizan reviews the Vercel **preview link** and ticks 🔍 items | Signed off |
+| G-2 | Lint | ESLint (typescript-eslint + react-hooks + security rules) | 0 errors, 0 warnings |
+| G-3 | Finance lint | `npm run check:finance` (see 3.1) | 0 findings |
+| G-4 | **Build** | `vite build` + scan of `dist/` for secret keys | Build succeeds; no secrets in the bundle |
+| G-5 | Unit tests | Vitest | 100% pass; tax & ledger code ≥ 95% line coverage |
+| G-6 | Database tests | Vitest against the **Test** Supabase project, signed in as real test users per role | 100% pass |
+| G-7 | Supabase advisors | Security + performance advisors | 0 errors, 0 warnings |
+| G-8 | Security scans | `gitleaks` (secrets in git) + `npm audit --audit-level=high` | 0 findings |
+| G-9 | End-to-end | Playwright: log in (with MFA) → create invoice → approve → TB → VAT box | 100% pass |
+| G-10 | Human check | Faizan reviews the Vercel **preview link** and ticks 🔍 items | Signed off |
 
-### 3.1 Finance lint rules (`check:finance`)
+One command runs the fast gates locally: `npm run check` (G-1, G-2, G-3, G-4, G-5, G-8).
+
+### 3.1 Finance & safety lint rules (`check:finance`)
 - No floating-point money: no `parseFloat`, `toFixed`, `* 1.05`, `/ 1.05` in calculation code; amounts are whole fils (integers).
-- No hard-coded tax rates or thresholds outside `config` (e.g. `500` bp, `0.05`, `375000`).
+- No hard-coded tax rates or thresholds outside config (e.g. `500` bp, `0.05`, `375000`).
 - No hard-coded business dates (e.g. `"2026-09-30"`) outside seed/test files.
-- Every table has `organization_id` + RLS enabled (checked via Supabase advisors).
-- No `delete`/`update` on posted journals or audit rows anywhere in app code.
+- No secret/service keys or `service_role` strings in `src/`; no `dangerouslySetInnerHTML`.
+- No direct `update`/`delete` on posted journals, approved returns or audit rows in app code (posting goes through database functions).
 
-### 3.2 How a change flows
-1. Claude makes the change on a branch and runs G-1 → G-7.
-2. Push to GitHub → **GitHub Actions** re-runs the checks → **Vercel** builds a private preview link.
-3. Faizan opens the preview and checks the numbers (G-8).
-4. Merge → Vercel deploys to the live URL. Database changes are applied as numbered migration files in `supabase/migrations/`, Test project first, then Live.
-
----
-
-## 4. Roles
-
-| Role | Who | Can | Cannot | From |
-|---|---|---|---|---|
-| **Firm Admin** | Faizan / partners | Everything: clients, users, approve, lock/reopen periods, finalise returns | Approve own entries | Phase 1 |
-| **Firm Accountant** | TFS staff | Prepare entries & documents, draft VAT/CT | Approve, lock, finalise | Phase 1 |
-| **Client Owner** | Client director | View own company, approve own bills | See other clients, touch locked periods | Phase 3 |
-| **Client Staff** | Client finance person | Upload bills, raise sales invoices | Approve | Phase 3 |
-| **Read-only** | Auditor / viewer | View reports within an access window | Change anything | Phase 3 |
-
-**Maker-checker:** the preparer of an entry or return can never approve it — enforced by the database.
+### 3.2 How a change flows (spec-first)
+1. **Spec** — the feature's spec in `docs/specs/` is approved (or updated and re-approved).
+2. **Database** — migration file in `supabase/migrations/`, applied to the **Test** project; advisors run (G-7).
+3. **Database tests** — written from the spec's test IDs (G-6).
+4. **Screens & logic** — built against the tests (G-1 → G-5).
+5. **End-to-end** — Playwright journey (G-9); security scans (G-8).
+6. **Commit** on branch `faizan` → push → GitHub Actions re-runs everything → Vercel builds a **preview link**.
+7. **Faizan checks** the preview (G-10) → pull request merged into `main` → live. Live database migrated only after this.
 
 ---
 
-## 5. Phases, to-dos and exit criteria
+## 4. Roles (full detail: [Spec 02](docs/specs/02-roles-rbac.md))
 
-Target dates assume Claude builds and Faizan reviews within 2–3 working days per preview.
+| Role | Who | In short | From |
+|---|---|---|---|
+| **Super Admin** | Faizan (+ one backup) | Firm Admin **plus** tax rules, email, invites, user suspension | Phase 1 |
+| **Firm Admin** | Partners / managers | Clients, staff, approvals, period locks, VAT approval | Phase 1 |
+| **Firm Accountant** | TFS staff | Prepares on assigned clients only | Phase 1 |
+| **Client Owner** | Client director | Own company; approves own bills/invoices; invites own staff | Phase 3 |
+| **Client Staff** | Client finance person | Uploads bills, drafts invoices | Phase 3 |
+| **Read-only** | Auditor / viewer | Views, until an end date | Phase 3 |
 
-### Phase 0 — Setup & clean-up · 🟡 In progress · target 16 Oct 2026
-- [x] Connect local folder to GitHub repo
+**Always-on rules (everyone, including Super Admin):** maker-checker; posted records never
+edited (reverse only); locked periods; nobody changes their own role; MFA for firm users;
+the last Super Admin can't be removed. Enforced in the database.
+
+---
+
+## 5. Phases, steps and exit criteria
+
+Every phase follows the flow in §3.2. Target dates assume Faizan reviews each preview within
+2–3 working days. Owner actions (OA-xx) are in [docs/OWNER-ACTIONS.md](docs/OWNER-ACTIONS.md).
+
+### Phase 0 — Setup, specs & clean-up · 🟡 In progress · target 16 Oct 2026
+- [x] Connect local folder to GitHub repo; work on branch **`faizan`**
 - [x] Run POC locally (`http://localhost:5180`)
 - [x] Supabase MCP (`supabase-tax`) configured and authenticated
-- [x] Project skills installed (Supabase, Postgres, Vercel/React, design, web testing)
-- [x] Plan agreed and written (this file)
-- [x] Update `CLAUDE.md` to the new stack and decisions
+- [x] Project skills installed (Supabase, Postgres, Vercel/React, design, web testing, supergoal)
+- [x] Plan agreed and written (this file); `CLAUDE.md` updated
+- [x] Specs written: [01 Data model](docs/specs/01-data-model.md), [02 Roles](docs/specs/02-roles-rbac.md), [03 Configuration & formulas](docs/specs/03-configuration-and-formulas.md), [04 Security](docs/specs/04-security.md), [05 Scope review](docs/specs/05-scope-and-simplifications.md)
+- [x] Owner-actions guide written ([docs/OWNER-ACTIONS.md](docs/OWNER-ACTIONS.md))
+- [ ] 🔍 Faizan approves specs 01–05 and answers Q-09 → Q-15 (OA-01)
 - [ ] Drop the 7 leftover tables + 2 functions created on 2026-10-06 in Supabase
-- [ ] Rename local folder to remove `&` (breaks Windows tooling) — e.g. `Ai Accounting and Tax system`
+- [ ] Rename local folder to remove `&` (OA-03)
 - [ ] Move useful docs (`PRD.md`, `UAE_COMPLIANCE_RULES.md`) to `/docs`; archive the unused `tfs-smart-ledger/` scaffold
-- [ ] Add tooling: ESLint, Vitest, Playwright, `check:finance`, GitHub Actions workflow
-- [ ] Write unit tests for the **existing** POC logic (VAT, CT, ledger) — fixes found become Phase 1 items
+- [ ] Tooling: ESLint, Vitest, Playwright, `check:finance`, `npm run check`, gitleaks, npm audit, GitHub Actions CI running G-1 → G-9
+- [ ] Unit tests for the **existing** POC logic (VAT, CT, ledger) — fixes found become Phase 1 items
 - [ ] Remove AI features from the UI: "Ask your books", simulated OCR, "AI" badges/insights (keep rule-based checks, relabelled)
 - [ ] Fix known POC defects: fixed date `2026-09-30` on receipts/payments/reversals; hard-coded 5% in reverse charge and bank split; VAT emirate box taken silently from the customer — replace with an editable emirate field on the invoice (D-10)
-- [ ] Create Resend account (Faizan) and verify sending domain
+- [ ] Owner actions started: OA-02 (2FA everywhere), OA-04 (Supabase auth settings)
 
-**Exit:** all tooling runs green on the current code; Faizan has supplied Q-06 examples.
+**Exit:** specs approved; CI runs green on the current code; Faizan has supplied Q-06 examples (OA-08).
 
-### Phase 1 — Foundation: logins, clients, ledger core · ⬜ · target 6 Nov 2026
-- [ ] Database schema v1 (migrations): firms, organizations (with head-office emirate), memberships/roles, chart of accounts, periods, journals, journal lines, tax settings table, audit log
-- [ ] Database guards: balance check, no debit+credit on one line, whole fils, no edit/delete of posted journals (reverse only), period lock, maker-checker
-- [ ] Row-Level Security on every table; firm users see clients via explicit access grant
-- [ ] Supabase Auth: invite-only, email + password, **MFA required** for firm users
-- [ ] Posting through database functions only (one transaction, all-or-nothing)
-- [ ] App reads/writes Supabase instead of browser storage; remove demo role-switcher; remove Basic Auth middleware once logins exist
-- [ ] Seed: TFS Plus firm, UAE SME chart of accounts, 1 demo client (Test project only)
-- [ ] Audit log: append-only, every post/approve/reverse/lock recorded
-- [ ] Manual journals screen + approval queue
-- [ ] Test cases **LED-*** and **SEC-*** passing (section 6)
+### Phase 1 — Foundation: database, logins, roles, admin · ⬜ · target 13 Nov 2026
 
-**Exit:** all LED/SEC tests green; Faizan can log in, create a client, post and approve journals, and cannot break the rules on purpose.
+**1A · Database foundation** (Spec 01 §4.1–4.5, 4.11–4.12 · Spec 02 §3)
+| ID | Step | Tests | Status |
+|---|---|---|---|
+| P1-01 | Migration: reference data — emirates, VAT boxes (incl. 2, 6, 7), tax codes + box mapping, CT tags, CoA template (adds 2150 Customer Credits) | DM-11 | ⬜ |
+| P1-02 | Migration: firms, profiles, firm_members, org_memberships, invitations | DM-12 | ⬜ |
+| P1-03 | Migration: organizations (VAT stagger, CT TRN), accounts, accounting & tax periods, number sequences | DM-01, DM-03 | ⬜ |
+| P1-04 | Migration: journals + lines with guards; `post_journal`, `reverse_journal`, `lock_period`, `reopen_period` | LED-01 → LED-14 | ⬜ |
+| P1-05 | Migration: config versions/values (seeded from current `TAX_CONFIG`), firm settings, email templates, compliance rules | CFG-01 → CFG-05 | ⬜ |
+| P1-06 | Migration: audit log + generic audit trigger (append-only) | LED-14, SEC-17 | ⬜ |
+| P1-07 | RLS on every table, `app.*` helpers, MFA restrictive policy, private storage bucket | RBAC-01 → RBAC-14, RBAC-17 → 19 | ⬜ |
+| P1-08 | Generated TypeScript types; advisors = 0 | DM-09, DM-10 | ⬜ |
 
-### Phase 2 — Daily bookkeeping · ⬜ · target 11 Dec 2026
-- [ ] Customers & suppliers (with TRN validation)
-- [ ] Sales invoices + credit notes → auto-posting
-- [ ] Purchase bills (manual entry + attach PDF/photo to Supabase Storage) + debit notes
-- [ ] Receipts & payments, allocation to invoices/bills; AR/AP ageing
-- [ ] Customer Credits (D-11, §2.1): overpayments to a liability account; auto-apply to the customer's open invoices (oldest first); one-click refund with approval; advance against a specific supply triggers output VAT on receipt
-- [ ] Bank statement upload (CSV/Excel), duplicate detection, rule-based matching, reconciliation
-- [ ] Reports: Trial Balance, General Ledger, P&L, Balance Sheet, AR/AP ageing — screen + Excel/PDF export
-- [ ] Nightly integrity checks (Supabase cron): TB balances; AR/AP = control accounts; bank reconciled; results to an "Integrity" page
-- [ ] Test cases **ARAP-***, **BANK-***, **RPT-*** passing
+**1B · Logins & administration** (Spec 02 · Spec 03 §3)
+| ID | Step | Tests | Status |
+|---|---|---|---|
+| P1-09 | Login, MFA enrolment, password reset, 30-min idle sign-out | SEC-08, SEC-09, SEC-21 | ⬜ |
+| P1-10 | Invite flow (Vercel function + one-time link; email via Resend when OA-09 done, logged to console before) | CFG-10, CFG-11, SEC-15 | ⬜ |
+| P1-11 | Admin area: Users & invites, Firm profile, Settings, **Tax rules** (versioned, with VERIFY flags) | CFG-01 → CFG-05, CFG-13 | ⬜ |
+| P1-12 | Client onboarding wizard (CoA copy, periods, VAT periods, number sequences, staff assignment, opening balances) | CFG-06 | ⬜ |
+
+**1C · The app on live data**
+| ID | Step | Tests | Status |
+|---|---|---|---|
+| P1-13 | Replace browser storage with Supabase data access; remove demo role switcher | — | ⬜ |
+| P1-14 | Chart of accounts, manual journals, approval queue, reversal, period lock screens | LED-*, RBAC-04 → 09 | ⬜ |
+| P1-15 | Trial balance & general ledger from database functions | LED-13 | ⬜ |
+| P1-16 | Security headers (CSP, HSTS) in `vercel.json`; Basic Auth removed once logins work | SEC-12 | ⬜ |
+| P1-17 | End-to-end: log in → create client → journal → approve → trial balance | G-9 | ⬜ |
+
+**Exit:** all LED, RBAC-01→14, DM, CFG-01→05 tests green; Faizan can log in with MFA, create a client, post and approve journals, and cannot break the rules on purpose.
+
+### Phase 2 — Daily bookkeeping · ⬜ · target 18 Dec 2026 (Spec 01 §4.4–4.9)
+| ID | Step | Tests | Status |
+|---|---|---|---|
+| P2-01 | Customers & suppliers (TRN validation, payment terms, default account) | ARAP-07 | ⬜ |
+| P2-02 | Sales invoices + credit notes with gap-free numbering and supply emirate (D-10) | ARAP-04, DM-02, VAT-02 | ⬜ |
+| P2-03 | Purchase bills + debit notes, attachments (private storage), compliance checks & risk | ARAP-06, DM-08, SEC-13, SEC-20 | ⬜ |
+| P2-04 | Receipts & payments, allocations, **Customer Credits** (auto-apply, refunds) (D-11) | ARAP-01 → 05, ARAP-08 → 12, DM-05, DM-06 | ⬜ |
+| P2-05 | Bank accounts, statement upload, duplicate detection, matching, reconciliation | BANK-01 → 03, DM-07 | ⬜ |
+| P2-06 | Reports: TB, GL, P&L, Balance Sheet, AR/AP ageing, customer statement; Excel/PDF export | RPT-01 → 04, SEC-14 | ⬜ |
+| P2-07 | Opening-balance & contacts import from one Excel template (Spec 05) | — | ⬜ |
+| P2-08 | Nightly integrity checks (pg_cron) + Integrity page | — | ⬜ |
 
 **Exit:** one pilot client's real past quarter re-keyed; Trial Balance agrees with their existing books **to the fils**.
 
-### Phase 3 — VAT, alerts & pilot launch · ⬜ · target 15 Jan 2027
-- [ ] Tax codes on every line; VAT 201 with drill-down to transactions
-- [ ] Emirate field on each sales invoice, chosen by the user, pre-filled with head-office emirate (D-10); boxes 1a–1g follow the chosen emirate
-- [ ] VAT return workflow: draft → review → approve (maker-checker) → **frozen snapshot** → period locked
-- [ ] VAT reconciliation: return = movement on VAT accounts
-- [ ] All VAT 201 boxes always listed; empty values shown as **0.00** (D-12) on screen, exports and snapshots
-- [ ] Add boxes missing from the POC: **2** (tax refunds to tourists), **6** (goods imported into the UAE), **7** (adjustments to goods imported)
-- [ ] Compliance calendar (VAT, CT, licence expiry)
-- [ ] Email alerts via Resend (deadlines, integrity failures, approvals waiting) — daily Vercel cron
-- [ ] Client logins: Client Owner, Client Staff, Read-only
-- [ ] Firm overview dashboard on live data
-- [ ] Independent security review (Q-03) and fixes
-- [ ] Test cases **VAT-*** passing
-- [ ] Go-live checklist (section 7) complete for pilot
+### Phase 3 — VAT, alerts, client logins & pilot · ⬜ · target 22 Jan 2027
+| ID | Step | Tests | Status |
+|---|---|---|---|
+| P3-01 | VAT 201: every box incl. 2, 6, 7; 0.00 for empty (D-12); drill-down | VAT-01 → 11, VAT-16 → 18 | ⬜ |
+| P3-02 | VAT return workflow: draft → review → approve → **frozen snapshot** → period locked | VAT-13, CFG-02 | ⬜ |
+| P3-03 | VAT reconciliation (return = VAT accounts); FTA Audit File (FAF) export | VAT-14 | ⬜ |
+| P3-04 | Golden VAT set from Faizan | VAT-15 | ⬜ |
+| P3-05 | Compliance calendar from rules; email alerts & templates via Resend; daily Vercel cron | CFG-07, CFG-12 | ⬜ |
+| P3-06 | Client logins: Client Owner, Client Staff, Read-only (time-boxed) | RBAC-15, RBAC-16, RBAC-20, SEC-16 | ⬜ |
+| P3-07 | Firm overview dashboard on live data | — | ⬜ |
+| P3-08 | Nightly encrypted database export (until Pro / self-hosted) + restore test | — | ⬜ |
+| P3-09 | Live Supabase project (OA-12), Resend (OA-09/10), domain (OA-11) | — | ⬜ |
+| P3-10 | Independent security review (OA-15) and fixes | SEC-11 → 21 | ⬜ |
+| P3-11 | Go-live checklist (§7) | — | ⬜ |
 
 **Exit:** one full VAT quarter per pilot client agrees to Faizan's manual workings. **Pilot live with 3–5 clients.**
 
 ### Phase 4 — E-invoicing · ⬜ · target 30 Apr 2027 (SME deadline 1 Jul 2027 — VERIFY)
 - [ ] ASP partner chosen (Q-02); sandbox credentials
 - [ ] PINT AE invoice & credit note generation + validation
-- [ ] Send via ASP (Vercel function), status tracking, rejection queue, retry
+- [ ] Send via ASP (Vercel function), status tracking, rejection queue, retry, idempotency
 - [ ] Store XML + ASP receipts; inbound e-invoices → draft bills
 - [ ] Test cases **EINV-*** passing in ASP sandbox
 
 **Exit:** all invoice scenarios pass in the ASP sandbox; pilot clients transmitting live before the deadline.
 
 ### Phase 5 — Corporate Tax & year-end · ⬜ · target 31 Jul 2027 (FY2026 returns due 30 Sep 2027)
-- [ ] Fixed asset register + depreciation
+- [ ] Fixed asset register + depreciation (F-21)
 - [ ] Year-end close: accruals/prepayments, closing entries, retained earnings roll-forward
-- [ ] CT computation: add-backs, SBR / standard regime gates, loss carry-forward (75% cap), CT payable, due dates
+- [ ] CT computation with config F-08 → F-12: add-backs, SBR / standard gates, loss carry-forward (75% cap), CT payable, due dates; manual adjustment lines with reason
 - [ ] CT return pack (Excel/PDF) with drill-down and legal references
-- [ ] Financial statements pack (IFRS for SMEs)
+- [ ] IFRS for SMEs primary statements (P&L, Balance Sheet, cash flow, SOCE)
 - [ ] Test cases **CT-*** passing
 
 **Exit:** FY2026 CT for pilot clients matches Faizan's manual computation.
@@ -197,6 +244,7 @@ Target dates assume Claude builds and Faizan reviews within 2–3 working days p
 - [ ] Upgrade Vercel to Pro (Hobby is for non-commercial use)
 - [ ] Penetration test; fix high/critical findings
 - [ ] Arabic UI & bilingual tax invoices
+- [ ] Deferred items from Spec 05 as demand proves (multi-currency, leases, payroll import, bank feeds…)
 - [ ] FTA Tax Accounting Software registration (later)
 
 ---
@@ -319,10 +367,21 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 
 ---
 
+### 6.9 Suites defined in the specs
+
+| Suite | Where | Count |
+|---|---|---|
+| DM-* (data model) | [Spec 01 §6](docs/specs/01-data-model.md) | 12 |
+| RBAC-* (roles & access) | [Spec 02 §4](docs/specs/02-roles-rbac.md) | 20 |
+| CFG-* (configuration) | [Spec 03 §5](docs/specs/03-configuration-and-formulas.md) | 13 |
+| SEC-11 → SEC-21 (security) | [Spec 04 §6](docs/specs/04-security.md) | 11 |
+
+---
+
 ## 7. Go-live checklist (pilot)
 
-- [ ] All quality gates G-1 → G-8 green on the release
-- [ ] All LED, SEC, ARAP, BANK, VAT, RPT tests green; all 🔍 cases confirmed by Faizan
+- [ ] All quality gates G-1 → G-10 green on the release
+- [ ] All LED, SEC, RBAC, DM, CFG, ARAP, BANK, VAT, RPT tests green; all 🔍 cases confirmed by Faizan
 - [ ] Parallel-run results signed off for each pilot client
 - [ ] Separate **Live** Supabase project (never used for testing); Test project holds dummy data only
 - [ ] Backups confirmed (Supabase Free has no automatic backups → upgrade or scheduled export before real data)
@@ -331,6 +390,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 - [ ] Security review done, high/critical findings fixed
 - [ ] Pilot clients' engagement letters cover data hosting outside the UAE until Phase 6
 - [ ] Resend domain verified; test alert received
+- [ ] Owner actions OA-01 → OA-15 done (or consciously deferred)
 
 ---
 
@@ -343,3 +403,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-06 | POC demo data: each client now has a zero-rated export, an exempt residential sublease and a reverse-charge imported service every quarter, so VAT boxes 3, 4, 5 and 10 show figures. |
 | 2026-10-06 | D-12 added: empty VAT/tax figures shown as 0.00 (FTA format). POC VAT page fixed (dash → 0.00); test VAT-18 added. |
 | 2026-10-06 | D-10 revised: emirate chosen manually on each invoice (pre-filled with head office); no automatic allocation by establishment; branches table dropped from Phase 1. |
+| 2026-10-06 | Specs 01–05 and OWNER-ACTIONS added; gates expanded to G-1 → G-10 (build, security scans); phases rewritten as spec-linked steps; Super Admin role; D-13 → D-17 proposed; Q-09 → Q-15 added. Work moved to branch `faizan`. |

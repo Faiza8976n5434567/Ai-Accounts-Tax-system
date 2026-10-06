@@ -58,9 +58,17 @@ work is done. Domain rules: `tfs-smart-ledger/docs/UAE_COMPLIANCE_RULES.md` and 
 - **Data location:** Supabase Cloud for development/pilot; self-hosted Supabase in the UAE
   before scaling (Phase 6).
 
-## 4. Roles
-Firm: `FIRM_ADMIN`, `FIRM_ACCOUNTANT`. Client (from Phase 3): `CLIENT_OWNER`,
-`CLIENT_STAFF`, `READ_ONLY` (time-boxed). See PLAN.md §4.
+## 4. Roles & specs
+- Roles (Spec 02): Super Admin (flag on Firm Admin), `firm_admin`, `firm_accountant`;
+  from Phase 3 `client_owner`, `client_staff`, `read_only` (time-boxed). Maker-checker and
+  immutability apply to everyone, including Super Admin.
+- **Spec-first:** build only from approved specs in `docs/specs/` (01 data model, 02 RBAC,
+  03 configuration & formulas, 04 security, 05 scope). Change the spec before the code.
+- Formula *parameters* are versioned config editable by Super Admin; formula *logic* stays
+  in tested code (Spec 03).
+- Things only Faizan can do (accounts, keys, DNS, legal) are in `docs/OWNER-ACTIONS.md` —
+  give him step-by-step instructions; never ask him to paste secrets into chat.
+- Work on branch `faizan`; merge to `main` via pull request after the quality gates.
 
 ## 5. How to work
 - Database changes = numbered SQL files in `supabase/migrations/`, applied to the Test
