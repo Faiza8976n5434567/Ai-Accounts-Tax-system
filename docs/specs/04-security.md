@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft — awaiting Faizan's approval |
+| **Status** | ✅ Approved by Faizan, 2026-10-06 |
 | **Implements** | Every phase (controls are added as each feature lands) |
 | **Related** | [02 Roles](02-roles-rbac.md) · [OWNER-ACTIONS](../OWNER-ACTIONS.md) |
 

@@ -10,7 +10,7 @@
 | **Current phase** | Phase 0 — Setup, specs & clean-up |
 | **Overall status** | 🟡 In progress |
 | **Last updated** | 2026-10-06 |
-| **Next milestone** | Faizan approves specs 01–05 (OA-01) |
+| **Next milestone** | Phase 0 build work (tooling, tests, clean-up) |
 
 **Status legend:** ⬜ Not started · 🟡 In progress · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
 
@@ -32,18 +32,19 @@
 | D-10 | **VAT 201 emirate boxes (1a–1g):** the user **selects the emirate manually on each sales invoice**. The field is pre-filled with the client's head-office emirate and can be changed; there is no automatic allocation by establishment. Changes are audit-logged. *(Answers Q-04; revised 2026-10-06.)* | 2026-10-06 |
 | D-11 | **Customer overpayments** are held as a **Customer Credit** — a liability (IAS 1 / IFRS 15: payable to the customer or contract liability) — until applied to a future invoice or refunded. Details in §2.1. *(Answers Q-05.)* | 2026-10-06 |
 | D-12 | **FTA display format:** every VAT 201 box (amount, VAT and adjustment columns) and every figure in tax return packs shows **0.00** when there is no value — never blank, a dash or hidden. Applies on screen, in Excel/PDF exports and in frozen snapshots. | 2026-10-06 |
-| D-13 | **Spec-first delivery:** every feature is specified in `docs/specs/` and approved before it is coded; tests come from the spec. *(Proposed — confirm with OA-01.)* | 2026-10-06 |
-| D-14 | **Six roles**; Super Admin is a flag on top of Firm Admin; permission matrix fixed in code, not editable in the UI ([Spec 02](docs/specs/02-roles-rbac.md)). *(Proposed.)* | 2026-10-06 |
-| D-15 | **Formulas:** the numbers in formulas (rates, thresholds, days, %, box mapping) are editable by Super Admin, versioned with effective dates; formula logic stays in tested code ([Spec 03](docs/specs/03-configuration-and-formulas.md)). *(Proposed.)* | 2026-10-06 |
-| D-16 | **Scope simplifications** per [Spec 05](docs/specs/05-scope-and-simplifications.md) (e.g. one Excel import template, AED books in v1, one ASP first, no direct EmaraTax filing). *(Proposed.)* | 2026-10-06 |
-| D-17 | **Invites and alert emails** are sent by the app through Resend using templates editable in the Admin area; password-reset emails go through Supabase via Resend SMTP. *(Proposed.)* | 2026-10-06 |
+| D-13 | **Spec-first delivery:** every feature is specified in `docs/specs/` and approved before it is coded; tests come from the spec. *(Approved 2026-10-06.)* | 2026-10-06 |
+| D-14 | **Six roles**; Super Admin is a flag on top of Firm Admin; permission matrix fixed in code, not editable in the UI ([Spec 02](docs/specs/02-roles-rbac.md)). *(Approved 2026-10-06.)* | 2026-10-06 |
+| D-15 | **Formulas:** the numbers in formulas (rates, thresholds, days, %, box mapping) are editable by Super Admin, versioned with effective dates; formula logic stays in tested code ([Spec 03](docs/specs/03-configuration-and-formulas.md)). *(Approved 2026-10-06.)* | 2026-10-06 |
+| D-16 | **Scope simplifications** per [Spec 05](docs/specs/05-scope-and-simplifications.md) (e.g. one Excel import template, AED books in v1, one ASP first, no direct EmaraTax filing). *(Approved 2026-10-06.)* | 2026-10-06 |
+| D-17 | **Invites and alert emails** are sent by the app through Resend using templates editable in the Admin area; password-reset emails go through Supabase via Resend SMTP. *(Approved 2026-10-06.)* | 2026-10-06 |
 | D-18 | **One Supabase project** (`mmsdgyvaxxsyzsowongx`) — used for development now and **becomes production** once mature; no separate Live project. To keep testing safe, automated database tests run on a **temporary Supabase started inside GitHub Actions** (deleted after each run). Before go-live the project is cleaned of demo/test data (P3-12). | 2026-10-06 |
 | D-19 | Current web address: **https://ai-accounts-tax-system.vercel.app** (Vercel). Own domain later (Q-13). | 2026-10-06 |
 | D-20 | **Platform owner = TFS Plus.** TFS Plus founds and runs the platform (Super Admins are TFS Plus staff only). **Other tax firms can become customers** of the platform, each with its own Firm Admins, staff and clients, fully separated from each other. Super Admins manage the platform but **cannot see another firm's client data** unless that firm grants time-limited, logged support access. The app name may change, so it is a setting, never hard-coded. *(Answers Q-09.)* | 2026-10-06 |
 | D-21 | **Currencies: AED and USD.** Books, reports and returns are in AED. USD documents convert at the fixed rate **1 USD = 3.6725 AED** (editable, versioned parameter `fx.usd_aed`). Each line is converted to AED first, then VAT is calculated on the AED amount. *(Answers Q-11.)* | 2026-10-06 |
-| D-22 | **Document numbers include year and month**, e.g. `INV-2026-10-0001` for the first October 2026 invoice. The counter restarts each month, per client, and is gap-free; numbers are assigned when a document is posted, using the document's date. Same pattern for credit notes (`CN-`), receipts (`RCPT-`), payments (`PAY-`) and journals (`JV-`). Format is a setting. *(Answers Q-14.)* | 2026-10-06 |
-| D-23 | **Two-person rule for tax-rule changes** once a backup Super Admin exists; until then a single approval with a written reason. *(Answers Q-10.)* | 2026-10-06 |
-| D-24 | Email sender for development: **`onboarding@resend.dev`** (Resend's test address — delivers only to the Resend account owner's email). A verified own domain is required before inviting anyone else (OA-09). *(Answers Q-13 for now.)* | 2026-10-06 |
+| D-22 | **Document numbers show year and month, with one running counter that never restarts**, e.g. if January ends at `INV-2026-01-0100`, February starts at `INV-2026-02-0101`. Counter per client and document type, gap-free, assigned when a document is posted; year-month comes from the document date. Same pattern for credit notes (`CN-`), receipts (`RCPT-`), payments (`PAY-`) and journals (`JV-`). Format is a setting. *(Answers Q-14 and Q-17; revised 2026-10-06.)* | 2026-10-06 |
+| D-23 | **Tax-rule changes:** no backup Super Admin for now, so Faizan approves alone with a written reason (audit-logged). The two-person rule switches on automatically when a second Super Admin is added. *(Answers Q-10, Q-16.)* | 2026-10-06 |
+| D-24 | Email sender: **`onboarding@resend.dev`** (Resend's default address) for now. It delivers only to the Resend account owner's email, so staff invites also get a **"Copy invite link"** button that you can send yourself (WhatsApp/Outlook). Own domain later (OA-09). *(Answers Q-13, Q-19.)* | 2026-10-06 |
+| D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
 
@@ -61,13 +62,14 @@
 | Q-10 | Two-person rule for tax-rule changes? → **Decided: yes once a backup Super Admin exists (D-23).** | Phase 1 | ✅ |
 | Q-11 | Currencies in v1? → **Decided: AED + USD at 3.6725 (D-21).** | Phase 2 | ✅ |
 | Q-12 | Backup Super Admin → **Agreed in principle**; name still needed (Q-16). | Phase 1 | ✅ |
-| Q-13 | Email sender → **`onboarding@resend.dev` for development (D-24)**; own domain still needed before inviting staff (OA-09). | Phase 1 | 🟡 |
+| Q-13 | Email sender → **`onboarding@resend.dev` (D-24)**; invites also shareable by link. | Phase 1 | ✅ |
 | Q-14 | Invoice numbering → **Decided: `INV-2026-10-0001` style, monthly counter (D-22).** | Phase 2 | ✅ |
-| Q-15 | Approve specs 01–05 (or send changes). | Phase 1 start | 🔍 |
-| Q-16 | Name and email of the **backup Super Admin** (a TFS Plus person). | Phase 1 | ⬜ |
-| Q-17 | D-22 assumes the counter **restarts at 0001 every month**. Correct? | Phase 2 | 🔍 |
-| Q-18 | USD rounding (D-21): convert each line to AED first, then VAT on the AED amount (test FX-01). Agree with this order? | Phase 2 | 🔍 |
-| Q-19 | Do you have a domain for email (e.g. `tfsplus.ae`) that we can verify in Resend, or should we wait for the new app name? | Phase 1 | ⬜ |
+| Q-15 | Approve specs 01–05 → **Approved 2026-10-06.** | Phase 1 start | ✅ |
+| Q-16 | Backup Super Admin → **none for now** (D-23, D-25). Revisit before the pilot. | Phase 3 | ✅ |
+| Q-17 | Monthly restart? → **No: one running counter, month shown in the number (D-22).** | Phase 2 | ✅ |
+| Q-18 | USD rounding: line → AED first, then VAT → **Agreed (D-21).** | Phase 2 | ✅ |
+| Q-19 | Email domain → **use Resend default for now (D-24).** | Phase 1 | ✅ |
+| Q-20 | Should the running counter **restart at 0001 each new year** (`INV-2027-01-0001`), or continue forever (`INV-2027-01-1245`)? Default if no answer: **continue**. | Phase 2 | 🔍 |
 
 ### 2.1 Customer overpayments & credits — agreed rule (D-11)
 
@@ -154,7 +156,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 - [x] Plan agreed and written (this file); `CLAUDE.md` updated
 - [x] Specs written: [01 Data model](docs/specs/01-data-model.md), [02 Roles](docs/specs/02-roles-rbac.md), [03 Configuration & formulas](docs/specs/03-configuration-and-formulas.md), [04 Security](docs/specs/04-security.md), [05 Scope review](docs/specs/05-scope-and-simplifications.md)
 - [x] Owner-actions guide written ([docs/OWNER-ACTIONS.md](docs/OWNER-ACTIONS.md))
-- [ ] 🔍 Faizan approves specs 01–05 and answers Q-09 → Q-15 (OA-01)
+- [x] Faizan approved specs 01–05 and answered Q-09 → Q-19 (OA-01)
 - [ ] Drop the 7 leftover tables + 2 functions created on 2026-10-06 in Supabase
 - [ ] Rename local folder to remove `&` (OA-03)
 - [ ] Move useful docs (`PRD.md`, `UAE_COMPLIANCE_RULES.md`) to `/docs`; archive the unused `tfs-smart-ledger/` scaffold
@@ -186,7 +188,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | ID | Step | Tests | Status |
 |---|---|---|---|
 | P1-09 | Login, MFA enrolment, password reset, 30-min idle sign-out | SEC-08, SEC-09, SEC-21 | ⬜ |
-| P1-10 | Invite flow (Vercel function + one-time link; email via Resend when OA-09 done, logged to console before) | CFG-10, CFG-11, SEC-15 | ⬜ |
+| P1-10 | Invite flow (Vercel function + one-time link; sent via Resend **and** a "Copy invite link" button, D-24) | CFG-10, CFG-11, SEC-15 | ⬜ |
 | P1-11 | Admin area: Users & invites, Firm profile, Settings, **Tax rules** (versioned, with VERIFY flags) | CFG-01 → CFG-05, CFG-13 | ⬜ |
 | P1-12 | Client onboarding wizard (CoA copy, periods, VAT periods, number sequences, staff assignment, opening balances) | CFG-06 | ⬜ |
 
@@ -385,7 +387,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 ### 6.9 Currency (FX) — 1 USD = 3.6725 AED
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
-| FX-01 | USD invoice, net USD 1,000.00, standard-rated | AED net 3,672.50; VAT 183.63 (5% of 3,672.50 = 183.625, half-up); gross AED 3,856.13; VAT 201 Box 1 shows AED | U | 🔍 |
+| FX-01 | USD invoice, net USD 1,000.00, standard-rated | AED net 3,672.50; VAT 183.63 (5% of 3,672.50 = 183.625, half-up); gross AED 3,856.13; VAT 201 Box 1 shows AED | U | ⬜ |
 | FX-02 | Customer pays USD 1,050.00 for FX-01 | AED 3,856.13 received; invoice fully settled | D | ⬜ |
 | FX-03 | USD payment exactly equal to a USD invoice's USD total | AED settled = invoice AED total — no 0.01 rounding residue left open | D | ⬜ |
 | FX-04 | Trial balance, P&L, VAT 201 with mixed AED/USD documents | All in AED; USD amounts shown only as document detail | D | ⬜ |
@@ -397,11 +399,12 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 |---|---|---|---|---|
 | NUM-01 | First invoice dated October 2026 | `INV-2026-10-0001` | D | ⬜ |
 | NUM-02 | Second October invoice | `INV-2026-10-0002` | D | ⬜ |
-| NUM-03 | First invoice dated November 2026 | `INV-2026-11-0001` | D | 🔍 |
-| NUM-04 | Back-dated October invoice posted in November | Next October number (e.g. `INV-2026-10-0003`) | D | ⬜ |
+| NUM-03 | October ends at `INV-2026-10-0100`; first November invoice | `INV-2026-11-0101` (counter continues) | D | ⬜ |
+| NUM-04 | October invoice back-dated and posted after `INV-2026-11-0101` | `INV-2026-10-0102` (next counter, its own month) | D | ⬜ |
 | NUM-05 | Two users post invoices at the same moment | Different numbers, no gaps, no duplicates | D | ⬜ |
 | NUM-06 | Draft invoice deleted before posting | No number used (numbers assigned at posting) | D | ⬜ |
-| NUM-07 | Two different clients | Each has its own sequence starting at 0001 | D | ⬜ |
+| NUM-07 | Two different clients | Each has its own counter starting at 0001 | D | ⬜ |
+| NUM-08 | First invoice of a new year | Per Q-20 (default: counter continues) | D | 🔍 |
 
 ### 6.11 Suites defined in the specs
 
@@ -443,3 +446,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-06 | Specs 01–05 and OWNER-ACTIONS added; gates expanded to G-1 → G-10 (build, security scans); phases rewritten as spec-linked steps; Super Admin role; D-13 → D-17 proposed; Q-09 → Q-15 added. Work moved to branch `faizan`. |
 | 2026-10-06 | D-18 single Supabase project (becomes production; CI tests on a temporary Supabase); D-19 Vercel address; OA-05 done; OA-12 removed; OA-16 key rotation added; P3-12 production cut-over added. |
 | 2026-10-06 | Faizan's answers: D-20 TFS Plus platform owner / other firms as customers / app name configurable; D-21 AED + USD at 3.6725; D-22 `INV-YYYY-MM-0001` numbering; D-23 two-person rule; D-24 dev sender `onboarding@resend.dev`. Added Q-16 → Q-19, FX-* and NUM-* tests, RBAC-21 → 24. |
+| 2026-10-06 | **Specs 01–05 approved.** D-13 → D-17 approved; D-22 revised (running counter, no monthly reset); D-23 single admin for now; D-24 invite link sharing; D-25 break-glass recovery. Q-20 (yearly reset?) added. |

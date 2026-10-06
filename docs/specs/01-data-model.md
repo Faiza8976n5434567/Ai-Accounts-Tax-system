@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft — awaiting Faizan's approval |
+| **Status** | ✅ Approved by Faizan, 2026-10-06 |
 | **Implements** | PLAN.md Phases 1–3 (Phase 4–5 tables marked *later*) |
 | **Related** | [02 Roles & RBAC](02-roles-rbac.md) · [03 Configuration & formulas](03-configuration-and-formulas.md) · [04 Security](04-security.md) |
 
@@ -311,16 +311,15 @@ Firm Admins see every client of their firm without a row here. Firm Accountants 
 - A journal can only become `posted` through `post_journal(id)`, which checks: ≥ 2 lines, Σ debit = Σ credit, all accounts active and in the same client, period open, approver ≠ preparer, approver has permission.
 - Once `posted`, the journal and its lines cannot be updated or deleted (trigger raises an error). `reverse_journal(id, date, reason)` creates the mirror journal.
 
-**`number_sequences`** — gap-free numbering per client, document type **and month** (D-22).
+**`number_sequences`** — one gap-free **running counter** per client and document type (D-22); the year-month in the number is only a label from the document date.
 | Column | Type | Rules |
 |---|---|---|
 | organization_id | uuid | FK |
 | doc_type | enum `journal`/`sales_invoice`/`credit_note`/`receipt`/`payment` | prefixes JV / INV / CN / RCPT / PAY |
-| period_year / period_month | smallint | from the **document date** |
 | next_value | bigint | taken with a row lock inside the posting transaction |
-| PK (organization_id, doc_type, period_year, period_month) | | |
+| PK (organization_id, doc_type) | | (add `year` to the key only if Q-20 = yearly reset) |
 
-Number = format setting `numbering_format` (default `{PREFIX}-{YYYY}-{MM}-{SEQ:4}`), e.g. `INV-2026-10-0001`. Numbers are assigned at posting, so deleted drafts never leave gaps.
+Number = format setting `numbering_format` (default `{PREFIX}-{YYYY}-{MM}-{SEQ:4}`, year-month from the document date), e.g. January ends `INV-2026-01-0100` → February starts `INV-2026-02-0101`. Numbers are assigned at posting, so deleted drafts never leave gaps. The counter grows beyond 4 digits automatically (`…-10000`).
 
 ### 4.6 Sales (receivables)
 

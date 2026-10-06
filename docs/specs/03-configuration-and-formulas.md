@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft — awaiting Faizan's approval |
+| **Status** | ✅ Approved by Faizan, 2026-10-06 |
 | **Implements** | PLAN.md Phase 1 (settings, invites, tax rules) and Phase 3 (email, reminders) |
 | **Related** | [01 Data model](01-data-model.md) §4.11 · [02 Roles](02-roles-rbac.md) |
 
@@ -55,7 +55,7 @@ Every calculation the app performs. **Editable** = parameter on the Tax Rules / 
 | **F-22** | E-invoicing dates (ASP appointment, go-live) | `einvoicing.asp_by`, `einvoicing.go_live` | 2027-03-31, 2027-07-01 (VERIFY) | MD 244/2025 | *Phase 4* |
 | **F-23** | Dashboard ratios (annualised revenue, DSO, collection %) | — (fixed, display only) | — | — | E2E |
 | **F-24** | USD → AED: line AED amount = round-half-up(USD amount × rate); VAT then calculated on the AED line (F-01); a USD payment that exactly matches a USD invoice settles its full AED total | `fx.usd_aed` | 3.6725 | CBUAE peg; D-21 | FX-01 → 06 |
-| **F-25** | Document number = `{PREFIX}-{YYYY}-{MM}-{SEQ:4}`, counter per client / type / month, assigned at posting | `numbering_format`, prefixes | `INV-2026-10-0001` | FTA sequential numbering; D-22 | NUM-01 → 07 |
+| **F-25** | Document number = `{PREFIX}-{YYYY}-{MM}-{SEQ:4}`; one running counter per client / type (never restarts monthly), year-month from document date, assigned at posting | `numbering_format`, prefixes | Jan `INV-2026-01-0100` → Feb `INV-2026-02-0101` | FTA sequential numbering; D-22 | NUM-01 → 08 |
 
 ---
 
@@ -108,6 +108,7 @@ Vercel environment variables / the Supabase dashboard — see [OWNER-ACTIONS.md]
 3. User clicks the link, sets a password, **firm users must set up MFA before seeing anything**.
 4. On first sign-in the database turns the invitation into `firm_members` / `org_memberships` rows.
 5. Expired / revoked invites can't be used; everything is audit-logged.
+6. Because the development sender (`onboarding@resend.dev`) only reaches the Resend account owner, the invite screen also offers **"Copy invite link"** so you can send it yourself (D-24).
 
 ---
 
@@ -142,4 +143,6 @@ Vercel environment variables / the Supabase dashboard — see [OWNER-ACTIONS.md]
 | CFG-13 | Every config change | Audit row with before/after, user, reason |
 | CFG-14 | Change the app name | New name in page titles, emails and exports; no code change |
 | CFG-15 | Change `numbering_format` | Next posted document uses the new format; existing numbers unchanged |
-| CFG-16 | Tax-rule change when a backup Super Admin exists | Needs the other Super Admin's approval (D-23) |
+| CFG-16 | Tax-rule change with **one** Super Admin | Saved only with a written reason; audit-logged (D-23) |
+| CFG-17 | Tax-rule change after a second Super Admin is added | Needs the other Super Admin's approval (D-23) |
+| CFG-18 | "Copy invite link" | Link works once, expires per `invite_expiry_days`, copying is audit-logged (D-24) |

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft — awaiting Faizan's approval |
+| **Status** | ✅ Approved by Faizan, 2026-10-06 |
 | **Implements** | PLAN.md Phase 1 (firm roles) and Phase 3 (client roles) |
 | **Related** | [01 Data model](01-data-model.md) · [04 Security](04-security.md) |
 

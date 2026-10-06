@@ -9,7 +9,7 @@ PLAN.md as you go. Screen names in Supabase/Vercel/GitHub may differ slightly ov
 
 | # | Action | Needed by | Time |
 |---|---|---|---|
-| OA-01 | Answer open questions & approve specs | Phase 1 start | 30 min |
+| OA-01 | Answer open questions & approve specs — ✅ done 2026-10-06 | Phase 1 start | — |
 | OA-02 | Turn on two-factor login on all admin accounts | Phase 1 start | 20 min |
 | OA-03 | Rename the project folder | Phase 1 start | 5 min |
 | OA-04 | Supabase: authentication settings | Phase 1 | 15 min |
@@ -166,6 +166,14 @@ Book a freelance senior developer/security reviewer for 2–3 days near the end 
 5. Tell Claude "keys rotated" — it will re-check they work, without you pasting them.
 
 **Done when:** the old keys are deleted and the app still connects.
+
+## Runbook: locked out (break-glass, D-25)
+You are the only Super Admin, so keep this safe.
+1. **Prevent it:** when you set up two-factor login, save the recovery codes offline; keep your Supabase dashboard login (with its own 2FA) separate from the app login.
+2. **If you lose your phone / authenticator:** sign in to the **Supabase dashboard** (not the app) → Authentication → Users → find your user → remove the MFA factor.
+3. Sign in to the app with your password and set up two-factor login again.
+4. Tell Claude — it checks the audit log for anything unusual during the lockout.
+5. Before the pilot, consider naming a backup Super Admin (Q-16) so this is never needed.
 
 ## Runbook: if a key leaks
 1. Supabase → API Keys → **rotate** the leaked key (or Resend → revoke API key).
