@@ -1,3 +1,5 @@
+> **Superseded by [PLAN.md](PLAN.md)** (2026-10-06). Kept for reference only.
+
 # Roadmap (starting October 2026)
 
 The anchor date is **1 July 2027**: SMEs below AED 50m must be live on e-invoicing, and
