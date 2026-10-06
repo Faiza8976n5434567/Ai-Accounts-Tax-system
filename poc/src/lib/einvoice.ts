@@ -1,14 +1,16 @@
 /** PINT AE (UBL 2.1) mapper + pre-validation — POC subset. Verify against current PINT AE spec. */
-import { applyBp } from "./money";
-import { isTrn } from "./ai";
+import { fmtPlain } from "./money";
+import { isTrn } from "./rules";
+import { vatOnNet } from "./vat";
+import { TAX_CONFIG } from "./config";
 import type { Org, SalesInvoice } from "./types";
 
 const VAT_CAT: Record<string, string> = { SR: "S", ZR: "Z", EX: "E", OS: "O", RCS: "AE", BLK: "S" };
 const esc = (s: string) => s.replace(/[<>&'"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c]!));
-const a = (f: number) => (f / 100).toFixed(2);
+const a = fmtPlain;
 
 export function invoiceTotals(inv: SalesInvoice) {
-  const lines = inv.lines.map((l) => { const net = Math.round(l.qty * l.price); return { ...l, net, vat: l.taxCode === "SR" ? applyBp(net, 500) : 0 }; });
+  const lines = inv.lines.map((l) => { const net = Math.round(l.qty * l.price); return { ...l, net, vat: l.taxCode === "SR" ? vatOnNet(net) : 0 }; });
   const net = lines.reduce((s, l) => s + l.net, 0), vat = lines.reduce((s, l) => s + l.vat, 0);
   return { lines, net, vat, total: net + vat };
 }
@@ -35,7 +37,7 @@ export function toPintXml(inv: SalesInvoice, org: Org): string {
     <cbc:LineExtensionAmount currencyID="AED">${a(l.net)}</cbc:LineExtensionAmount>
     <cac:Item>
       <cbc:Name>${esc(l.desc)}</cbc:Name>
-      <cac:ClassifiedTaxCategory><cbc:ID>${VAT_CAT[l.taxCode]}</cbc:ID><cbc:Percent>${l.taxCode === "SR" ? "5" : "0"}</cbc:Percent><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:ClassifiedTaxCategory>
+      <cac:ClassifiedTaxCategory><cbc:ID>${VAT_CAT[l.taxCode]}</cbc:ID><cbc:Percent>${l.taxCode === "SR" ? TAX_CONFIG.vat.rateBp.value / 100 : 0}</cbc:Percent><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:ClassifiedTaxCategory>
     </cac:Item>
     <cac:Price><cbc:PriceAmount currencyID="AED">${a(l.price)}</cbc:PriceAmount></cac:Price>
   </cac:InvoiceLine>`).join("\n");

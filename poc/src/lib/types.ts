@@ -12,7 +12,6 @@ export interface Org {
   id: string; name: string; nameAr: string; trn: string; emirate: Emirate; industry: string;
   regime: CtRegime; vatPeriod: "QUARTERLY" | "MONTHLY"; fyEnd: string; priorRevenue: Fils;
   licenceExpiry: string; color: string; assignedTo: string;
-  autoApprove: { enabled: boolean; maxAmount: Fils; minConfidence: number };
 }
 
 export interface JLine {
@@ -25,7 +24,7 @@ export interface Journal {
   id: string; orgId: string; date: string; ref: string; memo: string;
   source: "PURCHASE" | "SALE" | "MANUAL" | "BANK" | "OPENING" | "REVERSAL";
   status: JStatus; lines: JLine[]; preparedBy: string; approvedBy?: string; postedAt?: string;
-  ai?: { confidence: number; reasoning: string }; docId?: string; reversalOf?: string;
+  docId?: string; reversalOf?: string;
   /** Customer (AR) or supplier (AP) — drives the sub-ledgers. */
   party?: string;
 }
@@ -36,7 +35,8 @@ export interface PurchaseDoc {
   id: string; orgId: string; fileName?: string; supplier: string; supplierTrn: string; invNo: string;
   date: string; description: string; net: Fils; vat: Fils; total: Fils; currency: string;
   hasHeading: boolean; customerName: string; foreign?: boolean;
-  account: string; taxCode: TaxCode; confidence: number; reasoning: string;
+  /** Default account/tax code come from deterministic rules; `reasoning` explains which rule. */
+  account: string; taxCode: TaxCode; reasoning: string;
   checks: Check[]; risk: "Low" | "Medium" | "High"; riskScore: number;
   status: "REVIEW" | "PENDING" | "POSTED" | "REJECTED"; journalId?: string; createdAt: string; createdBy: string;
 }
@@ -50,7 +50,7 @@ export interface SalesInvoice {
 
 export interface BankLine { id: string; orgId: string; date: string; desc: string; amount: Fils; journalId?: string; suggestion?: string }
 
-export interface AuditEntry { id: string; ts: string; user: string; role: Role; orgId: string; action: string; detail: string; ai?: boolean }
+export interface AuditEntry { id: string; ts: string; user: string; role: Role; orgId: string; action: string; detail: string; /** done by a system rule (e.g. auto-match), not a person */ auto?: boolean }
 
 export interface Session { role: Role; user: string; orgId: string | "FIRM"; lang: "en" | "ar" }
 

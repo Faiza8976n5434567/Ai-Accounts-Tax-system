@@ -6,6 +6,7 @@ import { useI18n } from "../lib/useI18n";
 import { useOrgData, daysBetween, TODAY } from "../lib/derive";
 import { BUCKETS, type OpenItem, type PartyRow } from "../lib/subledger";
 import { fmt, compact } from "../lib/money";
+import { withVat } from "../lib/vat";
 import { Badge, Card, DataTable, KpiGrid, Modal, Num, PageHeader, Stat, Tabs, cx } from "../components/ui";
 import { axis, tipStyle, aedK } from "../components/charts";
 import { JournalModal } from "./Ledger";
@@ -32,7 +33,9 @@ function Subledger({ kind, org, go }: { kind: Kind; org: Org; go: (p: Page) => v
   const diff = gl - L.total;
   const overdue = L.items.filter((i) => i.overdueDays > 0);
   const overdueAmt = overdue.reduce((s, i) => s + i.open, 0);
-  const days = kind === "ar" ? Math.round(L.total / Math.max(1, (d.pl.revenue * 1.05) / 273)) : Math.round(L.total / Math.max(1, ((d.pl.cogs + d.pl.opex) * 1.05) / 273));
+  // Days outstanding = balance ÷ average daily (VAT-inclusive) turnover so far this financial year.
+  const elapsed = Math.max(1, daysBetween(d.fy.from, TODAY));
+  const days = kind === "ar" ? Math.round(L.total / Math.max(1, withVat(d.pl.revenue) / elapsed)) : Math.round(L.total / Math.max(1, withVat(d.pl.cogs + d.pl.opex) / elapsed));
   const [tab, setTab] = useState<"parties" | "items">("parties");
   const [stmt, setStmt] = useState<PartyRow | null>(null);
   const [jid, setJid] = useState<string | null>(null);

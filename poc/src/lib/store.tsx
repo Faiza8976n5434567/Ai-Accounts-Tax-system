@@ -1,13 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { buildSeed } from "./seed";
-import { classify, review, type Extracted } from "./ai";
+import { review, suggestAccount, suggestForSupplier } from "./rules";
 import { validateJournal, reverse as reverseLines } from "./ledger";
-import { applyBp } from "./money";
+import { fmt } from "./money";
+import { purchaseLines } from "./posting";
+import { vatInGross } from "./vat";
+import { today } from "./dates";
 import { invoiceTotals, validatePint } from "./einvoice";
 import { t as tr, type Lang } from "./i18n";
 import type { AppState, Journal, JLine, PurchaseDoc, Role, SalesInvoice, Session } from "./types";
 
-const KEY = "tfs-smart-ledger-poc-v3"; // v3: demo data covers zero-rated, exempt and reverse-charge VAT boxes
+const KEY = "tfs-smart-ledger-poc-v4"; // v4: AI features removed (D-01); bills entered manually
 export const USERS: Record<Role, { user: string; label: string; firm: boolean; canApprove: boolean }> = {
   FIRM_PARTNER: { user: "Faizan (Partner)", label: "Firm Partner", firm: true, canApprove: true },
   FIRM_ACCOUNTANT: { user: "Aisha (Accountant)", label: "Firm Accountant", firm: true, canApprove: false },
@@ -37,29 +40,15 @@ function useStoreImpl() {
 
   const mutate = (fn: (d: AppState) => void) => setState((prev) => { const d = structuredClone(prev); fn(d); return d; });
   const nid = (d: AppState, p: string) => `${p}-${(++d.seq).toString(36)}`;
-  const log = (d: AppState, orgId: string, action: string, detail: string, ai = false) =>
-    d.audit.unshift({ id: nid(d, "a"), ts: new Date().toISOString(), user: d.session.user, role: d.session.role, orgId, action, detail, ai });
-
-  const purchaseLines = (p: PurchaseDoc): JLine[] => {
-    if (p.taxCode === "RCS") {
-      const vat = applyBp(p.net, 500);
-      return [
-        { account: p.account, debit: p.net, credit: 0, taxCode: "RCS", vat },
-        { account: "1310", debit: vat, credit: 0 },
-        { account: "2110", debit: 0, credit: vat },
-        { account: "2000", debit: 0, credit: p.total },
-      ];
-    }
-    if (p.taxCode === "BLK" || (!p.supplierTrn && p.vat > 0)) return [{ account: p.account, debit: p.total, credit: 0, taxCode: "BLK", vat: p.vat }, { account: "2000", debit: 0, credit: p.total }];
-    if (p.taxCode === "SR") return [{ account: p.account, debit: p.net, credit: 0, taxCode: "SR", vat: p.vat }, { account: "1300", debit: p.vat, credit: 0 }, { account: "2000", debit: 0, credit: p.total }];
-    return [{ account: p.account, debit: p.total, credit: 0, taxCode: p.taxCode }, { account: "2000", debit: 0, credit: p.total }];
-  };
+  /** `auto` = done by a system rule (e.g. bank auto-match), not a person. */
+  const log = (d: AppState, orgId: string, action: string, detail: string, auto = false) =>
+    d.audit.unshift({ id: nid(d, "a"), ts: new Date().toISOString(), user: d.session.user, role: d.session.role, orgId, action, detail, auto });
 
   const postPurchase = (d: AppState, p: PurchaseDoc, approver: string) => {
     const lines = purchaseLines(p);
     const errs = validateJournal(lines);
     if (errs.length) throw new Error(errs.join(" "));
-    const j: Journal = { id: nid(d, "j"), orgId: p.orgId, date: p.date, ref: p.invNo, memo: `${p.supplier} — ${p.description}`, source: "PURCHASE", status: "POSTED", lines, preparedBy: p.createdBy, approvedBy: approver, postedAt: new Date().toISOString(), ai: { confidence: p.confidence, reasoning: p.reasoning }, docId: p.id, party: p.supplier };
+    const j: Journal = { id: nid(d, "j"), orgId: p.orgId, date: p.date, ref: p.invNo, memo: `${p.supplier} — ${p.description}`, source: "PURCHASE", status: "POSTED", lines, preparedBy: p.createdBy, approvedBy: approver, postedAt: new Date().toISOString(), docId: p.id, party: p.supplier };
     d.journals.push(j); p.status = "POSTED"; p.journalId = j.id;
     return j;
   };
@@ -77,35 +66,32 @@ function useStoreImpl() {
     reset: () => { localStorage.removeItem(KEY); setState(buildSeed()); toast(T("Demo data reset")); },
     importState: (s: AppState) => { setState(s); toast(T("Backup restored")); },
 
-    capture: (orgId: string, ex: Extracted, fileName?: string): PurchaseDoc => {
-      const cl = classify(`${ex.supplier} ${ex.description}`, ex.foreign);
-      const base = { ...ex, id: `p-${Date.now().toString(36)}`, orgId, fileName, ...cl, status: "REVIEW" as const, createdAt: new Date().toISOString(), createdBy: state.session.user };
+    /** New purchase bill entered by hand (no OCR — D-01). The file, if any, is kept as an attachment name. */
+    newBill: (orgId: string, fileName?: string): PurchaseDoc => {
+      const base = {
+        id: `p-${Date.now().toString(36)}`, orgId, fileName, supplier: "", supplierTrn: "", invNo: "", date: today(), description: "", net: 0, vat: 0, total: 0,
+        currency: "AED", hasHeading: true, customerName: "", foreign: false, ...suggestAccount(""), status: "REVIEW" as const, createdAt: new Date().toISOString(), createdBy: state.session.user,
+      };
       const p: PurchaseDoc = { ...base, ...review(base, state.purchases) };
-      mutate((d) => {
-        d.purchases.unshift(p);
-        log(d, orgId, "AI extraction", `${fileName ?? "sample"} → ${p.supplier} ${p.invNo}, AED ${(p.total / 100).toFixed(2)}, suggested ${p.account} (${Math.round(p.confidence * 100)}%), risk ${p.risk}`, true);
-      });
+      mutate((d) => { d.purchases.unshift(p); log(d, orgId, "Bill created", fileName ? `Draft bill with attachment ${fileName}` : "Draft bill"); });
       return p;
     },
     updatePurchase: (id: string, patch: Partial<PurchaseDoc>) => mutate((d) => {
       const p = d.purchases.find((x) => x.id === id); if (!p) return;
+      const userPicked = (patch.account !== undefined && patch.account !== p.account) || (patch.taxCode !== undefined && patch.taxCode !== p.taxCode);
+      const supplierChanged = patch.supplier !== undefined && patch.supplier !== p.supplier;
       Object.assign(p, patch);
-      if (patch.account && patch.account !== p.account) p.reasoning += " (Overridden by user.)";
+      if (userPicked) p.reasoning = "(Changed by user.)";
+      else if ((supplierChanged || patch.description !== undefined || patch.foreign !== undefined) && p.reasoning !== "(Changed by user.)") Object.assign(p, suggestForSupplier(p.orgId, p.supplier, d.purchases, p.description, p.foreign));
       Object.assign(p, review(p, d.purchases));
     }),
     submitPurchase: (id: string) => mutate((d) => {
       const p = d.purchases.find((x) => x.id === id); if (!p) return;
-      const org = d.orgs.find((o) => o.id === p.orgId)!;
       const hardFail = p.checks.some((c) => !c.ok && c.severity === "error" && (c.id === "dup"));
       if (hardFail) { toast(T("Duplicate invoice — cannot submit"), "err"); return; }
-      const aa = org.autoApprove;
-      if (aa.enabled && p.risk === "Low" && p.confidence >= aa.minConfidence && p.total <= aa.maxAmount) {
-        try { const j = postPurchase(d, p, "Auto-approve rule"); log(d, p.orgId, "Auto-posted", `${p.invNo} posted as ${j.id} (confidence ${Math.round(p.confidence * 100)}% ≥ ${aa.minConfidence * 100}%, total ≤ AED ${aa.maxAmount / 100}, risk Low)`, true); toast(T("Auto-approved & posted {ref} — within tenant thresholds", { ref: p.invNo })); }
-        catch (e) { toast(String((e as Error).message), "err"); }
-      } else {
-        p.status = "PENDING"; log(d, p.orgId, "Submitted for approval", `${p.invNo} — ${p.risk} risk, ${Math.round(p.confidence * 100)}% confidence`);
-        toast(T("{ref} sent for approval (maker-checker)", { ref: p.invNo }), "info");
-      }
+      // Every bill goes to a second person for approval (maker-checker); there is no auto-posting.
+      p.status = "PENDING"; log(d, p.orgId, "Submitted for approval", `${p.invNo} — ${p.risk} risk`);
+      toast(T("{ref} sent for approval (maker-checker)", { ref: p.invNo }), "info");
     }),
     approvePurchase: (id: string) => mutate((d) => {
       const p = d.purchases.find((x) => x.id === id); if (!p) return;
@@ -125,13 +111,13 @@ function useStoreImpl() {
       const j: Journal = { id: nid(d, "j"), orgId: inv.orgId, date: inv.date, ref: inv.invNo, memo: `Sales invoice — ${inv.customer}`, source: "SALE", status: "POSTED", lines, preparedBy: d.session.user, approvedBy: "Posting rule (sales)", postedAt: new Date().toISOString(), party: inv.customer };
       d.journals.push(j);
       d.sales.unshift({ ...inv, id: nid(d, "s"), status: "POSTED", journalId: j.id, einv: "NOT_SENT", einvLog: [] });
-      log(d, inv.orgId, "Sales invoice issued", `${inv.invNo} — ${inv.customer} AED ${(tot.total / 100).toFixed(2)}`);
+      log(d, inv.orgId, "Sales invoice issued", `${inv.invNo} — ${inv.customer} AED ${fmt(tot.total)}`);
       toast(T("Invoice {ref} issued & posted", { ref: inv.invNo }));
     }),
     receivePayment: (id: string) => mutate((d) => {
       const s = d.sales.find((x) => x.id === id); if (!s) return;
       const tot = invoiceTotals(s).total;
-      d.journals.push({ id: nid(d, "j"), orgId: s.orgId, date: "2026-09-30", ref: `RCPT-${s.invNo}`, memo: `Receipt — ${s.customer}`, source: "BANK", status: "POSTED", lines: [{ account: "1010", debit: tot, credit: 0 }, { account: "1100", debit: 0, credit: tot }], preparedBy: d.session.user, approvedBy: "Posting rule (receipts)", party: s.customer, postedAt: new Date().toISOString() });
+      d.journals.push({ id: nid(d, "j"), orgId: s.orgId, date: today(), ref: `RCPT-${s.invNo}`, memo: `Receipt — ${s.customer}`, source: "BANK", status: "POSTED", lines: [{ account: "1010", debit: tot, credit: 0 }, { account: "1100", debit: 0, credit: tot }], preparedBy: d.session.user, approvedBy: "Posting rule (receipts)", party: s.customer, postedAt: new Date().toISOString() });
       s.status = "PAID"; log(d, s.orgId, "Receipt", `${s.invNo} marked paid`); toast(T("Receipt recorded for {ref}", { ref: s.invNo }));
     }),
     /** Settle an AR invoice (customer receipt) or AP bill (supplier payment) — posts to the GL control account. */
@@ -141,9 +127,9 @@ function useStoreImpl() {
         for (const it of items) {
           const ar = account === "1100";
           const lines: JLine[] = ar ? [{ account: "1010", debit: it.open, credit: 0 }, { account: "1100", debit: 0, credit: it.open }] : [{ account: "2000", debit: it.open, credit: 0 }, { account: "1010", debit: 0, credit: it.open }];
-          d.journals.push({ id: nid(d, "j"), orgId, date: "2026-09-30", ref: `${ar ? "RCPT" : "PAY"}-${it.ref}`, memo: `${ar ? "Receipt" : "Supplier payment"} — ${it.party}`, source: "BANK", status: "POSTED", lines, preparedBy: d.session.user, approvedBy: d.session.user, postedAt: new Date().toISOString(), party: it.party });
+          d.journals.push({ id: nid(d, "j"), orgId, date: today(), ref: `${ar ? "RCPT" : "PAY"}-${it.ref}`, memo: `${ar ? "Receipt" : "Supplier payment"} — ${it.party}`, source: "BANK", status: "POSTED", lines, preparedBy: d.session.user, approvedBy: d.session.user, postedAt: new Date().toISOString(), party: it.party });
           if (ar) { const sale = d.sales.find((x) => x.journalId === it.jid); if (sale) sale.status = "PAID"; }
-          log(d, orgId, ar ? "Receipt" : "Supplier payment", `${it.ref} — ${it.party} AED ${(it.open / 100).toFixed(2)}`);
+          log(d, orgId, ar ? "Receipt" : "Supplier payment", `${it.ref} — ${it.party} AED ${fmt(it.open)}`);
         }
       });
       toast(T(account === "1100" ? "{n} receipt(s) posted to the ledger" : "{n} payment(s) posted to the ledger", { n: items.length }));
@@ -178,7 +164,7 @@ function useStoreImpl() {
       const j = d.journals.find((x) => x.id === id)!;
       if (!USERS[d.session.role].firm) { toast(T("Only firm users can reverse posted journals."), "err"); return; }
       j.status = "REVERSED";
-      d.journals.push({ id: nid(d, "j"), orgId: j.orgId, date: "2026-09-30", ref: `REV-${j.ref}`, memo: `Reversal of ${j.ref}`, source: "REVERSAL", status: "POSTED", lines: reverseLines(j), preparedBy: d.session.user, approvedBy: d.session.user, reversalOf: j.id });
+      d.journals.push({ id: nid(d, "j"), orgId: j.orgId, date: today(), ref: `REV-${j.ref}`, memo: `Reversal of ${j.ref}`, source: "REVERSAL", status: "POSTED", lines: reverseLines(j), preparedBy: d.session.user, approvedBy: d.session.user, reversalOf: j.id });
       log(d, j.orgId, "Journal reversed", `${j.ref} (posted journals are never edited)`); toast(T("{ref} reversed", { ref: j.ref }), "info");
     }),
 
@@ -196,18 +182,17 @@ function useStoreImpl() {
       const b = d.bank.find((x) => x.id === bankId)!;
       const amt = Math.abs(b.amount);
       const sr = !["6500", "6120", "6160"].includes(account) && b.amount < 0;
-      const net = sr ? Math.round(amt / 1.05) : amt, vat = amt - net;
+      const vat = sr ? vatInGross(amt) : 0, net = amt - vat;
       const lines: JLine[] = b.amount < 0
         ? [{ account, debit: sr ? net : amt, credit: 0, taxCode: sr ? "SR" : account === "6500" ? "BLK" : "OS", vat: sr ? vat : undefined }, ...(sr ? [{ account: "1300", debit: vat, credit: 0 }] : []), { account: "1010", debit: 0, credit: amt }]
         : [{ account: "1010", debit: amt, credit: 0 }, { account, debit: 0, credit: amt }];
-      const j: Journal = { id: nid(d, "j"), orgId: b.orgId, date: b.date, ref: `BNK-${d.seq}`, memo: b.desc, source: "BANK", status: "POSTED", lines, preparedBy: "AI categoriser", approvedBy: d.session.user, ai: { confidence: 0.88, reasoning: "Bank narrative pattern" } };
-      d.journals.push(j); b.journalId = j.id; log(d, b.orgId, "Bank line categorised", `${b.desc} → ${account}`, true); toast(T("Bank line posted"));
+      const j: Journal = { id: nid(d, "j"), orgId: b.orgId, date: b.date, ref: `BNK-${d.seq}`, memo: b.desc, source: "BANK", status: "POSTED", lines, preparedBy: "Bank rule", approvedBy: d.session.user };
+      d.journals.push(j); b.journalId = j.id; log(d, b.orgId, "Bank line categorised", `${b.desc} → ${account}`); toast(T("Bank line posted"));
     }),
     importBank: (orgId: string, rows: { date: string; desc: string; amount: number }[]) => mutate((d) => {
-      for (const r of rows) { const cl = classify(r.desc); d.bank.push({ id: nid(d, "b"), orgId, date: r.date, desc: r.desc, amount: r.amount, suggestion: r.amount < 0 ? cl.account : "4300" }); }
+      for (const r of rows) { const cl = suggestAccount(r.desc); d.bank.push({ id: nid(d, "b"), orgId, date: r.date, desc: r.desc, amount: r.amount, suggestion: r.amount < 0 ? cl.account : "4300" }); }
       log(d, orgId, "Bank import", `${rows.length} line(s)`); toast(T("{n} bank line(s) imported", { n: rows.length }));
     }),
-    setAutoApprove: (orgId: string, aa: AppState["orgs"][number]["autoApprove"]) => mutate((d) => { const o = d.orgs.find((x) => x.id === orgId)!; o.autoApprove = aa; log(d, orgId, "Settings", `Auto-approve ${aa.enabled ? "on" : "off"} ≤ AED ${aa.maxAmount / 100} @ ${aa.minConfidence * 100}%`); }),
     setRegime: (orgId: string, regime: AppState["orgs"][number]["regime"]) => mutate((d) => { const o = d.orgs.find((x) => x.id === orgId)!; o.regime = regime; log(d, orgId, "CT regime", regime); }),
   };
   return api;

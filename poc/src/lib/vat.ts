@@ -1,8 +1,20 @@
 /** VAT 201 builder from posted journal lines tagged with tax codes. Box map: docs/UAE_COMPLIANCE_RULES.md §1. */
 import { ACC } from "./coa";
 import type { Journal, Emirate } from "./types";
-import type { Fils } from "./money";
+import { applyBp, type Fils } from "./money";
 import { TAX_CONFIG } from "./config";
+
+/** F-01: VAT on a net amount at the standard rate, half-up to the fils. */
+export const vatOnNet = (net: Fils, rateBp: number = TAX_CONFIG.vat.rateBp.value): Fils => applyBp(net, rateBp);
+
+/** F-02: VAT contained in a VAT-inclusive (gross) amount: gross × rate ÷ (10,000 + rate), half-up. */
+export function vatInGross(gross: Fils, rateBp: number = TAX_CONFIG.vat.rateBp.value): Fils {
+  const raw = (gross * rateBp) / (10_000 + rateBp);
+  return raw >= 0 ? Math.floor(raw + 0.5) : -Math.floor(-raw + 0.5);
+}
+
+/** Net amount grossed up by the standard rate (display ratios only). */
+export const withVat = (net: Fils): Fils => net + vatOnNet(net);
 
 export type Box = "1a" | "1b" | "1c" | "1d" | "1e" | "1f" | "1g" | "3" | "4" | "5" | "6" | "9" | "10";
 export interface BoxVal { amount: Fils; vat: Fils; refs: { jid: string; ref: string; date: string; amount: Fils; vat: Fils; memo: string }[] }

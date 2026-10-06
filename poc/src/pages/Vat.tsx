@@ -18,7 +18,7 @@ export function Vat({ org }: { org: Org }) {
   const [qk, setQk] = useState(qs[2].key);
   const q = qs.find((x) => x.key === qk)!;
   const v = useMemo(() => buildVat201(posted(store.state.journals, org.id, q.from, q.to)), [store.state.journals, org.id, q]);
-  const trend = useMemo(() => qs.map((x) => { const r = buildVat201(posted(store.state.journals, org.id, x.from, x.to)); return { q: x.label.split(" ")[0], output: r.box12 / 100, input: r.box13 / 100, net: r.box14 / 100 }; }), [store.state.journals, org.id]);
+  const trend = useMemo(() => qs.map((x) => { const r = buildVat201(posted(store.state.journals, org.id, x.from, x.to)); return { q: x.label.split(" ")[0], output: r.box12 / 100, input: r.box13 / 100, net: r.box14 / 100 }; }), [store.state.journals, org.id, qs]);
   const EK = { "1a": "AUH", "1b": "DXB", "1c": "SHJ", "1d": "AJM", "1e": "UAQ", "1f": "RAK", "1g": "FUJ" } as const;
   const em7 = (Object.keys(EK) as (keyof typeof EK)[]).map((k) => ({ k, name: em(EK[k]), v: v.boxes[k].amount })).filter((x) => x.v > 0);
   const emMax = Math.max(1, ...em7.map((x) => x.v));

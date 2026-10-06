@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { CalendarClock, AlertTriangle, Landmark, Calculator, Zap, ArrowRight } from "lucide-react";
+import { CalendarClock, AlertTriangle, Landmark, Zap, ArrowRight } from "lucide-react";
 import { useStore } from "../lib/store";
 import { useI18n } from "../lib/useI18n";
+import { TAX_CONFIG } from "../lib/config";
 import { deadlines, daysBetween, TODAY, type Deadline } from "../lib/derive";
 import { Badge, Card, KpiGrid, PageHeader, Stat, Tabs, cx, Empty } from "../components/ui";
 import type { Page } from "../components/Layout";
@@ -30,7 +31,7 @@ export function Calendar({ open }: { open: (orgId: string, p?: Page) => void }) 
         <Stat label={t("Due in 7 days")} value={String(within(7))} icon={<AlertTriangle size={16} />} tone="rose" />
         <Stat label={t("Due in 30 days")} value={String(within(30))} icon={<CalendarClock size={16} />} tone="amber" />
         <Stat label={t("Next VAT return")} value={upcoming.find((d) => d.kind === "VAT")?.date ?? "—"} icon={<Landmark size={16} />} tone="sky" />
-        <Stat label={t("E-invoicing go-live")} value="2027-07-01" icon={<Zap size={16} />} tone="indigo" hint={t("{n} days", { n: daysBetween(TODAY, "2027-07-01") })} />
+        <Stat label={t("E-invoicing go-live")} value={TAX_CONFIG.einvoicing.below50m.goLive} icon={<Zap size={16} />} tone="indigo" hint={t("{n} days", { n: daysBetween(TODAY, TAX_CONFIG.einvoicing.below50m.goLive) })} />
       </KpiGrid>
       <div className="flex flex-wrap gap-1.5 mb-4" role="group" aria-label={t("Filter by type")}>
         {["ALL", "VAT", "CT", "EINV", "LICENCE", "WPS"].map((k) => (

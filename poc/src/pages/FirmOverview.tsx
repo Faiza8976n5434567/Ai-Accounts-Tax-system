@@ -14,6 +14,7 @@ export function FirmOverview({ open }: { open: (orgId: string, p?: Page) => void
   const rows = state.orgs.map((o) => ({ o, d: orgData(state, o), pend: state.purchases.filter((p) => p.orgId === o.id && p.status === "PENDING").length }));
   const pending = state.purchases.filter((p) => p.status === "PENDING");
   const dl = deadlines(state).filter((x) => x.date >= TODAY);
+  const nextFiling = dl.find((x) => x.kind === "VAT" || x.kind === "CT");
   const weeks = Array.from({ length: 12 }, (_, i) => { const s = new Date(TODAY); s.setDate(s.getDate() + i * 7); return s.toISOString().slice(0, 10); });
   const totRev = rows.reduce((s, r) => s + r.d.pl.revenue, 0);
   const totVat = rows.reduce((s, r) => s + r.d.vat.box14, 0);
@@ -34,7 +35,7 @@ export function FirmOverview({ open }: { open: (orgId: string, p?: Page) => void
           <div>
             <div className="flex items-center gap-2 text-xs text-emerald-300 font-medium"><span className="size-1.5 rounded-full bg-emerald-400 pulse-ring" />{t("TFS Plus Tax & Accountancy LLC · FTA-registered tax agency")}</div>
             <h1 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">{t("Firm overview")}</h1>
-            <p className="text-sm text-slate-400 mt-1">{t("Master console across every client — prepared by AI, reviewed by your team.")}</p>
+            <p className="text-sm text-slate-400 mt-1">{t("Master console across every client — prepared and reviewed by your team.")}</p>
           </div>
           <div className="flex flex-wrap gap-6 sm:gap-8">
             {([["Revenue under management", totRev, 1400], ["VAT payable · Q3", totVat, 900], ["CT estimate FY26", totCt, 900]] as const).map(([l, v, ms]) => (
@@ -45,9 +46,9 @@ export function FirmOverview({ open }: { open: (orgId: string, p?: Page) => void
       </section>
 
       <KpiGrid>
-        <Stat label={t("Active clients")} value={<Num v={state.orgs.length} f={String} />} icon={<Building2 size={16} />} tone="indigo" hint={t("Pilot cohort · Feb 2027")} />
+        <Stat label={t("Active clients")} value={<Num v={state.orgs.length} f={String} />} icon={<Building2 size={16} />} tone="indigo" hint={t("Pilot cohort")} />
         <Stat label={t("Docs awaiting approval")} value={<Num v={pending.length} f={String} />} icon={<FileCheck2 size={16} />} tone="amber" hint={t("Maker-checker queue")} />
-        <Stat label={t("Next filing")} value={date("2026-10-28")} icon={<Clock size={16} />} tone="sky" hint={t("VAT Q3 · {n} days", { n: daysBetween(TODAY, "2026-10-28") })} />
+        <Stat label={t("Next filing")} value={nextFiling ? date(nextFiling.date) : "—"} icon={<Clock size={16} />} tone="sky" hint={nextFiling ? `${t(nextFiling.title, nextFiling.p)} · ${t("{n} days", { n: daysBetween(TODAY, nextFiling.date) })}` : ""} />
         <Stat label={t("Open risk flags")} value={<Num v={flags} f={String} />} icon={<AlertTriangle size={16} />} tone="rose" hint={t("Across all clients")} />
       </KpiGrid>
 

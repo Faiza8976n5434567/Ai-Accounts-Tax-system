@@ -2,11 +2,12 @@
 import { TAX_CONFIG } from "./config";
 import { applyBp, type Fils } from "./money";
 import { trialBalance } from "./ledger";
+import { financialYear } from "./dates";
 import type { Journal, Org } from "./types";
 
 export interface CtLine { label: string; amount: Fils; basis: string; kind: "base" | "add" | "less" | "total"; p?: Record<string, string> }
 
-export function computeCt(js: Journal[], org: Org, periodEnd = "2026-12-31") {
+export function computeCt(js: Journal[], org: Org, periodEnd: string = financialYear(org.fyEnd).to) {
   const c = TAX_CONFIG.ct;
   const tb = trialBalance(js);
   const bal = (code: string) => tb.find((r) => r.code === code)?.balance ?? 0;
@@ -37,7 +38,7 @@ export function computeCt(js: Journal[], org: Org, periodEnd = "2026-12-31") {
   } else {
     if (org.regime === "sbr") warnings.push("SBR elected but eligibility FAILS — computed under the standard regime.");
     ct = applyBp(Math.max(0, taxable - c.zeroBand.value), c.rateBp.value);
-    lines.push({ label: `0% on first AED 375,000`, amount: 0, basis: c.zeroBand.ref, kind: "less" });
+    lines.push({ label: "0% on first AED {band}", p: { band: (c.zeroBand.value / 100).toLocaleString("en-AE") }, amount: 0, basis: c.zeroBand.ref, kind: "less" });
     lines.push({ label: "9% on AED {amt}", p: { amt: (Math.max(0, taxable - c.zeroBand.value) / 100).toLocaleString("en-AE") }, amount: ct, basis: c.rateBp.ref, kind: "total" });
   }
   if (org.regime === "standard" && sbrEligible) warnings.push("Client is eligible for Small Business Relief (revenue ≤ AED 3m). Consider electing SBR.");

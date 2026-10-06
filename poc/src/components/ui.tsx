@@ -297,7 +297,7 @@ export function DataTable<T>({ rows, cols, rowKey, search, filters = [], pageSiz
     let r = rows;
     if (q && search) { const s = q.toLowerCase(); r = r.filter((x) => search(x).toLowerCase().includes(s)); }
     for (const f of filters) if (fv[f.key]) r = r.filter((x) => f.get(x) === fv[f.key]);
-    if (sort) { const c = cols.find((c) => c.key === sort.key); if (c?.sort) { const g = c.sort; r = [...r].sort((a, b) => { const A = g(a), B = g(b); const v = A < B ? -1 : A > B ? 1 : 0; return sort.dir === "asc" ? v : -v; }); } }
+    if (sort) { const col = cols.find((x) => x.key === sort.key); if (col?.sort) { const g = col.sort; r = [...r].sort((a, b) => { const A = g(a), B = g(b); const v = A < B ? -1 : A > B ? 1 : 0; return sort.dir === "asc" ? v : -v; }); } }
     return r;
   }, [rows, q, fv, sort, cols, filters, search]);
   const pages = Math.max(1, Math.ceil(filtered.length / ps));

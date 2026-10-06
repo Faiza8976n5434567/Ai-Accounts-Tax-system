@@ -2,7 +2,7 @@ import { useStore } from "./store";
 import { accName, emirateName, TAX_CODES } from "./coa";
 import { monthShort, monthLong, fmtDate, weekday } from "./i18n";
 import { AR } from "./ar";
-import { REASON_SENTENCES } from "./ai";
+import { RULE_SENTENCES } from "./rules";
 
 /** One hook for every translated thing a page needs. */
 export function useI18n() {
@@ -23,7 +23,7 @@ export function useI18n() {
     tx: (text?: string) => {
       if (!text || !rtl) return text ?? "";
       let out = text;
-      for (const s of [...REASON_SENTENCES, ...Object.keys(AR).filter((k) => k.length > 24)]) if (out.includes(s) && AR[s]) out = out.split(s).join(AR[s]);
+      for (const s of [...RULE_SENTENCES, ...Object.keys(AR).filter((k) => k.length > 24)]) if (out.includes(s) && AR[s]) out = out.split(s).join(AR[s]);
       return out;
     },
     /** Props for Recharts so time flows right-to-left in Arabic. */

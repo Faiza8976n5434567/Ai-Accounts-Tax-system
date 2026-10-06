@@ -23,6 +23,9 @@ export const fmt = (f: Fils, opts: { dp0?: boolean; aed?: boolean } = {}) => {
   return opts.aed ? `AED ${signed}` : signed;
 };
 
+/** Plain 2-dp string without grouping, e.g. for XML or check messages: 123456 → "1234.56". */
+export const fmtPlain = (f: Fils): string => (f / 100).toFixed(2);
+
 export const compact = (f: Fils) => {
   const v = f / 100;
   const a = Math.abs(v);
