@@ -1,6 +1,7 @@
 /** Deterministic demo data: 3 UAE SME clients, Jan–Sep 2026. */
 import { applyBp, toFils } from "./money";
 import { review } from "./ai";
+import { TAX_CONFIG } from "./config";
 import type { AppState, Journal, JLine, Org, SalesInvoice, BankLine, PurchaseDoc, Emirate, TaxCode } from "./types";
 
 let s = 42;
@@ -145,6 +146,51 @@ export function buildSeed(): AppState {
       bank.push({ id: id("b"), orgId: org.id, date: "2026-09-30", desc: "ETISALAT BILL PAYMENT", amount: -toFils(1_890), suggestion: "6110" });
       bank.push({ id: id("b"), orgId: org.id, date: "2026-09-30", desc: "CARREFOUR MOE PERSONAL", amount: -toFils(640), suggestion: "6500" });
     }
+  }
+
+  // Every quarter, each client also has a zero-rated export (Box 4), an exempt residential
+  // sublease (Box 5) and an imported service under reverse charge (Boxes 3 & 10).
+  // Fixed amounts (no rnd) so the rest of the demo data is unchanged.
+  const EXTRA: Record<string, { zr: { customer: string; country: string; desc: string; aed: number }; ex: { desc: string; aed: number }; rc: { supplier: string; desc: string; account: string; aed: number } }> = {
+    alnoor: { zr: { customer: "Muscat Traders SAOC (Oman)", country: "OM", desc: "Export of goods — shipment to Oman", aed: 64_500 }, ex: { desc: "Staff accommodation sublease — residential (exempt)", aed: 12_000 }, rc: { supplier: "Google Ireland Ltd", desc: "Google Ads — imported service", account: "6150", aed: 8_400 } },
+    brightpath: { zr: { customer: "Bahrain FinTech WLL", country: "BH", desc: "Advisory services — exported to Bahrain", aed: 38_000 }, ex: { desc: "Residential flat sublease — staff (exempt)", aed: 9_000 }, rc: { supplier: "Microsoft Ireland Operations Ltd", desc: "Microsoft 365 & Azure — imported service", account: "6180", aed: 5_600 } },
+    gulffresh: { zr: { customer: "Muscat Food Co. (Oman)", country: "OM", desc: "Export of packaged food — shipment to Oman", aed: 27_000 }, ex: { desc: "Staff accommodation sublease — residential (exempt)", aed: 15_000 }, rc: { supplier: "Meta Platforms Ireland Ltd", desc: "Meta Ads — imported service", account: "6150", aed: 6_900 } },
+  };
+  for (const org of ORGS) {
+    const x = EXTRA[org.id];
+    const revAcc = org.id === "brightpath" ? "4010" : "4000";
+    [2, 5, 8].forEach((m, q) => {
+      const mm = `2026-${pad(m)}`;
+      const grow = 1 + q / 10;
+      // Box 4 — zero-rated export
+      const zr = toFils(Math.round(x.zr.aed * grow));
+      const inv: SalesInvoice = {
+        id: id("s"), orgId: org.id, invNo: `EXP-${org.id.slice(0, 2).toUpperCase()}-${q + 1}`, date: `${mm}-14`, dueDate: `${mm}-28`,
+        customer: x.zr.customer, customerTrn: "", customerCountry: x.zr.country, emirate: org.emirate,
+        lines: [{ desc: x.zr.desc, qty: 1, price: zr, taxCode: "ZR", account: revAcc }], status: "POSTED", einv: "NOT_SENT", einvLog: [],
+      };
+      const zj = J(org.id, inv.date, inv.invNo, `Sales invoice — ${x.zr.customer}`, "SALE", [
+        { account: "1100", debit: zr, credit: 0 },
+        { account: revAcc, debit: 0, credit: zr, taxCode: "ZR", vat: 0, emirate: org.emirate },
+      ]);
+      zj.party = x.zr.customer; inv.journalId = zj.id; sales.push(inv);
+      // Box 5 — exempt supply (residential sublease income, received quarterly)
+      const ex = toFils(x.ex.aed);
+      J(org.id, `${mm}-01`, `RES-${mm}`, x.ex.desc, "BANK", [
+        { account: "1010", debit: ex, credit: 0 },
+        { account: "4300", debit: 0, credit: ex, taxCode: "EX", vat: 0 },
+      ]);
+      // Boxes 3 & 10 — imported service, VAT self-accounted under reverse charge
+      const rc = toFils(Math.round(x.rc.aed * grow));
+      const rcVat = applyBp(rc, TAX_CONFIG.vat.rateBp.value);
+      const rj = J(org.id, `${mm}-18`, `RC-${mm}`, `${x.rc.supplier} — ${x.rc.desc}`, "PURCHASE", [
+        { account: x.rc.account, debit: rc, credit: 0, taxCode: "RCS", vat: rcVat },
+        { account: "1310", debit: rcVat, credit: 0 },
+        { account: "2110", debit: 0, credit: rcVat },
+        { account: "1010", debit: 0, credit: rc },
+      ]);
+      rj.party = x.rc.supplier;
+    });
   }
 
   const state: AppState = { orgs: ORGS, journals, purchases: [], sales, bank, audit: [], session: { role: "FIRM_PARTNER", user: "Faizan (Partner)", orgId: "FIRM", lang: "en" }, seq: n };

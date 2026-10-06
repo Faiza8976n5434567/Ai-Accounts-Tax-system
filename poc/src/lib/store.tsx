@@ -7,7 +7,7 @@ import { invoiceTotals, validatePint } from "./einvoice";
 import { t as tr, type Lang } from "./i18n";
 import type { AppState, Journal, JLine, PurchaseDoc, Role, SalesInvoice, Session } from "./types";
 
-const KEY = "tfs-smart-ledger-poc-v2"; // v2: journals carry customer/supplier (party) for AR/AP
+const KEY = "tfs-smart-ledger-poc-v3"; // v3: demo data covers zero-rated, exempt and reverse-charge VAT boxes
 export const USERS: Record<Role, { user: string; label: string; firm: boolean; canApprove: boolean }> = {
   FIRM_PARTNER: { user: "Faizan (Partner)", label: "Firm Partner", firm: true, canApprove: true },
   FIRM_ACCOUNTANT: { user: "Aisha (Accountant)", label: "Firm Accountant", firm: true, canApprove: false },

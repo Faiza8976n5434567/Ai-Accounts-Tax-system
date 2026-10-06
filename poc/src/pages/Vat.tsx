@@ -27,7 +27,7 @@ export function Vat({ org }: { org: Org }) {
   const R = ({ box, b, vatCol = true }: { box: string; b: BoxVal; vatCol?: boolean }) => (
     <tr tabIndex={0} className="hover:bg-emerald-50/40 focus-visible:bg-emerald-50/60 outline-none cursor-pointer group transition-colors" onClick={() => setDrill({ title: `${t("Box")} ${box} — ${boxLabel(box)}`, b })} onKeyDown={(e) => e.key === "Enter" && setDrill({ title: `${t("Box")} ${box} — ${boxLabel(box)}`, b })}>
       <td className="td w-14"><Badge tone="indigo">{box}</Badge></td><td className="td">{boxLabel(box)} <span className="text-xs text-slate-400 num">({b.refs.length})</span></td>
-      <td className="td text-end num">{fmt(b.amount)}</td><td className="td text-end num">{vatCol ? fmt(b.vat) : "—"}</td><td className="td w-8"><ChevronRight size={15} className="text-slate-300 rtl:rotate-180 group-hover:text-emerald-600 transition" /></td>
+      <td className="td text-end num">{fmt(b.amount)}</td><td className="td text-end num">{fmt(vatCol ? b.vat : 0)}</td><td className="td w-8"><ChevronRight size={15} className="text-slate-300 rtl:rotate-180 group-hover:text-emerald-600 transition" /></td>
     </tr>
   );
   const Head = ({ c4 }: { c4: string }) => <thead><tr><th className="th">{t("Box")}</th><th className="th">{t("Description")}</th><th className="th !text-end">{t("Amount")}</th><th className="th !text-end">{c4}</th><th className="th" /></tr></thead>;
