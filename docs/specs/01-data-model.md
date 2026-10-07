@@ -361,14 +361,17 @@ Number = format setting `numbering_format` (default `{PREFIX}-{YYYY}-{MM}-{SEQ:4
 |---|---|---|
 | id | uuid | PK |
 | organization_id | uuid | FK |
-| kind | enum `receipt`/`payment`/`refund` | |
+| kind | enum `customer_receipt`/`supplier_payment`/`customer_refund`/`supplier_refund` | receipts & supplier refunds → RCPT-, payments & customer refunds → PAY- |
 | contact_id | uuid | FK |
-| bank_account_id | uuid | FK → bank_accounts |
+| bank_account_id | uuid | FK → `accounts` (the GL bank/cash account; P2-05's `bank_accounts` map one-to-one to it) |
 | payment_date | date | |
-| amount | bigint | AED fils; CK > 0 |
+| amount_fcy / amount | bigint | settled with the contact (payment currency / AED); CK > 0 |
+| bank_charges_fcy / bank_charges | bigint | D-34, posted to 6400 |
+| writeoff_fcy / writeoff, fx_difference | bigint | D-34 small differences (6190), D-37 exchange differences (4310/6410) |
+| credit_fcy / credit_aed | bigint | left as Customer Credit (2150) / Supplier advance (1160) at posting |
 | currency / fx_rate / amount_fcy | | as on invoices (D-21) |
-| is_advance_for_supply | boolean | true → output VAT due on receipt (D-11 §2.1) |
-| status | enum `draft`/`posted`/`void` | |
+| is_advance_for_supply | boolean | *deferred to the VAT 201 work (D-35)* |
+| status | enum `draft`/`pending`/`posted` | maker-checker like other documents |
 | journal_id | uuid | FK → journals |
 
 **`payment_allocations`**
@@ -379,10 +382,12 @@ Number = format setting `numbering_format` (default `{PREFIX}-{YYYY}-{MM}-{SEQ:4
 | payment_id | uuid | FK → payments |
 | sales_invoice_id | uuid | FK, nullable |
 | purchase_bill_id | uuid | FK, nullable |
-| amount | bigint | CK > 0 |
+| refund_id | uuid | FK → payments, nullable — the refund paying out this credit |
+| amount_fcy / amount | bigint | CK > 0; AED on the document side |
+| credit_amount | bigint | AED taken from a credit balance (later applications, refunds) |
 | applied_on | date | |
 | journal_id | uuid | FK — the credit-application journal (Dr 2150 / Cr 1100) when applied later |
-| CK | | exactly one of sales_invoice_id / purchase_bill_id |
+| CK | | exactly one of sales_invoice_id / purchase_bill_id / refund_id |
 
 Rules enforced by functions: allocations never exceed the payment amount or the document's open balance; the payment and the document must belong to the same contact. **Customer credit = payment amount − allocations** (no separate table, so it can't go out of sync).
 
