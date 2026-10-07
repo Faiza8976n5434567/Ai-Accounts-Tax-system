@@ -2,7 +2,7 @@
 -- Each check signs in as a real test user, exactly as the API would.
 begin;
 \ir fixtures/setup.psql
-select plan(39);
+select plan(40);
 
 -- RBAC-01 / SEC-01 · not signed in
 select tests.anon();
@@ -135,6 +135,11 @@ select ok(not has_function_privilege('authenticated', 'app.bootstrap_super_admin
       and not has_function_privilege('authenticated', 'app.setup_table(regclass, boolean)', 'execute')
       and not has_function_privilege('anon', 'app.has_perm(uuid, text)', 'execute'),
   'RBAC-19 · bootstrap and set-up helpers are not executable by API roles');
+
+-- G-7 / lint 0029 · nothing in the API schema runs with the database's own rights
+select is_empty($$ select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                   where n.nspname = 'public' and p.prosecdef $$,
+  'No SECURITY DEFINER functions in the public (API) schema');
 
 select * from finish();
 rollback;
