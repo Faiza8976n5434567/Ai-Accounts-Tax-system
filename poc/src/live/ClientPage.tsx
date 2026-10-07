@@ -11,9 +11,10 @@ import { JournalsTab } from "./JournalsTab";
 import { AccountsTab } from "./AccountsTab";
 import { PeriodsTab } from "./PeriodsTab";
 import { ReportsTab } from "./ReportsTab";
+import { ContactsTab } from "./ContactsTab";
 import { useLoad, useToday } from "./hooks";
 
-const TITLES: Record<ClientTab, string> = { overview: "Overview", journals: "Journals", approvals: "Approvals", reports: "Trial balance & ledger", accounts: "Chart of accounts", periods: "Periods" };
+const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", journals: "Journals", approvals: "Approvals", reports: "Trial balance & ledger", accounts: "Chart of accounts", periods: "Periods" };
 
 export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab }) {
   const fetchAll = useCallback(() => Promise.all([getClient(clientId), listAccounts(clientId), listAccountingPeriods(clientId), listTaxPeriods(clientId), myPermissions(clientId)]), [clientId]);
@@ -66,6 +67,7 @@ export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab
           </Card>
         </div>
       )}
+      {tab === "contacts" && <ContactsTab orgId={clientId} accounts={accounts} canEdit={perms.includes("prepare")} />}
       {(tab === "journals" || tab === "approvals") && <JournalsTab key={tab} orgId={clientId} accounts={accounts} perms={perms} booksStart={booksStart} approvalsOnly={tab === "approvals"} />}
       {tab === "reports" && <ReportsTab orgId={clientId} accounts={accounts} fyStartMonth={client.fy_start_month} />}
       {tab === "accounts" && <AccountsTab orgId={clientId} accounts={accounts} canManage={perms.includes("manage_coa")} reload={load} />}

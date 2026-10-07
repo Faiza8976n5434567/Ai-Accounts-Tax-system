@@ -214,7 +214,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 ### Phase 2 — Daily bookkeeping · 🟡 In progress · target 18 Dec 2026 (Spec 01 §4.4–4.9)
 | ID | Step | Tests | Status |
 |---|---|---|---|
-| P2-01 | Customers & suppliers (TRN validation, payment terms, default account) | ARAP-07 | ⬜ |
+| P2-01 | Customers & suppliers (TRN validation, payment terms, default account) | ARAP-07 | 🟡 built — `…101200_contacts.sql` (14 pgTAP tests, applied) + **Customers & suppliers** screen (search, filters, add/edit, TRN check, default account/tax code, related-party tag); rules in `lib/contacts.ts` (7 unit tests) |
 | P2-02 | Sales invoices + credit notes with `INV-YYYY-MM-0001` numbering (D-22), supply emirate (D-10), AED or USD (D-21) | ARAP-04, DM-02, VAT-02, NUM-01 → 07, FX-01 | ⬜ |
 | P2-03 | Purchase bills + debit notes, attachments (private storage), compliance checks & risk | ARAP-06, DM-08, SEC-13, SEC-20 | ⬜ |
 | P2-04 | Receipts & payments (AED/USD), allocations, **Customer Credits** (auto-apply, refunds) (D-11) | ARAP-01 → 05, ARAP-08 → 12, DM-05, DM-06, FX-02, FX-03 | ⬜ |
@@ -471,3 +471,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | **P1-18 ✅** strict React rules on for all rebuilt code (shared `useLoad`/`useToday` hooks; lint 0 findings). P1-13 ✅. **Phase 1: every step built and tested — waiting for Faizan's sign-off.** |
 | 2026-10-07 | Faizan: **work only on branch `faizan`; never touch `main`** unless he asks (CLAUDE.md and §3.2 updated). Q-24 → **D-28** (automatic roll-forward of prior-year P&L into Retained earnings in reports, P2-06). Admin → Tax rules: "Mark all VERIFY as checked today" button for draft versions. |
 | 2026-10-07 | **Phase 1 approved by Faizan (G-10).** Phase 2 started. Still open from Phase 1: approve the VERIFY sign-off tax-rule version (Q-07, a few clicks in Admin → Tax rules). |
+| 2026-10-07 | **P2-01 built:** customers & suppliers (database + screen). 214 database + 172 unit tests. |

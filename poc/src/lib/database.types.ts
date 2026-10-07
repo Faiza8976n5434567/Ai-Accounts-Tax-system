@@ -517,6 +517,101 @@ export type Database = {
           },
         ]
       }
+      contacts: {
+        Row: {
+          address: string | null
+          country_code: string
+          created_at: string
+          created_by: string | null
+          default_account_id: string | null
+          default_tax_code: string | null
+          email: string | null
+          emirate_code: string | null
+          id: string
+          is_active: boolean
+          is_related_party: boolean
+          kind: Database["public"]["Enums"]["contact_kind"]
+          name: string
+          organization_id: string
+          payment_terms_days: number | null
+          phone: string | null
+          trn: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          default_account_id?: string | null
+          default_tax_code?: string | null
+          email?: string | null
+          emirate_code?: string | null
+          id?: string
+          is_active?: boolean
+          is_related_party?: boolean
+          kind: Database["public"]["Enums"]["contact_kind"]
+          name: string
+          organization_id: string
+          payment_terms_days?: number | null
+          phone?: string | null
+          trn?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          default_account_id?: string | null
+          default_tax_code?: string | null
+          email?: string | null
+          emirate_code?: string | null
+          id?: string
+          is_active?: boolean
+          is_related_party?: boolean
+          kind?: Database["public"]["Enums"]["contact_kind"]
+          name?: string
+          organization_id?: string
+          payment_terms_days?: number | null
+          phone?: string | null
+          trn?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_default_account_id_organization_id_fkey"
+            columns: ["default_account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "contacts_default_tax_code_fkey"
+            columns: ["default_tax_code"]
+            isOneToOne: false
+            referencedRelation: "tax_codes"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "contacts_emirate_code_fkey"
+            columns: ["emirate_code"]
+            isOneToOne: false
+            referencedRelation: "emirates"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "contacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ct_tags: {
         Row: {
           addback_key: string | null
@@ -894,6 +989,7 @@ export type Database = {
         Row: {
           account_id: string
           amount_fcy: number | null
+          contact_id: string | null
           created_at: string
           created_by: string | null
           credit: number
@@ -914,6 +1010,7 @@ export type Database = {
         Insert: {
           account_id: string
           amount_fcy?: number | null
+          contact_id?: string | null
           created_at?: string
           created_by?: string | null
           credit?: number
@@ -934,6 +1031,7 @@ export type Database = {
         Update: {
           account_id?: string
           amount_fcy?: number | null
+          contact_id?: string | null
           created_at?: string
           created_by?: string | null
           credit?: number
@@ -957,6 +1055,13 @@ export type Database = {
             columns: ["account_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "journal_lines_contact_id_organization_id_fkey"
+            columns: ["contact_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id", "organization_id"]
           },
           {
@@ -992,6 +1097,7 @@ export type Database = {
       journals: {
         Row: {
           approved_by: string | null
+          contact_id: string | null
           created_at: string
           created_by: string | null
           entry_date: string
@@ -1010,6 +1116,7 @@ export type Database = {
         }
         Insert: {
           approved_by?: string | null
+          contact_id?: string | null
           created_at?: string
           created_by?: string | null
           entry_date: string
@@ -1028,6 +1135,7 @@ export type Database = {
         }
         Update: {
           approved_by?: string | null
+          contact_id?: string | null
           created_at?: string
           created_by?: string | null
           entry_date?: string
@@ -1051,6 +1159,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journals_contact_id_organization_id_fkey"
+            columns: ["contact_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "organization_id"]
           },
           {
             foreignKeyName: "journals_organization_id_fkey"
@@ -1665,6 +1780,7 @@ export type Database = {
       compliance_kind: "vat" | "ct" | "licence" | "einvoicing"
       config_status: "draft" | "approved"
       config_value_type: "bp" | "fils" | "days" | "months" | "date" | "rate"
+      contact_kind: "customer" | "supplier" | "both"
       ct_regime: "standard" | "sbr" | "qfzp"
       doc_type:
         | "journal"
@@ -1834,6 +1950,7 @@ export const Constants = {
       compliance_kind: ["vat", "ct", "licence", "einvoicing"],
       config_status: ["draft", "approved"],
       config_value_type: ["bp", "fils", "days", "months", "date", "rate"],
+      contact_kind: ["customer", "supplier", "both"],
       ct_regime: ["standard", "sbr", "qfzp"],
       doc_type: [
         "journal",
