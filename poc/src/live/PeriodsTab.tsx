@@ -28,7 +28,7 @@ export function PeriodsTab({ periods, taxPeriods, perms, reload }: { periods: Ac
   };
 
   return (
-    <div className="grid gap-5 xl:grid-cols-2">
+    <div className="grid gap-5 grid-cols-[minmax(0,1fr)] xl:grid-cols-2">
       <Card title="Accounting periods" sub="A locked month rejects every posting. Only a Firm Admin can lock or reopen, and reopening needs a reason (audit-logged)." icon={<CalendarRange size={16} />} pad={false}>
         <div className="overflow-x-auto max-h-[65vh]"><table className="w-full">
           <thead className="sticky top-0"><tr><th className="th">Month</th><th className="th">Status</th><th className="th"><span className="sr-only">Action</span></th></tr></thead>

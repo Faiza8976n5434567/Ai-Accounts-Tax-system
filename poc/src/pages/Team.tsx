@@ -44,7 +44,7 @@ export function TeamPage() {
       <PageHeader eyebrow="Settings" title="Users & invites" sub="Firm staff who can sign in, and invitations waiting to be accepted"
         actions={<button className="btn-primary bg-emerald-600" onClick={() => { setResult(null); setInviting(true); }}><UserPlus size={15} />Invite staff</button>} />
       {loadError && <p role="alert" className="mb-4 text-sm text-rose-700">{loadError}</p>}
-      <div className="grid gap-5 max-w-5xl">
+      <div className="grid gap-5 grid-cols-[minmax(0,1fr)] max-w-5xl">
         <Card title="Firm staff" sub="People who can sign in to this firm" icon={<Users size={16} />} pad={false}>
           <div className="overflow-x-auto"><table className="w-full min-w-[560px]">
             <thead><tr><th className="th">Name</th><th className="th">Email</th><th className="th">Role</th><th className="th">Status</th></tr></thead>

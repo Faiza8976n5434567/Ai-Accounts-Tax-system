@@ -10,7 +10,7 @@
 | **Current phase** | Phase 1 — Foundation (1A database ✅ live; 1B logins next) |
 | **Overall status** | 🟡 In progress |
 | **Last updated** | 2026-10-07 |
-| **Next milestone** | P1-11 Admin area (firm profile, settings, tax rules with VERIFY flags), then P1-16 → P1-18 |
+| **Next milestone** | P1-16 security headers, P1-17 end-to-end journey test, P1-18 lint clean-up → Phase 1 exit |
 
 **Status legend:** ⏸ Deferred · ⬜ Not started · 🟡 In progress (for tests: written and passing locally, awaiting CI) · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
 
@@ -195,7 +195,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 |---|---|---|---|
 | P1-09 | Login, MFA enrolment, password reset, 30-min idle sign-out | SEC-08, SEC-09, SEC-21 | ✅ `components/AuthGate.tsx` + `lib/auth.ts` (22 unit tests); Faizan signed in with password + two-factor on 2026-10-07 |
 | P1-10 | Invite flow (Vercel function + one-time link; sent via Resend **and** a "Copy invite link" button, D-24) | CFG-10, CFG-11, SEC-15, CFG-18 | ✅ Faizan's real invite accepted 2026-10-07 (second Firm Admin joined); 23 pgTAP + 12 unit tests |
-| P1-11 | Admin area: Users & invites, Firm profile, Settings, **Tax rules** (versioned, with VERIFY flags) | CFG-01 → CFG-05, CFG-13 | ⬜ |
+| P1-11 | Admin area: Users & invites, Firm profile, Settings, **Tax rules** (versioned, with VERIFY flags) | CFG-01 → CFG-05, CFG-13 | 🟡 built — **Admin** page: My profile (own name), Tax rules (versions, in-force version, VERIFY banner, Super Admin drafts → edit → approve with reason), Firm profile + settings (restricted keys Super Admin only), Platform settings and Email templates (Super Admin); rules already enforced and tested in the database (CFG-01/03/04/05/13/16/17); value parsing in `lib/admin.ts` (13 unit tests); waiting for Faizan's first use (VERIFY sign-off, Q-07) |
 | P1-12 | Client onboarding (CoA copy, periods, VAT periods, number sequences, staff assignment, opening balances) | CFG-06 | ✅ 3 real clients added by Faizan 2026-10-07; 21 pgTAP tests (CFG-06, CT-10) |
 
 **1C · The app on live data**
@@ -464,3 +464,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | OA-04 done by Faizan (public sign-up off; leaked-password protection needs the Pro plan — advisor still warns, tracked under OA-13). OA-16 deferred until deployment (local testing only). **P1-12/P1-13:** `create_client()` creates a client in one call (chart of accounts, monthly periods to end of next FY, VAT periods from the stagger with due dates from config, CT periods, number counters, accountant assignment). New live app frame (`src/live/`) — normal start shows only real-database screens; the demo build keeps the old POC screens. Exact AED→fils parser (`parseAedToFils`, refuses fractions of a fils). 168 database + 118 unit tests. |
 | 2026-10-07 | **P1-14 built.** Journals (new, opening balances, drafts, submit, withdraw, delete), approval queue (approve & post / send back with a reason — the preparer never sees Approve), reversal requests approved by a second Firm Admin (D-26), chart of accounts (add, rename, CT treatment, deactivate), period lock/reopen with reason. Faizan applied `…101000` in the SQL Editor (the app's safety check blocks database changes containing deletes). 186 database + 138 unit tests. |
 | 2026-10-07 | Faizan's tests (invite, clients, journals with maker-checker) recorded → P1-10, P1-12, P1-14 ✅. **P1-15 ✅:** `trial_balance()` / `general_ledger()` (calculated from posted journals each time, RLS applies, reversals net out, drafts never count) + Trial balance & ledger screen with drill-down to the journal; LED-13 proven with 1,000 random journals. Q-24 added (year-end presentation). 200 database + 145 unit tests. |
+| 2026-10-07 | **P1-11 built:** Admin page (profile, tax rules with versioning and VERIFY sign-off flow, firm profile/settings, platform settings, email templates); layout fix so wide tables scroll inside their card. 159 unit tests. |

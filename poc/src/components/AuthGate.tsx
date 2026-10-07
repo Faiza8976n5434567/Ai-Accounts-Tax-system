@@ -12,7 +12,7 @@ import { KeyRound, LogOut, Mail, ShieldCheck, Smartphone } from "lucide-react";
 import { DEMO_MODE, linkOnArrival, supabase } from "../lib/supabase";
 import { friendlyAuthError, isIdle, isSixDigitCode, mfaStep, MIN_PASSWORD_LENGTH, passwordProblem, IDLE_LIMIT_MS } from "../lib/auth";
 
-interface AuthInfo { userId: string; email: string; fullName: string; appName: string; signOut: () => Promise<void> }
+interface AuthInfo { userId: string; email: string; fullName: string; appName: string; signOut: () => Promise<void>; setFullName: (name: string) => void; setAppName: (name: string) => void }
 const AuthContext = createContext<AuthInfo | null>(null);
 /** The signed-in user, or null in the demo build. */
 export const useAuth = () => useContext(AuthContext);
@@ -100,7 +100,7 @@ function Gate({ children }: { children: ReactNode }) {
   useIdleSignOut(step === "ready", onIdle);
 
   if (step === "ready" && session) {
-    return <AuthContext.Provider value={{ userId: session.user.id, email: session.user.email ?? "", fullName, appName, signOut: () => signOut() }}>{children}</AuthContext.Provider>;
+    return <AuthContext.Provider value={{ userId: session.user.id, email: session.user.email ?? "", fullName, appName, signOut: () => signOut(), setFullName, setAppName }}>{children}</AuthContext.Provider>;
   }
   return (
     <Shell title={appName}>
