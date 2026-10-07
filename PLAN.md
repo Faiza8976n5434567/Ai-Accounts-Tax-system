@@ -10,9 +10,9 @@
 | **Current phase** | Phase 1 — Foundation (1A database ✅ live; 1B logins next) |
 | **Overall status** | 🟡 In progress |
 | **Last updated** | 2026-10-07 |
-| **Next milestone** | Faizan creates his login (OA-17) → P1-09 login + MFA screens |
+| **Next milestone** | P1-09 sign-in, set password, two-factor (MFA) and 30-min idle sign-out screens |
 
-**Status legend:** ⬜ Not started · 🟡 In progress (for tests: written and passing locally, awaiting CI) · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
+**Status legend:** ⏸ Deferred · ⬜ Not started · 🟡 In progress (for tests: written and passing locally, awaiting CI) · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
 
 ---
 
@@ -44,6 +44,8 @@
 | D-22 | **Document numbers show year and month, with one running counter that never restarts**, e.g. if January ends at `INV-2026-01-0100`, February starts at `INV-2026-02-0101`. Counter per client and document type, gap-free, assigned when a document is posted; year-month comes from the document date. Same pattern for credit notes (`CN-`), receipts (`RCPT-`), payments (`PAY-`) and journals (`JV-`). Format is a setting. *(Answers Q-14 and Q-17; revised 2026-10-06.)* | 2026-10-06 |
 | D-23 | **Tax-rule changes:** no backup Super Admin for now, so Faizan approves alone with a written reason (audit-logged). The two-person rule switches on automatically when a second Super Admin is added. *(Answers Q-10, Q-16.)* | 2026-10-06 |
 | D-24 | Email sender: **`onboarding@resend.dev`** (Resend's default address) for now. It delivers only to the Resend account owner's email, so staff invites also get a **"Copy invite link"** button that you can send yourself (WhatsApp/Outlook). Own domain later (OA-09). *(Answers Q-13, Q-19.)* | 2026-10-06 |
+| D-26 | **Reversing a posted journal needs a second person:** a Firm Admin *requests* the reversal (reason required); it waits as a pending mirror journal that nobody can edit; a **different** Firm Admin approves it, which posts it and marks the original reversed. The request can be cancelled. *(Answers Q-21.)* | 2026-10-07 |
+| D-27 | **Bank account (1010) is a control account:** manual journals cannot post to it; bank entries come from the bank module, opening balances from the opening journal. *(Answers Q-22, confirms Spec 01.)* | 2026-10-07 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -70,9 +72,9 @@
 | Q-18 | USD rounding: line → AED first, then VAT → **Agreed (D-21).** | Phase 2 | ✅ |
 | Q-19 | Email domain → **use Resend default for now (D-24).** | Phase 1 | ✅ |
 | Q-20 | Yearly reset of the counter? → **No: continues across years** (`INV-2027-01-1245`, D-22). | Phase 2 | ✅ |
-| Q-21 | **Reversing a posted journal:** built so a Firm Admin reverses in one step (reason required, audit-logged, reversal posted immediately — the original was already approved by two people). Alternative: the reversal waits for a second person's approval. Which do you want? | Phase 1 | 🔍 |
-| Q-22 | **Bank account (1010) as a control account:** Spec 01 lists bank with AR/AP/VAT as control accounts, so manual journals can't touch it (bank entries come from the bank module, opening balances from the opening journal). OK, or allow manual journals on bank (e.g. bank charges)? | Phase 1 | 🔍 |
-| Q-23 | Firm-staff email domain for invites (e.g. `@tfsplus.ae`) and invite expiry (set to **7 days** for now). | Phase 1 (P1-10) | 🔍 |
+| Q-21 | Reversing a posted journal: one step or second approval? → **Decided: second person approves (D-26).** | Phase 1 | ✅ |
+| Q-22 | Bank account (1010) as a control account? → **Decided: yes (D-27).** | Phase 1 | ✅ |
+| Q-23 | Firm-staff email domain for invites; invite expiry (7 days for now). → **Deferred: nothing is deployed yet; decide before inviting staff.** | Before first staff invite | ⏸ |
 
 ### 2.1 Customer overpayments & credits — agreed rule (D-11)
 
@@ -287,7 +289,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | LED-06 | Amount 10.005 (fraction of a fils) | Rejected | U+D | ✅ |
 | LED-07 | Edit a posted journal | Rejected | D | ✅ |
 | LED-08 | Delete a posted journal | Rejected | D | ✅ |
-| LED-09 | Reverse a posted journal | Mirror entry created with today's date; net effect 0; original marked reversed | D | ✅ |
+| LED-09 | Reverse a posted journal | Requested by one Firm Admin, approved by another (D-26); mirror entry on the chosen date; net effect 0; original marked reversed on approval | D | ✅ |
 | LED-10 | Post into a locked period | Rejected | D | ✅ |
 | LED-11 | Firm Admin reopens a period | Allowed; audit entry with reason | D | ✅ |
 | LED-12 | Unknown or inactive account | Rejected | D | ✅ |
@@ -454,3 +456,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-06 | Q-20 → counter continues across years. **Phase 0 build work:** AI features removed; hard-coded dates/rates fixed; new `rules.ts`, `posting.ts`, `dates.ts`, `insights.ts`; 63 unit tests + 4 E2E tests; oxlint, finance lint, bundle secret scan, coverage gate, GitHub Actions CI; docs reorganised. Remaining Phase 0: drop leftover Supabase tables (needs `supabase-tax` MCP in a new session), owner actions. |
 | 2026-10-07 | **Phase 1 started — database foundation (P1-01 → P1-07).** Six migrations in `supabase/migrations/`: clean-up of the POC leftovers, locked-down default privileges, private `app` schema, append-only audit log; reference data (VAT boxes incl. 2/6/7, emirates, tax codes → boxes, CT tags, UAE SME chart with 2150 Customer Credits); platform settings, firms (TFS Plus = owner), profiles, memberships, invitations, clients; chart of accounts, periods, running document numbers, journals with `post_journal` / `reverse_journal` / `lock_period` / `reopen_period`; versioned tax rules seeded from the POC (`uae-2026.09`) with `approve_config_version` (D-23), firm settings, email templates, compliance rules; role permissions, RLS + MFA policy on every table, private `documents` bucket. **118 pgTAP database tests** (LED-01→14 except LED-13 (unit, later), NUM-01→04/06→08, DM-01/03/12/13/14, RBAC-01→14/17→19/21/23/24, SEC-01/16/17, CFG-01/03→05/13/16/17). CI job G-6 added. Local PGlite harness found and fixed 4 defects before CI. Not yet applied to Supabase. New questions Q-21 → Q-23; owner action OA-17. |
 | 2026-10-07 | **Phase 1A live.** CI (G-6) ran the real pgTAP suite on a temporary Supabase: 3 files, 119 tests, PASS. Faizan ran migrations `…100000` → `…100500` in the Supabase SQL Editor (so they are not in Supabase's migration-history table — the files in `supabase/migrations/` are the record); verified tables, functions, 104 policies, triggers and storage bucket. Security advisor flagged the 7 API functions (lint 0029) → `…100600_private_definer_functions.sql` moves them to the private `app` schema behind invoker wrappers (+ regression test), CI-proven and applied. **G-7: 0 errors / 0 warnings.** P1-08 types generated. Next: OA-17 (first Super Admin), P1-09. |
+| 2026-10-07 | Faizan's login created (OA-17 ✅) and made first Super Admin + Firm Admin of TFS Plus (`app.bootstrap_super_admin`, audit-logged). Answers: **D-26** reversal needs a second person (Q-21); **D-27** bank stays a control account (Q-22); Q-23 deferred (no deployment yet). Migration `…100700_reversal_needs_approval.sql` + 5 new LED-09/D-26 tests (124 database tests). |

@@ -2,7 +2,7 @@
 -- Spec 02 RBAC-04 → 09, PLAN §6.10 NUM-*. Amounts in fils (AED 1,000.00 = 100000).
 begin;
 \ir fixtures/setup.psql
-select plan(52);
+select plan(57);
 
 -- Helper: a draft journal in client A prepared by the accountant, with the given lines.
 create function tests.draft(p_memo text, p_date date, p_lines jsonb, p_org text default 'orgA') returns uuid
@@ -121,17 +121,28 @@ select tests.login('admin2@test.local');
 select throws_like($$ select public.post_journal((select id from j where k = 'ctl')) $$,
   'Control account(s) 1100%', 'Manual journal to Trade receivables (control) rejected');
 
--- LED-09 · reversal
+-- LED-09 · reversal — requested by one Firm Admin, approved by another (D-26)
 select throws_like($$ select public.reverse_journal((select id from j where k = 'led01'), '  ') $$,
   'A reason is required%', 'LED-09 · reversal needs a reason');
 insert into j values ('rev', public.reverse_journal((select id from j where k = 'led01'), 'Booked twice', '2026-03-05'));
+select is((select (status::text, journal_no) from public.journals where id = (select id from j where k = 'rev'))::text,
+  '(pending,)', 'D-26 · a reversal request waits for approval, unnumbered');
+select is((select status::text from public.journals where id = (select id from j where k = 'led01')), 'posted',
+  'D-26 · the original stays posted until the reversal is approved');
+select throws_like($$ select public.post_journal((select id from j where k = 'rev')) $$,
+  'You prepared this journal%', 'D-26 · the requester cannot approve their own reversal');
+select throws_like($$ select public.reverse_journal((select id from j where k = 'led01'), 'twice') $$,
+  'A reversal of this journal is already waiting%', 'D-26 · only one reversal request at a time');
+select throws_ok($$ update public.journal_lines set debit = debit + 1 where journal_id = (select id from j where k = 'rev') and line_no = 2 $$,
+  '42501', null, 'D-26 · nobody can edit a reversal request');
+select tests.login('super@test.local');
+select is(public.post_journal((select id from j where k = 'rev')), 'JV-2026-03-0004',
+  'LED-09 · a second Firm Admin approves; reversal takes the next running number');
 select is((select status::text from public.journals where id = (select id from j where k = 'led01')), 'reversed',
-  'LED-09 · original marked reversed');
+  'LED-09 · original marked reversed on approval');
 select is((select (entry_date, source::text, reversal_of)::text from public.journals where id = (select id from j where k = 'rev')),
   ('2026-03-05'::date, 'reversal', (select id from j where k = 'led01'))::text,
   'LED-09 · mirror journal dated as requested, linked to the original');
-select is((select journal_no from public.journals where id = (select id from j where k = 'rev')), 'JV-2026-03-0004',
-  'LED-09 · reversal takes the next running number (counter continues into March)');
 select is((select sum(debit - credit) from public.journal_lines l join public.accounts a on a.id = l.account_id
             where l.journal_id in ((select id from j where k = 'led01'), (select id from j where k = 'rev')) and a.code = '6100'),
   0::numeric, 'LED-09 · net effect on Rent is zero');

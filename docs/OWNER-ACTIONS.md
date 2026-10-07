@@ -25,7 +25,7 @@ PLAN.md as you go. Screen names in Supabase/Vercel/GitHub may differ slightly ov
 | OA-14 | Engagement-letter clause on data hosting | Before pilot | legal |
 | OA-15 | Book the independent security review | Before pilot | — |
 | **OA-16** | **Rotate the secret key and Resend key shared in chat** | **Now** | 10 min |
-| OA-17 | Create your own login (first Super Admin) | After the Phase 1 database is applied | 10 min |
+| OA-17 | Create your own login (first Super Admin) — ✅ done 2026-10-07 | — | — |
 
 ---
 
