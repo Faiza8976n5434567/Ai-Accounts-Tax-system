@@ -10,7 +10,7 @@
 | **Current phase** | Phase 1 — Foundation (1A database ✅ live; 1B logins next) |
 | **Overall status** | 🟡 In progress |
 | **Last updated** | 2026-10-07 |
-| **Next milestone** | P1-09 sign-in, set password, two-factor (MFA) and 30-min idle sign-out screens |
+| **Next milestone** | P1-10 invites (second Firm Admin needed for maker-checker) |
 
 **Status legend:** ⏸ Deferred · ⬜ Not started · 🟡 In progress (for tests: written and passing locally, awaiting CI) · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
 
@@ -192,7 +192,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 **1B · Logins & administration** (Spec 02 · Spec 03 §3)
 | ID | Step | Tests | Status |
 |---|---|---|---|
-| P1-09 | Login, MFA enrolment, password reset, 30-min idle sign-out | SEC-08, SEC-09, SEC-21 | 🟡 built (`components/AuthGate.tsx`, rules in `lib/auth.ts` + 22 unit tests); checked in the browser against live Supabase; **waiting for Faizan's first real sign-in with two-factor** |
+| P1-09 | Login, MFA enrolment, password reset, 30-min idle sign-out | SEC-08, SEC-09, SEC-21 | ✅ `components/AuthGate.tsx` + `lib/auth.ts` (22 unit tests); Faizan signed in with password + two-factor on 2026-10-07 |
 | P1-10 | Invite flow (Vercel function + one-time link; sent via Resend **and** a "Copy invite link" button, D-24) | CFG-10, CFG-11, SEC-15 | ⬜ |
 | P1-11 | Admin area: Users & invites, Firm profile, Settings, **Tax rules** (versioned, with VERIFY flags) | CFG-01 → CFG-05, CFG-13 | ⬜ |
 | P1-12 | Client onboarding wizard (CoA copy, periods, VAT periods, number sequences, staff assignment, opening balances) | CFG-06 | ⬜ |
@@ -458,3 +458,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | **Phase 1A live.** CI (G-6) ran the real pgTAP suite on a temporary Supabase: 3 files, 119 tests, PASS. Faizan ran migrations `…100000` → `…100500` in the Supabase SQL Editor (so they are not in Supabase's migration-history table — the files in `supabase/migrations/` are the record); verified tables, functions, 104 policies, triggers and storage bucket. Security advisor flagged the 7 API functions (lint 0029) → `…100600_private_definer_functions.sql` moves them to the private `app` schema behind invoker wrappers (+ regression test), CI-proven and applied. **G-7: 0 errors / 0 warnings.** P1-08 types generated. Next: OA-17 (first Super Admin), P1-09. |
 | 2026-10-07 | Faizan's login created (OA-17 ✅) and made first Super Admin + Firm Admin of TFS Plus (`app.bootstrap_super_admin`, audit-logged). Answers: **D-26** reversal needs a second person (Q-21); **D-27** bank stays a control account (Q-22); Q-23 deferred (no deployment yet). Migration `…100700_reversal_needs_approval.sql` + 5 new LED-09/D-26 tests (124 database tests). |
 | 2026-10-07 | **P1-09 sign-in built.** Sign-in gate in front of the app: email + password (no sign-up screen), "forgot / never set your password" email link, set-password page for invite and reset links, two-factor set-up (QR code) and code check, plain-language errors, 30-minute idle sign-out shared across tabs, Sign out button, app name read from `platform_settings`. Two-factor is required for every signed-in user for now (all users are firm users until Phase 3). Automated browser tests (G-9) now run against a separate demo build (`vite build --mode demo`, sample data, no sign-in); normal builds always require sign-in. `@supabase/supabase-js` 2.117.2 added. |
+| 2026-10-07 | P1-09 ✅ — Faizan set his password via the reset link and enrolled two-factor (TOTP factor verified in Supabase). |
