@@ -30,6 +30,13 @@ join public.coa_templates t on t.id = ta.template_id and t.code = 'uae-sme'
 where not exists (select 1 from public.accounts a where a.organization_id = o.id and (a.code = ta.code or a.subtype = ta.subtype));
 update public.accounts set subtype = 'bank_charges' where code = '6400' and subtype is null;
 
+insert into public.firm_settings (firm_id, key, value)
+select f.id, s.key, s.value::jsonb from public.firms f, (values
+  ('small_difference_limit',       '100'),                 -- fils: AED 1.00 (D-34)
+  ('auto_apply_supplier_advances', 'true')                 -- D-36
+) as s(key, value)
+on conflict (firm_id, key) do nothing;
+
 -- ── Tables ──────────────────────────────────────────────────────────────────────────────
 create type public.payment_kind as enum ('customer_receipt', 'supplier_payment', 'customer_refund', 'supplier_refund');
 
