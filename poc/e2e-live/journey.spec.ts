@@ -70,7 +70,7 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await page.locator("aside").getByRole("button", { name: "Sales invoices" }).click();
   await page.getByRole("button", { name: "New invoice" }).click();
   const inv = page.getByRole("dialog", { name: "New invoice" });
-  await inv.getByLabel("Customer").selectOption({ label: "E2E Buyer LLC" });
+  await inv.getByLabel("Customer", { exact: true }).selectOption({ label: "E2E Buyer LLC" });
   await inv.getByLabel("Line 1 description").fill("E2E consulting");
   await inv.getByLabel("Line 1 unit price").fill("10,000");
   await inv.getByLabel("Line 1 account").selectOption({ label: "4010 · Revenue - services" });
