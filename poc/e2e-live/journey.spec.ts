@@ -78,7 +78,7 @@ test("sign in with MFA → add client → journal → second admin approves → 
   // Drill-down: account → ledger → journal (Principle 10)
   await rent.click();
   await expect(page.getByText("General ledger — 6100 · Rent")).toBeVisible();
-  await page.getByText(/JV-\d{4}-\d{2}-0001/).click();
+  await page.getByRole("cell", { name: /JV-\d{4}-\d{2}-0001/ }).click();
   await expect(page.getByRole("dialog")).toContainText("E2E rent accrual");
 });
 
