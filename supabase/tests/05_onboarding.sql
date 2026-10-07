@@ -1,7 +1,7 @@
 -- Client onboarding (P1-12 · Spec 03 §3.1 · CFG-06, CT-10, F-05/F-06/F-12).
 begin;
 \ir fixtures/setup.psql
-select plan(21);
+select plan(23);
 
 create temp table c (k text primary key, id uuid) on commit drop;
 grant all on c to authenticated;
@@ -74,6 +74,16 @@ select throws_like($$ select public.create_client(p_legal_name => 'No stagger', 
 select throws_like($$ select public.create_client(p_legal_name => 'Mid month', p_emirate_code => 'AUH', p_books_start => '2026-01-01',
   p_trn => '100222222200003', p_vat_registered => true, p_vat_period => 'quarterly', p_vat_first_period_end => '2026-02-15') $$,
   'The first VAT period must end on the last day of a month%', 'First VAT period must end on a month end');
+
+-- Editing client details (address for tax invoices): Firm Admin yes, Firm Accountant no
+select tests.login('admin2@test.local');
+update public.organizations set address = 'Office 1201, Al Maqam Tower, ADGM, Abu Dhabi' where id = (select id from c where k = 'q');
+select is((select address from public.organizations where id = (select id from c where k = 'q')), 'Office 1201, Al Maqam Tower, ADGM, Abu Dhabi',
+  'A Firm Admin can set the client''s address (needed on tax invoices)');
+select tests.login('acct@test.local');
+update public.organizations set address = 'Hacked' where id = (select id from c where k = 'q');
+select is((select address from public.organizations where id = (select id from c where k = 'q')), 'Office 1201, Al Maqam Tower, ADGM, Abu Dhabi',
+  'A Firm Accountant cannot change client details');
 
 -- Firms stay separate
 select tests.login('badmin@test.local');
