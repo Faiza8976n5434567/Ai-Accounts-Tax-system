@@ -7,7 +7,7 @@ export default defineConfig({
     environment: "node",
     coverage: {
       provider: "v8",
-      include: ["src/lib/{money,ledger,vat,ct,subledger,einvoice,posting,rules,dates}.ts"],
+      include: ["src/lib/{money,ledger,vat,ct,subledger,einvoice,posting,rules,dates,auth}.ts"],
       reporter: ["text-summary", "text"],
       thresholds: { lines: 95 },
     },

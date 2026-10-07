@@ -21,6 +21,7 @@
     "check": "npm run typecheck && npm run lint && npm run check:finance && npm run test && npm run build && npm run check:bundle"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.117.2",
     "lucide-react": "^1.49.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

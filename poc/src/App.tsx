@@ -26,7 +26,7 @@ export function App() {
   useEffect(() => {
     const label = ALL_ITEMS.find((i) => i.id === page)?.label ?? "";
     const who = org ? (state.session.lang === "ar" ? org.nameAr : org.name) : "TFS Plus";
-    document.title = `${t(label)} · ${who} · TFS+ Smart Ledger`;
+    document.title = `${t(label)} · ${who} · TFS+ Smart Ledger`; // TODO(P1-13): app name from platform_settings
   }, [page, org, state.session.lang, t]);
   useEffect(() => { if (!org && !["firm", "calendar", "audit", "settings"].includes(page)) go("firm"); }, [org, page]);
   const { setSession } = useStore();
