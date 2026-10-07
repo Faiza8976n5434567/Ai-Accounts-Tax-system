@@ -1,26 +1,33 @@
-/** One client: overview, chart of accounts and periods — live from Supabase (P1-13). */
-import { useEffect, useState } from "react";
-import { BookOpen, CalendarRange, FileText, Landmark } from "lucide-react";
+/** One client — live from Supabase: overview, journals, approvals, chart of accounts, periods (P1-13/P1-14). */
+import { useCallback, useEffect, useState } from "react";
+import { FileText, Landmark } from "lucide-react";
 import { Badge, Card, PageHeader } from "../components/ui";
 import { getClient, listAccountingPeriods, listAccounts, listTaxPeriods, MONTHS, nextVatDue, vatSummary, type Account, type AccountingPeriod, type Client, type TaxPeriod } from "../lib/clients";
+import { myPermissions } from "../lib/journals";
 import { shortDate } from "../lib/email";
 import { fmt } from "../lib/money";
 import type { ClientTab } from "./routes";
+import { JournalsTab } from "./JournalsTab";
+import { AccountsTab } from "./AccountsTab";
+import { PeriodsTab } from "./PeriodsTab";
+
+const TITLES: Record<ClientTab, string> = { overview: "Overview", journals: "Journals", approvals: "Approvals", accounts: "Chart of accounts", periods: "Periods" };
 
 export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab }) {
   const [client, setClient] = useState<Client | null | undefined>(undefined);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [periods, setPeriods] = useState<AccountingPeriod[]>([]);
   const [taxPeriods, setTaxPeriods] = useState<TaxPeriod[]>([]);
+  const [perms, setPerms] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let live = true;
-    void Promise.all([getClient(clientId), listAccounts(clientId), listAccountingPeriods(clientId), listTaxPeriods(clientId)])
-      .then(([c, a, p, t]) => { if (live) { setClient(c); setAccounts(a); setPeriods(p); setTaxPeriods(t); } })
-      .catch(() => { if (live) setError("Could not load this client. Check your connection and try again."); });
-    return () => { live = false; };
+  const load = useCallback(async () => {
+    try {
+      const [c, a, p, t, m] = await Promise.all([getClient(clientId), listAccounts(clientId), listAccountingPeriods(clientId), listTaxPeriods(clientId), myPermissions(clientId)]);
+      setClient(c); setAccounts(a); setPeriods(p); setTaxPeriods(t); setPerms(m); setError(null);
+    } catch { setError("Could not load this client. Check your connection and try again."); }
   }, [clientId]);
+  useEffect(() => { void load(); }, [load]);
 
   if (error) return <p role="alert" className="text-sm text-rose-700">{error}</p>;
   if (client === undefined) return <p className="text-sm text-slate-500">Loading…</p>;
@@ -28,11 +35,11 @@ export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab
 
   const today = new Date().toISOString().slice(0, 10);
   const vatDue = nextVatDue(taxPeriods, today);
-  const titles: Record<ClientTab, string> = { overview: "Overview", accounts: "Chart of accounts", periods: "Periods" };
+  const booksStart = periods[0]?.start_date ?? today;
 
   return (
     <>
-      <PageHeader eyebrow={client.legal_name} title={titles[tab]}
+      <PageHeader eyebrow={client.legal_name} title={TITLES[tab]}
         sub={<span className="flex flex-wrap gap-1.5"><Badge>{client.emirate_code}</Badge><Badge tone={client.vat_registered ? "emerald" : "slate"}>{vatSummary(client)}</Badge>{client.trn && <Badge>TRN {client.trn}</Badge>}</span>} />
 
       {tab === "overview" && (
@@ -67,50 +74,9 @@ export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab
           </Card>
         </div>
       )}
-
-      {tab === "accounts" && (
-        <Card title="Chart of accounts" sub="Control accounts (receivables, payables, VAT, bank, customer credits) are posted only by their own documents, not by manual journals" icon={<BookOpen size={16} />} pad={false}>
-          <div className="overflow-x-auto"><table className="w-full min-w-[720px]">
-            <thead><tr><th className="th">Code</th><th className="th">Name</th><th className="th">Type</th><th className="th">Group</th><th className="th">Corporate Tax</th><th className="th">Status</th></tr></thead>
-            <tbody>{accounts.map((a) => (
-              <tr key={a.id} className="hover:bg-slate-50/70">
-                <td className="td font-mono">{a.code}</td>
-                <td className="td">{a.name}{a.is_control && <Badge tone="indigo" className="ms-2">Control</Badge>}</td>
-                <td className="td capitalize">{a.type}</td>
-                <td className="td text-slate-600">{a.report_group}</td>
-                <td className="td text-xs text-slate-600">{a.ct_tag?.replaceAll("_", " ").toLowerCase()}</td>
-                <td className="td">{a.is_active ? <Badge tone="emerald" dot>Active</Badge> : <Badge dot>Inactive</Badge>}</td>
-              </tr>
-            ))}</tbody>
-          </table></div>
-        </Card>
-      )}
-
-      {tab === "periods" && (
-        <div className="grid gap-5 xl:grid-cols-2">
-          <Card title="Accounting periods" sub="Locked periods reject postings; only a Firm Admin can lock or reopen (with a reason)" icon={<CalendarRange size={16} />} pad={false}>
-            <div className="overflow-x-auto max-h-[60vh]"><table className="w-full">
-              <thead className="sticky top-0"><tr><th className="th">Month</th><th className="th">Status</th></tr></thead>
-              <tbody>{periods.map((p) => (
-                <tr key={p.id}><td className="td">{new Date(p.start_date + "T00:00:00Z").toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" })}</td>
-                  <td className="td">{p.status === "locked" ? <Badge tone="amber" dot>Locked</Badge> : <Badge tone="emerald" dot>Open</Badge>}</td></tr>
-              ))}</tbody>
-            </table></div>
-          </Card>
-          <Card title="Tax periods and deadlines" sub="From the VAT stagger and financial year; due dates come from the versioned tax rules" icon={<Landmark size={16} />} pad={false}>
-            <div className="overflow-x-auto max-h-[60vh]"><table className="w-full">
-              <thead className="sticky top-0"><tr><th className="th">Return</th><th className="th">Period</th><th className="th">Due</th></tr></thead>
-              <tbody>{taxPeriods.map((t) => (
-                <tr key={t.id} className={t.due_date < today ? "text-slate-400" : undefined}>
-                  <td className="td">{t.kind === "vat" ? "VAT 201" : "Corporate Tax"}</td>
-                  <td className="td">{shortDate(t.start_date)} – {shortDate(t.end_date)}</td>
-                  <td className="td font-medium">{shortDate(t.due_date)}</td>
-                </tr>
-              ))}</tbody>
-            </table></div>
-          </Card>
-        </div>
-      )}
+      {(tab === "journals" || tab === "approvals") && <JournalsTab key={tab} orgId={clientId} accounts={accounts} perms={perms} booksStart={booksStart} approvalsOnly={tab === "approvals"} />}
+      {tab === "accounts" && <AccountsTab orgId={clientId} accounts={accounts} canManage={perms.includes("manage_coa")} reload={load} />}
+      {tab === "periods" && <PeriodsTab periods={periods} taxPeriods={taxPeriods} perms={perms} reload={load} />}
     </>
   );
 }

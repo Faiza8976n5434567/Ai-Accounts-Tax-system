@@ -4,11 +4,11 @@
  * demo screens remain available only in the demo build (`vite --mode demo`).
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { BookOpen, Building2, CalendarRange, ChevronDown, LayoutDashboard, LogOut, Menu, UserPlus, X } from "lucide-react";
+import { BookOpen, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, LayoutDashboard, LogOut, Menu, UserPlus, X } from "lucide-react";
 import { useAuth } from "../components/AuthGate";
 import { cx } from "../components/ui";
 import { listClients, type Client } from "../lib/clients";
-import { parseRoute, routeHash, type Route } from "./routes";
+import { parseRoute, routeHash, type ClientTab, type Route } from "./routes";
 import { ClientsPage } from "./ClientsPage";
 import { ClientPage } from "./ClientPage";
 import { TeamPage } from "../pages/Team";
@@ -38,8 +38,10 @@ export function LiveApp() {
     { label: "Clients", icon: <Building2 size={17} />, to: { page: "clients" }, active: route.page === "clients" },
     { label: "Users & invites", icon: <UserPlus size={17} />, to: { page: "team" }, active: route.page === "team" },
   ];
-  const clientNav: { label: string; icon: ReactNode; tab: "overview" | "accounts" | "periods" }[] = [
+  const clientNav: { label: string; icon: ReactNode; tab: ClientTab }[] = [
     { label: "Overview", icon: <LayoutDashboard size={17} />, tab: "overview" },
+    { label: "Journals", icon: <BookOpenCheck size={17} />, tab: "journals" },
+    { label: "Approvals", icon: <CheckSquare size={17} />, tab: "approvals" },
     { label: "Chart of accounts", icon: <BookOpen size={17} />, tab: "accounts" },
     { label: "Periods", icon: <CalendarRange size={17} />, tab: "periods" },
   ];
@@ -69,7 +71,7 @@ export function LiveApp() {
             <div className="space-y-1">
               <div className="px-3 text-[10px] uppercase tracking-[0.14em] text-slate-500 mb-1.5 truncate">{client?.trade_name ?? client?.legal_name ?? "Client"}</div>
               {clientNav.map((n) => <NavButton key={n.tab} label={n.label} icon={n.icon} active={route.tab === n.tab} onClick={() => go({ page: "client", clientId: route.clientId, tab: n.tab })} />)}
-              <p className="px-3 pt-2 text-xs text-slate-500">Journals, approvals and the trial balance arrive next (P1-14, P1-15).</p>
+              <p className="px-3 pt-2 text-xs text-slate-500">Trial balance and general ledger arrive next (P1-15).</p>
             </div>
           )}
         </nav>

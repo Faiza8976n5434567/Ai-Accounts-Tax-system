@@ -1578,7 +1578,12 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: undefined
       }
+      my_permissions: { Args: { p_organization_id: string }; Returns: string[] }
       post_journal: { Args: { p_journal_id: string }; Returns: string }
+      reject_journal: {
+        Args: { p_journal_id: string; p_reason: string }
+        Returns: undefined
+      }
       reopen_period: {
         Args: { p_period_id: string; p_reason: string }
         Returns: undefined
@@ -1590,6 +1595,17 @@ export type Database = {
       revoke_invitation: {
         Args: { p_invitation_id: string }
         Returns: undefined
+      }
+      save_journal_draft: {
+        Args: {
+          p_entry_date: string
+          p_journal_id: string
+          p_lines: Json
+          p_memo: string
+          p_organization_id: string
+          p_source: Database["public"]["Enums"]["journal_source"]
+        }
+        Returns: string
       }
       set_super_admin: {
         Args: { p_reason: string; p_user: string; p_value: boolean }
