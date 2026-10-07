@@ -65,7 +65,7 @@ test("sign in with MFA → add client → journal → second admin approves → 
   const cust = page.getByRole("dialog", { name: "New customer" });
   await cust.getByLabel("Name (as on their trade licence or invoice)").fill("E2E Buyer LLC");
   await cust.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByRole("cell", { name: /E2E Buyer LLC/ })).toBeVisible();
+  await expect(page.getByRole("cell", { name: /E2E Buyer LLC/ }).first()).toBeVisible();
 
   await page.locator("aside").getByRole("button", { name: "Sales invoices" }).click();
   await page.getByRole("button", { name: "New invoice" }).click();
