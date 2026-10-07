@@ -46,6 +46,7 @@
 | D-24 | Email sender: **`onboarding@resend.dev`** (Resend's default address) for now. It delivers only to the Resend account owner's email, so staff invites also get a **"Copy invite link"** button that you can send yourself (WhatsApp/Outlook). Own domain later (OA-09). *(Answers Q-13, Q-19.)* | 2026-10-06 |
 | D-26 | **Reversing a posted journal needs a second person:** a Firm Admin *requests* the reversal (reason required); it waits as a pending mirror journal that nobody can edit; a **different** Firm Admin approves it, which posts it and marks the original reversed. The request can be cancelled. *(Answers Q-21.)* | 2026-10-07 |
 | D-27 | **Bank account (1010) is a control account:** manual journals cannot post to it; bank entries come from the bank module, opening balances from the opening journal. *(Answers Q-22, confirms Spec 01.)* | 2026-10-07 |
+| D-28 | **Reports before year-end closing:** until a year-end closing journal exists (Phase 5), reports roll earlier financial years' income and expense balances into **Retained earnings** automatically (Xero/QuickBooks style); P&L accounts show only the current year. The ledger itself is never changed. Built with the Phase 2 reports (P2-06). *(Answers Q-24.)* | 2026-10-07 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -74,7 +75,7 @@
 | Q-20 | Yearly reset of the counter? → **No: continues across years** (`INV-2027-01-1245`, D-22). | Phase 2 | ✅ |
 | Q-21 | Reversing a posted journal: one step or second approval? → **Decided: second person approves (D-26).** | Phase 1 | ✅ |
 | Q-22 | Bank account (1010) as a control account? → **Decided: yes (D-27).** | Phase 1 | ✅ |
-| Q-24 | **Trial balance before year-end closing (Phase 5):** should reports roll earlier years' income and expenses into Retained earnings automatically (like Xero/QuickBooks), or show the ledger exactly as posted until a closing journal is made? Built as "exactly as posted" for now. | Phase 2 (reports, P2-06) | 🔍 |
+| Q-24 | Reports before year-end closing: roll earlier years' P&L into Retained earnings automatically? → **Decided: yes (D-28)**, built in P2-06. | Phase 2 | ✅ |
 | Q-23 | Firm-staff email domain for invites; invite expiry (7 days for now). → **Deferred: nothing is deployed yet; decide before inviting staff.** | Before first staff invite | ⏸ |
 
 ### 2.1 Customer overpayments & credits — agreed rule (D-11)
@@ -128,7 +129,7 @@ One command runs the fast gates locally: `npm run check` (G-1, G-2, G-3, G-4, G-
 4. **Screens & logic** — built against the tests (G-1 → G-5).
 5. **End-to-end** — Playwright journey (G-9); security scans (G-8).
 6. **Commit** on branch `faizan` → push → GitHub Actions re-runs everything → Vercel builds a **preview link**.
-7. **Faizan checks** the preview (G-10) → pull request merged into `main` → live. Live database migrated only after this.
+7. **Faizan checks** the work (G-10). `main` is **not touched** — no pull request or merge — until Faizan explicitly asks (2026-10-07); all work stays on `faizan`.
 
 ---
 
@@ -218,7 +219,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P2-03 | Purchase bills + debit notes, attachments (private storage), compliance checks & risk | ARAP-06, DM-08, SEC-13, SEC-20 | ⬜ |
 | P2-04 | Receipts & payments (AED/USD), allocations, **Customer Credits** (auto-apply, refunds) (D-11) | ARAP-01 → 05, ARAP-08 → 12, DM-05, DM-06, FX-02, FX-03 | ⬜ |
 | P2-05 | Bank accounts, statement upload, duplicate detection, matching, reconciliation | BANK-01 → 03, DM-07 | ⬜ |
-| P2-06 | Reports: TB, GL, P&L, Balance Sheet, AR/AP ageing, customer statement; Excel/PDF export | RPT-01 → 04, SEC-14 | ⬜ |
+| P2-06 | Reports: TB, GL, P&L, Balance Sheet, AR/AP ageing, customer statement; Excel/PDF export | RPT-01 → 04, SEC-14, D-28 roll-forward | ⬜ |
 | P2-07 | Opening-balance & contacts import from one Excel template (Spec 05) | — | ⬜ |
 | P2-08 | Nightly integrity checks (pg_cron) + Integrity page | — | ⬜ |
 
@@ -468,3 +469,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | Q-07: Faizan confirmed all VERIFY values (unchanged); the in-app approval of a new version still has to be done to clear the flags. **P1-16 ✅** security headers + site password removed. |
 | 2026-10-07 | **P1-17 ✅** live end-to-end journey in CI (G-9 on a temporary Supabase). Local Supabase config fix: in the CLI, `[auth.email] enable_signup=false` also disables email sign-in — sign-ups stay off via `[auth] enable_signup=false`. |
 | 2026-10-07 | **P1-18 ✅** strict React rules on for all rebuilt code (shared `useLoad`/`useToday` hooks; lint 0 findings). P1-13 ✅. **Phase 1: every step built and tested — waiting for Faizan's sign-off.** |
+| 2026-10-07 | Faizan: **work only on branch `faizan`; never touch `main`** unless he asks (CLAUDE.md and §3.2 updated). Q-24 → **D-28** (automatic roll-forward of prior-year P&L into Retained earnings in reports, P2-06). Admin → Tax rules: "Mark all VERIFY as checked today" button for draft versions. |

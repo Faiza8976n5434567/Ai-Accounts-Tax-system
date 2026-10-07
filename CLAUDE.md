@@ -73,7 +73,8 @@ work is done. Domain rules: `docs/UAE_COMPLIANCE_RULES.md` and `docs/PRD.md`
   in tested code (Spec 03).
 - Things only Faizan can do (accounts, keys, DNS, legal) are in `docs/OWNER-ACTIONS.md` —
   give him step-by-step instructions; never ask him to paste secrets into chat.
-- Work on branch `faizan`; merge to `main` via pull request after the quality gates.
+- Work on branch `faizan` **only**. Never push to, merge into or open pull requests against `main`
+  unless Faizan explicitly asks (Faizan, 2026-10-07).
 
 ## 5. How to work
 - Database changes = numbered SQL files in `supabase/migrations/`, proven on a temporary

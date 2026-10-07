@@ -119,6 +119,13 @@ function TaxRulesTab({ superAdmin }: { superAdmin: boolean }) {
           sub={isDraft ? (superAdmin ? "Draft: edit values below, then approve with a written reason." : "Draft — only a Super Admin can edit and approve it.") : "Approved and frozen."}
           actions={isDraft && superAdmin && <div className="flex gap-2">
             <button className="btn-danger" onClick={async () => { try { await deleteDraftVersion(version.id); setSelected(null); toast("Draft deleted"); await load(); } catch (e) { toast(friendlyDbError(e), "err"); } }}><Trash2 size={15} />Delete draft</button>
+            {rows.some((r) => r.needs_verification) && <button className="btn-ghost" onClick={async () => {
+              try {
+                for (const r of rows.filter((x) => x.needs_verification))
+                  await updateDraftValue(r.version_id, r.key, { value: r.value, legal_reference: r.legal_reference, last_verified: today, needs_verification: false });
+                toast("All VERIFY items marked as checked today — now approve the version"); await load();
+              } catch (e) { toast(friendlyDbError(e), "err"); }
+            }}><BadgeCheck size={15} />Mark all VERIFY as checked today</button>}
             <button className="btn-primary bg-emerald-600" onClick={() => setApproving(true)}><BadgeCheck size={15} />Approve…</button>
           </div>}>
           <div className="overflow-x-auto"><table className="w-full min-w-[860px]">
@@ -127,7 +134,7 @@ function TaxRulesTab({ superAdmin }: { superAdmin: boolean }) {
               const row = rows.find((r) => r.key === k.key);
               if (!row) return null;
               return isDraft && superAdmin
-                ? <DraftRow key={k.key} k={k} row={row} onSaved={load} />
+                ? <DraftRow key={`${k.key}:${row.needs_verification}:${row.last_verified}`} k={k} row={row} onSaved={load} />
                 : (
                   <tr key={k.key}>
                     <td className="td"><div>{k.label}</div><div className="text-xs text-slate-400 font-mono">{k.key}</div></td>
