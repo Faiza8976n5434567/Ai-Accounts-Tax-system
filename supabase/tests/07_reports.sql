@@ -65,7 +65,7 @@ select tests.anon();
 select throws_ok($$ select * from public.trial_balance((select id from fx where k = 'orgA'), '2026-01-01', '2026-12-31') $$, '42501', null,
   'Anonymous users cannot run reports');
 
--- LED-13 · 200 random balanced journals: the trial balance always balances
+-- LED-13 · 1,000 random balanced journals: the trial balance always balances
 reset role;
 select set_config('request.jwt.claims', '', true);
 select setseed(0.42);
@@ -75,7 +75,7 @@ declare
   v_acc uuid[] := array(select id from public.accounts where organization_id = v_org and not is_control and is_active);
   v_j uuid; v_n int; v_total bigint; v_amt bigint;
 begin
-  for i in 1..200 loop
+  for i in 1..1000 loop
     insert into public.journals (organization_id, entry_date, memo) values (v_org, date '2026-01-01' + (random() * 360)::int, 'random ' || i)
     returning id into v_j;
     v_n := 2 + (random() * 3)::int; v_total := 0;
@@ -95,9 +95,9 @@ begin
 end $$;
 create temp table tb2 on commit drop as select * from public.trial_balance((select id from fx where k = 'orgB'), '2026-01-01', '2026-12-31');
 select ok((select sum(debit) = sum(credit) and sum(closing) = 0 and count(*) > 10 from tb2),
-  'LED-13 · after 200 random journals, total debits = total credits and balances net to zero');
-select is((select count(*)::int from public.journals where organization_id = (select id from fx where k = 'orgB') and status = 'posted'), 200,
-  'All 200 random journals were posted through the balance check');
+  'LED-13 · after 1,000 random journals, total debits = total credits and balances net to zero');
+select is((select count(*)::int from public.journals where organization_id = (select id from fx where k = 'orgB') and status = 'posted'), 1000,
+  'All 1,000 random journals were posted through the balance check');
 
 select * from finish();
 rollback;
