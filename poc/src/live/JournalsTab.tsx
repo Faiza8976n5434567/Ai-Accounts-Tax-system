@@ -107,7 +107,7 @@ const ACTION_UI: Record<JournalAction, { label: string; icon: ReactNode; tone: "
   request_reversal: { label: "Request reversal", icon: <RotateCcw size={15} />, tone: "danger", needsReason: "Why must this journal be reversed? A second Firm Admin will approve the reversal." },
 };
 
-function JournalView({ journal: j, accountName, actions, onClose, onAction }: {
+export function JournalView({ journal: j, accountName, actions, onClose, onAction }: {
   journal: Journal; accountName: Map<string, string>; actions: JournalAction[];
   onClose: () => void; onAction: (a: JournalAction, reason?: string, date?: string) => Promise<void>;
 }) {

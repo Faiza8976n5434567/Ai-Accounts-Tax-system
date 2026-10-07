@@ -10,8 +10,9 @@ import type { ClientTab } from "./routes";
 import { JournalsTab } from "./JournalsTab";
 import { AccountsTab } from "./AccountsTab";
 import { PeriodsTab } from "./PeriodsTab";
+import { ReportsTab } from "./ReportsTab";
 
-const TITLES: Record<ClientTab, string> = { overview: "Overview", journals: "Journals", approvals: "Approvals", accounts: "Chart of accounts", periods: "Periods" };
+const TITLES: Record<ClientTab, string> = { overview: "Overview", journals: "Journals", approvals: "Approvals", reports: "Trial balance & ledger", accounts: "Chart of accounts", periods: "Periods" };
 
 export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab }) {
   const [client, setClient] = useState<Client | null | undefined>(undefined);
@@ -75,6 +76,7 @@ export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab
         </div>
       )}
       {(tab === "journals" || tab === "approvals") && <JournalsTab key={tab} orgId={clientId} accounts={accounts} perms={perms} booksStart={booksStart} approvalsOnly={tab === "approvals"} />}
+      {tab === "reports" && <ReportsTab orgId={clientId} accounts={accounts} fyStartMonth={client.fy_start_month} />}
       {tab === "accounts" && <AccountsTab orgId={clientId} accounts={accounts} canManage={perms.includes("manage_coa")} reload={load} />}
       {tab === "periods" && <PeriodsTab periods={periods} taxPeriods={taxPeriods} perms={perms} reload={load} />}
     </>

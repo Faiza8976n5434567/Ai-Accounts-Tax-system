@@ -10,7 +10,7 @@
 | **Current phase** | Phase 1 — Foundation (1A database ✅ live; 1B logins next) |
 | **Overall status** | 🟡 In progress |
 | **Last updated** | 2026-10-07 |
-| **Next milestone** | P1-14 journals, approval queue, reversal, period locks on live data |
+| **Next milestone** | P1-11 Admin area (firm profile, settings, tax rules with VERIFY flags), then P1-16 → P1-18 |
 
 **Status legend:** ⏸ Deferred · ⬜ Not started · 🟡 In progress (for tests: written and passing locally, awaiting CI) · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
 
@@ -74,6 +74,7 @@
 | Q-20 | Yearly reset of the counter? → **No: continues across years** (`INV-2027-01-1245`, D-22). | Phase 2 | ✅ |
 | Q-21 | Reversing a posted journal: one step or second approval? → **Decided: second person approves (D-26).** | Phase 1 | ✅ |
 | Q-22 | Bank account (1010) as a control account? → **Decided: yes (D-27).** | Phase 1 | ✅ |
+| Q-24 | **Trial balance before year-end closing (Phase 5):** should reports roll earlier years' income and expenses into Retained earnings automatically (like Xero/QuickBooks), or show the ledger exactly as posted until a closing journal is made? Built as "exactly as posted" for now. | Phase 2 (reports, P2-06) | 🔍 |
 | Q-23 | Firm-staff email domain for invites; invite expiry (7 days for now). → **Deferred: nothing is deployed yet; decide before inviting staff.** | Before first staff invite | ⏸ |
 
 ### 2.1 Customer overpayments & credits — agreed rule (D-11)
@@ -193,16 +194,16 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | ID | Step | Tests | Status |
 |---|---|---|---|
 | P1-09 | Login, MFA enrolment, password reset, 30-min idle sign-out | SEC-08, SEC-09, SEC-21 | ✅ `components/AuthGate.tsx` + `lib/auth.ts` (22 unit tests); Faizan signed in with password + two-factor on 2026-10-07 |
-| P1-10 | Invite flow (Vercel function + one-time link; sent via Resend **and** a "Copy invite link" button, D-24) | CFG-10, CFG-11, SEC-15, CFG-18 | 🟡 built — DB `…100800_invitations.sql` (23 pgTAP tests, applied), server `poc/api/invite.ts` (12 unit tests), **Users & invites** page; waiting for Faizan's first real invite |
+| P1-10 | Invite flow (Vercel function + one-time link; sent via Resend **and** a "Copy invite link" button, D-24) | CFG-10, CFG-11, SEC-15, CFG-18 | ✅ Faizan's real invite accepted 2026-10-07 (second Firm Admin joined); 23 pgTAP + 12 unit tests |
 | P1-11 | Admin area: Users & invites, Firm profile, Settings, **Tax rules** (versioned, with VERIFY flags) | CFG-01 → CFG-05, CFG-13 | ⬜ |
-| P1-12 | Client onboarding (CoA copy, periods, VAT periods, number sequences, staff assignment, opening balances) | CFG-06 | 🟡 built — `create_client()` (`…100900`, 21 pgTAP tests incl. CFG-06, CT-10; applied) + **Add client** form; opening balances via the opening journal in P1-14; waiting for Faizan's first real client |
+| P1-12 | Client onboarding (CoA copy, periods, VAT periods, number sequences, staff assignment, opening balances) | CFG-06 | ✅ 3 real clients added by Faizan 2026-10-07; 21 pgTAP tests (CFG-06, CT-10) |
 
 **1C · The app on live data**
 | ID | Step | Tests | Status |
 |---|---|---|---|
 | P1-13 | Replace browser storage with Supabase data access; remove demo role switcher | — | 🟡 live app (`src/live/`) on Supabase: Clients, client Overview / Chart of accounts / Periods, Users & invites; no demo data or role switcher. Old POC screens kept only in the demo build (`npm run dev -- --mode demo`, port 5182). Remaining live screens: P1-14/P1-15, then Phases 2–3 |
-| P1-14 | Chart of accounts, manual journals, approval queue, reversal, period lock screens | LED-*, RBAC-04 → 09 | 🟡 built — `…101000_journal_workflow.sql` (save draft, send back with reason, my_permissions; 18 pgTAP tests; applied by Faizan in the SQL Editor) + Journals / Approvals / Chart of accounts / Periods screens; journal rules in `lib/journals.ts` (20 unit tests); waiting for Faizan's first real journal |
-| P1-15 | Trial balance & general ledger from database functions | LED-13 | ⬜ |
+| P1-14 | Chart of accounts, manual journals, approval queue, reversal, period lock screens | LED-*, RBAC-04 → 09 | ✅ Faizan posted an opening and a manual journal approved by the second Firm Admin (JV-2026-01-0001, JV-2026-10-0002), no self-approval; 18 pgTAP + 20 unit tests |
+| P1-15 | Trial balance & general ledger from database functions | LED-13 | ✅ `…101100_reports.sql` (`trial_balance`, `general_ledger`; 14 pgTAP tests incl. LED-13 with 200 random journals) + **Trial balance & ledger** screen with drill-down TB → ledger → journal; checked on Faizan's real client (balanced) |
 | P1-16 | Security headers (CSP, HSTS) in `vercel.json`; Basic Auth removed once logins work | SEC-12 | ⬜ |
 | P1-17 | End-to-end: log in → create client → journal → approve → trial balance | G-9 | ⬜ |
 | P1-18 | Re-enable the React style/performance lint rules switched off in Phase 0 (`poc/.oxlintrc.json`) as screens are rebuilt | G-2 | ⬜ |
@@ -293,7 +294,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | LED-10 | Post into a locked period | Rejected | D | ✅ |
 | LED-11 | Firm Admin reopens a period | Allowed; audit entry with reason | D | ✅ |
 | LED-12 | Unknown or inactive account | Rejected | D | ✅ |
-| LED-13 | 1,000 random valid journals | TB total debits = total credits (property test) | U | ⬜ |
+| LED-13 | 1,000 random valid journals | TB total debits = total credits (property test) | U | ✅ |
 | LED-14 | Every post/approve/reverse/lock | Audit row written; audit rows cannot be edited or deleted | D | ✅ |
 
 ### 6.2 Security & access (SEC)
@@ -462,3 +463,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | **P1-10 invites built.** Database decides who may invite whom (Firm Admin → Firm Accountants; Super Admin → Firm Admins; client roles wait for Phase 3), checks email format and allowed domains (CFG-11, list empty for now — Q-23), expiry from `invite_expiry_days` (7); invitation becomes a membership on first sign-in, expired ones refused (CFG-10); copying the link is audit-logged (CFG-18). Server function `/api/invite` (secret key server-side only; 401 without session, 403 when refused — SEC-15) creates the one-time link and emails it via Resend using the editable template; the link is also shown once for "Copy invite link" (D-24). Local dev server now runs `api/` functions and reads `.env.local` from `poc/`. 147 database + 106 unit tests. |
 | 2026-10-07 | OA-04 done by Faizan (public sign-up off; leaked-password protection needs the Pro plan — advisor still warns, tracked under OA-13). OA-16 deferred until deployment (local testing only). **P1-12/P1-13:** `create_client()` creates a client in one call (chart of accounts, monthly periods to end of next FY, VAT periods from the stagger with due dates from config, CT periods, number counters, accountant assignment). New live app frame (`src/live/`) — normal start shows only real-database screens; the demo build keeps the old POC screens. Exact AED→fils parser (`parseAedToFils`, refuses fractions of a fils). 168 database + 118 unit tests. |
 | 2026-10-07 | **P1-14 built.** Journals (new, opening balances, drafts, submit, withdraw, delete), approval queue (approve & post / send back with a reason — the preparer never sees Approve), reversal requests approved by a second Firm Admin (D-26), chart of accounts (add, rename, CT treatment, deactivate), period lock/reopen with reason. Faizan applied `…101000` in the SQL Editor (the app's safety check blocks database changes containing deletes). 186 database + 138 unit tests. |
+| 2026-10-07 | Faizan's tests (invite, clients, journals with maker-checker) recorded → P1-10, P1-12, P1-14 ✅. **P1-15 ✅:** `trial_balance()` / `general_ledger()` (calculated from posted journals each time, RLS applies, reversals net out, drafts never count) + Trial balance & ledger screen with drill-down to the journal; LED-13 proven with 200 random journals. Q-24 added (year-end presentation). 200 database + 145 unit tests. |

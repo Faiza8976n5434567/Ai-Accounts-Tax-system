@@ -1570,6 +1570,27 @@ export type Database = {
           role: string
         }[]
       }
+      general_ledger: {
+        Args: {
+          p_account_id: string
+          p_from: string
+          p_organization_id: string
+          p_to: string
+        }
+        Returns: {
+          balance: number
+          credit: number
+          debit: number
+          description: string
+          entry_date: string
+          journal_id: string
+          journal_no: string
+          line_no: number
+          memo: string
+          row_kind: string
+          source: Database["public"]["Enums"]["journal_source"]
+        }[]
+      }
       lock_period: {
         Args: { p_period_id: string; p_reason?: string }
         Returns: undefined
@@ -1618,6 +1639,20 @@ export type Database = {
           p_user: string
         }
         Returns: undefined
+      }
+      trial_balance: {
+        Args: { p_from: string; p_organization_id: string; p_to: string }
+        Returns: {
+          account_id: string
+          closing: number
+          code: string
+          credit: number
+          debit: number
+          name: string
+          opening: number
+          report_group: string
+          type: Database["public"]["Enums"]["account_type"]
+        }[]
       }
     }
     Enums: {

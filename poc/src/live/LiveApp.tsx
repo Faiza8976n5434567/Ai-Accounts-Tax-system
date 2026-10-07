@@ -4,7 +4,7 @@
  * demo screens remain available only in the demo build (`vite --mode demo`).
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { BookOpen, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, LayoutDashboard, LogOut, Menu, UserPlus, X } from "lucide-react";
+import { BookOpen, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, LayoutDashboard, LogOut, Menu, Scale, UserPlus, X } from "lucide-react";
 import { useAuth } from "../components/AuthGate";
 import { cx } from "../components/ui";
 import { listClients, type Client } from "../lib/clients";
@@ -42,6 +42,7 @@ export function LiveApp() {
     { label: "Overview", icon: <LayoutDashboard size={17} />, tab: "overview" },
     { label: "Journals", icon: <BookOpenCheck size={17} />, tab: "journals" },
     { label: "Approvals", icon: <CheckSquare size={17} />, tab: "approvals" },
+    { label: "Trial balance & ledger", icon: <Scale size={17} />, tab: "reports" },
     { label: "Chart of accounts", icon: <BookOpen size={17} />, tab: "accounts" },
     { label: "Periods", icon: <CalendarRange size={17} />, tab: "periods" },
   ];
@@ -71,7 +72,6 @@ export function LiveApp() {
             <div className="space-y-1">
               <div className="px-3 text-[10px] uppercase tracking-[0.14em] text-slate-500 mb-1.5 truncate">{client?.trade_name ?? client?.legal_name ?? "Client"}</div>
               {clientNav.map((n) => <NavButton key={n.tab} label={n.label} icon={n.icon} active={route.tab === n.tab} onClick={() => go({ page: "client", clientId: route.clientId, tab: n.tab })} />)}
-              <p className="px-3 pt-2 text-xs text-slate-500">Trial balance and general ledger arrive next (P1-15).</p>
             </div>
           )}
         </nav>

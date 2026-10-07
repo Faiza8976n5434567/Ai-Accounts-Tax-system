@@ -87,16 +87,25 @@ export const STATUS_LABEL: Record<JournalStatus, string> = { draft: "Draft", pen
 
 // ── Data access ─────────────────────────────────────────────────────────────────────────
 
+const JOURNAL_COLUMNS = "id, journal_no, entry_date, source, memo, status, reversal_of, prepared_by, approved_by, posted_at, created_at, preparer:profiles!journals_prepared_by_fkey(full_name), approver:profiles!journals_approved_by_fkey(full_name), journal_lines(id, line_no, account_id, debit, credit, description)";
+type JournalQueryRow = { preparer: { full_name: string } | null; approver: { full_name: string } | null; journal_lines: JournalLine[] | null } & Omit<Journal, "preparer" | "approver" | "lines">;
+const toJournal = (j: JournalQueryRow): Journal => ({
+  ...j, preparer: j.preparer?.full_name ?? null, approver: j.approver?.full_name ?? null,
+  lines: [...(j.journal_lines ?? [])].sort((a, b) => a.line_no - b.line_no),
+});
+
 export async function listJournals(orgId: string): Promise<Journal[]> {
-  const r = await db().from("journals")
-    .select("id, journal_no, entry_date, source, memo, status, reversal_of, prepared_by, approved_by, posted_at, created_at, preparer:profiles!journals_prepared_by_fkey(full_name), approver:profiles!journals_approved_by_fkey(full_name), journal_lines(id, line_no, account_id, debit, credit, description)")
-    .eq("organization_id", orgId)
+  const r = await db().from("journals").select(JOURNAL_COLUMNS).eq("organization_id", orgId)
     .order("entry_date", { ascending: false }).order("created_at", { ascending: false });
   ok(r);
-  return (r.data ?? []).map((j) => ({
-    ...j, preparer: j.preparer?.full_name ?? null, approver: j.approver?.full_name ?? null,
-    lines: [...(j.journal_lines ?? [])].sort((a, b) => a.line_no - b.line_no),
-  }));
+  return ((r.data ?? []) as unknown as JournalQueryRow[]).map(toJournal);
+}
+
+/** One journal with its lines (drill-down from the general ledger). */
+export async function getJournal(id: string): Promise<Journal | null> {
+  const r = await db().from("journals").select(JOURNAL_COLUMNS).eq("id", id).maybeSingle();
+  ok(r);
+  return r.data ? toJournal(r.data as unknown as JournalQueryRow) : null;
 }
 
 export async function myPermissions(orgId: string): Promise<string[]> {
