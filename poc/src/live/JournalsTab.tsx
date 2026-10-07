@@ -1,5 +1,5 @@
 /** Journals and the approval queue for one client (P1-14 · Spec 02 R1–R3 · D-26). */
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { BookOpenCheck, CheckCircle2, FilePlus2, Landmark, RotateCcw, Send, Undo2, XCircle } from "lucide-react";
 import { Badge, Card, Modal } from "../components/ui";
 import { useAuth } from "../components/AuthGate";
@@ -12,6 +12,7 @@ import {
 } from "../lib/journals";
 import { JournalEditor } from "./JournalEditor";
 import { useToast } from "./toast";
+import { useLoad, useToday } from "./hooks";
 
 const STATUS_TONE: Record<string, string> = { draft: "slate", pending: "amber", posted: "emerald", reversed: "rose" };
 type Filter = "all" | "pending" | "draft" | "posted";
@@ -19,16 +20,14 @@ type Filter = "all" | "pending" | "draft" | "posted";
 export function JournalsTab({ orgId, accounts, perms, booksStart, approvalsOnly }: { orgId: string; accounts: Account[]; perms: string[]; booksStart: string; approvalsOnly?: boolean }) {
   const auth = useAuth()!;
   const toast = useToast();
-  const [journals, setJournals] = useState<Journal[] | null>(null);
   const [filter, setFilter] = useState<Filter>(approvalsOnly ? "pending" : "all");
   const [open, setOpen] = useState<Journal | null>(null);
   const [editing, setEditing] = useState<{ journal: Journal | null; source: JournalSource } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const reload = useCallback(async () => {
-    try { setJournals(await listJournals(orgId)); setError(null); } catch { setError("Could not load journals."); }
-  }, [orgId]);
-  useEffect(() => { void reload(); }, [reload]);
+  const fetchJournals = useCallback(() => listJournals(orgId), [orgId]);
+  const { data, error: loadError, reload } = useLoad(fetchJournals);
+  const journals = data ?? null;
+  const error = loadError ? "Could not load journals." : null;
+  const today = useToday();
 
   const accountName = useMemo(() => new Map(accounts.map((a) => [a.id, `${a.code} · ${a.name}`])), [accounts]);
   const pendingReversalOf = useMemo(() => new Set((journals ?? []).filter((j) => j.source === "reversal" && j.status === "pending").map((j) => j.reversal_of)), [journals]);
@@ -36,7 +35,7 @@ export function JournalsTab({ orgId, accounts, perms, booksStart, approvalsOnly 
   const hasOpening = (journals ?? []).some((j) => j.source === "opening");
   const pendingCount = (journals ?? []).filter((j) => j.status === "pending").length;
 
-  const done = async (msg: string) => { toast(msg); setOpen(null); await reload(); };
+  const done = async (msg: string) => { toast(msg); setOpen(null); reload(); };
   const run = async (fn: () => Promise<unknown>, msg: string) => { try { await fn(); await done(msg); } catch (e) { toast(friendlyDbError(e), "err"); } };
 
   return (
@@ -90,7 +89,7 @@ export function JournalsTab({ orgId, accounts, perms, booksStart, approvalsOnly 
         }} />}
 
       {editing && <JournalEditor orgId={orgId} accounts={accounts} journal={editing.journal} source={editing.source}
-        defaultDate={editing.source === "opening" ? booksStart : new Date().toISOString().slice(0, 10)}
+        defaultDate={editing.source === "opening" ? booksStart : today}
         onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void reload(); }} />}
     </>
   );
@@ -113,7 +112,7 @@ export function JournalView({ journal: j, accountName, actions, onClose, onActio
 }) {
   const [asking, setAsking] = useState<JournalAction | null>(null);
   const [reason, setReason] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(useToday());
   const [busy, setBusy] = useState(false);
   const t = lineTotals(j.lines);
   const go = async (a: JournalAction) => {

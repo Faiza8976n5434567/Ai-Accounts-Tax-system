@@ -1,33 +1,26 @@
 /** Users & invites (P1-10 · Spec 03 §3 "Users & invites" · D-24). Live data from Supabase. */
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Copy, MailCheck, MailWarning, UserPlus, Users, XCircle } from "lucide-react";
 import { useToast } from "../live/toast";
 import { roleLabel, shortDate } from "../lib/email";
 import { inviteDisplayStatus, inviteStaff, loadTeam, markInviteLinkCopied, revokeInvitation, type InviteResult, type Invitation, type StaffMember } from "../lib/team";
 import { Badge, Card, Modal, PageHeader } from "../components/ui";
+import { useLoad } from "../live/hooks";
 
 const STATUS_TONE: Record<string, string> = { pending: "amber", accepted: "emerald", revoked: "slate", expired: "rose" };
 
 export function TeamPage() {
   const toast = useToast();
-  const [staff, setStaff] = useState<StaffMember[]>([]);
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [canInviteAdmins, setCanInviteAdmins] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { data, error, loading, reload } = useLoad(loadTeam);
+  const staff: StaffMember[] = data?.staff ?? [];
+  const invitations: Invitation[] = data?.invitations ?? [];
+  const canInviteAdmins = data?.meIsSuperAdmin ?? false;
+  const loadError = error ? "Could not load the team. Check your connection and try again." : null;
+  const refresh = async () => reload();
   const [inviting, setInviting] = useState(false);
   const [result, setResult] = useState<(InviteResult & { email: string }) | null>(null);
   const [revoking, setRevoking] = useState<Invitation | null>(null);
 
-  const refresh = useCallback(async () => {
-    try {
-      const t = await loadTeam();
-      setStaff(t.staff); setInvitations(t.invitations); setCanInviteAdmins(t.meIsSuperAdmin); setLoadError(null);
-    } catch {
-      setLoadError("Could not load the team. Check your connection and try again.");
-    } finally { setLoading(false); }
-  }, []);
-  useEffect(() => { void refresh(); }, [refresh]);
 
   const copyLink = async () => {
     if (!result) return;
@@ -85,8 +78,8 @@ export function TeamPage() {
         </Card>
       </div>
 
-      <InviteModal open={inviting} canInviteAdmins={canInviteAdmins} result={result} onClose={() => setInviting(false)} onCopy={copyLink}
-        onInvited={(r) => { setResult(r); void refresh(); }} />
+      {inviting && <InviteModal open canInviteAdmins={canInviteAdmins} result={result} onClose={() => setInviting(false)} onCopy={copyLink}
+        onInvited={(r) => { setResult(r); void refresh(); }} />}
 
       <Modal open={!!revoking} onClose={() => setRevoking(null)} title="Revoke invitation?"
         footer={<><button className="btn-ghost" onClick={() => setRevoking(null)}>Cancel</button>
@@ -110,7 +103,6 @@ function InviteModal({ open, canInviteAdmins, result, onClose, onCopy, onInvited
   const [role, setRole] = useState("firm_accountant");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => { if (open && !result) { setFullName(""); setEmail(""); setRole("firm_accountant"); setError(null); } }, [open, result]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setBusy(true); setError(null);

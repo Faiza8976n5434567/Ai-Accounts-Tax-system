@@ -7,10 +7,10 @@
 
 | | |
 |---|---|
-| **Current phase** | Phase 1 — Foundation (1A database ✅ live; 1B logins next) |
+| **Current phase** | Phase 1 — Foundation: all steps built 🔍 waiting for Faizan's sign-off (G-10) |
 | **Overall status** | 🟡 In progress |
 | **Last updated** | 2026-10-07 |
-| **Next milestone** | P1-16 security headers, P1-17 end-to-end journey test, P1-18 lint clean-up → Phase 1 exit |
+| **Next milestone** | Faizan signs off Phase 1 → Phase 2 (daily bookkeeping) |
 
 **Status legend:** ⏸ Deferred · ⬜ Not started · 🟡 In progress (for tests: written and passing locally, awaiting CI) · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
 
@@ -176,7 +176,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 
 **Exit:** specs approved; CI runs green on the current code; Faizan has supplied Q-06 examples (OA-08).
 
-### Phase 1 — Foundation: database, logins, roles, admin · 🟡 In progress · target 13 Nov 2026
+### Phase 1 — Foundation: database, logins, roles, admin · 🔍 Built — waiting for Faizan's sign-off · target 13 Nov 2026
 
 **1A · Database foundation** (Spec 01 §4.1–4.5, 4.11–4.12 · Spec 02 §3)
 | ID | Step | Tests | Status |
@@ -201,12 +201,12 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 **1C · The app on live data**
 | ID | Step | Tests | Status |
 |---|---|---|---|
-| P1-13 | Replace browser storage with Supabase data access; remove demo role switcher | — | 🟡 live app (`src/live/`) on Supabase: Clients, client Overview / Chart of accounts / Periods, Users & invites; no demo data or role switcher. Old POC screens kept only in the demo build (`npm run dev -- --mode demo`, port 5182). Remaining live screens: P1-14/P1-15, then Phases 2–3 |
+| P1-13 | Replace browser storage with Supabase data access; remove demo role switcher | — | ✅ live app (`src/live/`) on Supabase for everything Phase 1 covers (clients, chart of accounts, journals, approvals, periods, trial balance & ledger, users, admin); no demo data or role switcher in normal builds. Old POC screens stay in the demo build until rebuilt on real data in Phases 2–3 |
 | P1-14 | Chart of accounts, manual journals, approval queue, reversal, period lock screens | LED-*, RBAC-04 → 09 | ✅ Faizan posted an opening and a manual journal approved by the second Firm Admin (JV-2026-01-0001, JV-2026-10-0002), no self-approval; 18 pgTAP + 20 unit tests |
 | P1-15 | Trial balance & general ledger from database functions | LED-13 | ✅ `…101100_reports.sql` (`trial_balance`, `general_ledger`; 14 pgTAP tests incl. LED-13 with 1,000 random journals) + **Trial balance & ledger** screen with drill-down TB → ledger → journal; checked on Faizan's real client (balanced) |
 | P1-16 | Security headers (CSP, HSTS) in `vercel.json`; Basic Auth removed once logins work | SEC-12 | ✅ CSP (own scripts only; Supabase + Google Fonts), HSTS 2 years, X-Frame-Options DENY, nosniff, Referrer/Permissions/COOP, `no-store` on `/api`; proven in a real browser with the production build (no violations); SEC-12 unit test on `vercel.json`; site password middleware removed |
-| P1-17 | End-to-end: log in → create client → journal → approve → trial balance | G-9 | ⬜ |
-| P1-18 | Re-enable the React style/performance lint rules switched off in Phase 0 (`poc/.oxlintrc.json`) as screens are rebuilt | G-2 | ⬜ |
+| P1-17 | End-to-end: log in → create client → journal → approve → trial balance | G-9 | ✅ `poc/e2e-live/journey.spec.ts` on a temporary Supabase in CI: two test Firm Admins, TOTP two-factor (RFC 6238 helper), add client, submit journal, maker cannot approve, checker approves, trial balance balanced, drill-down; plus SEC-08 (no sign-up path) |
+| P1-18 | Re-enable the React style/performance lint rules switched off in Phase 0 (`poc/.oxlintrc.json`) as screens are rebuilt | G-2 | ✅ all nine strict React rules on (as errors) for every rebuilt file — `src/live/**`, `AuthGate`, `Team`, `src/lib/**`, `api/**`; shared `useLoad` / `useToday` hooks; 0 findings. Old demo screens (demo build only) keep the exemption until they are rebuilt in Phases 2–3 |
 
 **Exit:** all LED, RBAC-01→14, DM, CFG-01→05 tests green; Faizan can log in with MFA, create a client, post and approve journals, and cannot break the rules on purpose.
 
@@ -307,8 +307,8 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | SEC-05 | Firm Admin approves **own** entry | Rejected (maker-checker) | D | ✅ |
 | SEC-06 | Read-only user inserts a journal | Rejected | D | ✅ |
 | SEC-07 | Read-only access past its end date | Denied | D | ⬜ |
-| SEC-08 | Public sign-up attempt | Not possible (invite only) | E | ⬜ |
-| SEC-09 | Firm user logs in without MFA | Blocked until MFA set up | E | ⬜ |
+| SEC-08 | Public sign-up attempt | Not possible (invite only) | E | ✅ |
+| SEC-09 | Firm user logs in without MFA | Blocked until MFA set up | E | ✅ |
 | SEC-10 | Supabase secret key appears in browser bundle | Never (build check) | U | ✅ |
 
 ### 6.3 Receivables & payables (ARAP)
@@ -466,3 +466,5 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | Faizan's tests (invite, clients, journals with maker-checker) recorded → P1-10, P1-12, P1-14 ✅. **P1-15 ✅:** `trial_balance()` / `general_ledger()` (calculated from posted journals each time, RLS applies, reversals net out, drafts never count) + Trial balance & ledger screen with drill-down to the journal; LED-13 proven with 1,000 random journals. Q-24 added (year-end presentation). 200 database + 145 unit tests. |
 | 2026-10-07 | **P1-11 built:** Admin page (profile, tax rules with versioning and VERIFY sign-off flow, firm profile/settings, platform settings, email templates); layout fix so wide tables scroll inside their card. 159 unit tests. |
 | 2026-10-07 | Q-07: Faizan confirmed all VERIFY values (unchanged); the in-app approval of a new version still has to be done to clear the flags. **P1-16 ✅** security headers + site password removed. |
+| 2026-10-07 | **P1-17 ✅** live end-to-end journey in CI (G-9 on a temporary Supabase). Local Supabase config fix: in the CLI, `[auth.email] enable_signup=false` also disables email sign-in — sign-ups stay off via `[auth] enable_signup=false`. |
+| 2026-10-07 | **P1-18 ✅** strict React rules on for all rebuilt code (shared `useLoad`/`useToday` hooks; lint 0 findings). P1-13 ✅. **Phase 1: every step built and tested — waiting for Faizan's sign-off.** |

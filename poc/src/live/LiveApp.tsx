@@ -13,11 +13,11 @@ import { ClientsPage } from "./ClientsPage";
 import { ClientPage } from "./ClientPage";
 import { TeamPage } from "../pages/Team";
 import { AdminPage } from "./AdminPage";
+import { useLoad } from "./hooks";
 
 export function LiveApp() {
   const auth = useAuth()!;
   const [route, setRoute] = useState<Route>(() => parseRoute(location.hash));
-  const [clients, setClients] = useState<Client[]>([]);
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
@@ -26,8 +26,8 @@ export function LiveApp() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
   const go = useCallback((r: Route) => { location.hash = routeHash(r); }, []);
-  const reloadClients = useCallback(async () => { try { setClients(await listClients()); } catch { /* shown on the page */ } }, []);
-  useEffect(() => { void reloadClients(); }, [reloadClients]);
+  const { data: loadedClients, reload: reloadClients } = useLoad(listClients);
+  const clients: Client[] = loadedClients ?? [];
 
   const client = route.page === "client" ? clients.find((c) => c.id === route.clientId) : undefined;
   useEffect(() => {
@@ -49,12 +49,6 @@ export function LiveApp() {
     { label: "Periods", icon: <CalendarRange size={17} />, tab: "periods" },
   ];
 
-  const NavButton = ({ label, icon, active, onClick }: { label: string; icon: ReactNode; active: boolean; onClick: () => void }) => (
-    <button aria-current={active ? "page" : undefined} onClick={onClick}
-      className={cx("w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition cursor-pointer", active ? "text-white bg-emerald-500/15 ring-1 ring-emerald-400/20" : "text-slate-300 hover:bg-white/5 hover:text-white")}>
-      <span className={active ? "text-emerald-400" : "text-slate-500"}>{icon}</span>{label}
-    </button>
-  );
 
   return (
     <div className="min-h-screen flex">
@@ -102,7 +96,7 @@ export function LiveApp() {
         </header>
         <main id="main" className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full mx-auto">
           <div key={routeHash(route)} className="page-enter">
-            {route.page === "clients" && <ClientsPage clients={clients} reload={reloadClients} open={(id) => go({ page: "client", clientId: id, tab: "overview" })} />}
+            {route.page === "clients" && <ClientsPage clients={clients} reload={async () => reloadClients()} open={(id) => go({ page: "client", clientId: id, tab: "overview" })} />}
             {route.page === "client" && <ClientPage clientId={route.clientId} tab={route.tab} />}
             {route.page === "team" && <TeamPage />}
             {route.page === "admin" && <AdminPage tab={route.tab} go={(tab) => go({ page: "admin", tab })} />}
@@ -111,4 +105,13 @@ export function LiveApp() {
       </div>
     </div>
   );
+}
+
+function NavButton({ label, icon, active, onClick }: { label: string; icon: ReactNode; active: boolean; onClick: () => void }) {
+  return (
+  <button aria-current={active ? "page" : undefined} onClick={onClick}
+    className={cx("w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition cursor-pointer", active ? "text-white bg-emerald-500/15 ring-1 ring-emerald-400/20" : "text-slate-300 hover:bg-white/5 hover:text-white")}>
+    <span className={active ? "text-emerald-400" : "text-slate-500"}>{icon}</span>{label}
+  </button>
+);
 }

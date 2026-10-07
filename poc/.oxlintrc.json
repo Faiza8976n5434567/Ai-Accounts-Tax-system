@@ -46,5 +46,28 @@
     "node_modules",
     "coverage",
     "scripts"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "src/live/**",
+        "src/components/AuthGate.tsx",
+        "src/pages/Team.tsx",
+        "src/lib/**",
+        "api/**",
+        "src/main.tsx"
+      ],
+      "rules": {
+        "react/no-unstable-nested-components": "error",
+        "react/static-components": "error",
+        "react/preserve-manual-memoization": "error",
+        "react/memo-dependencies": "error",
+        "react/exhaustive-effect-dependencies": "error",
+        "react/refs": "error",
+        "react/immutability": "error",
+        "react/set-state-in-effect": "error",
+        "react/purity": "error"
+      }
+    }
   ]
 }

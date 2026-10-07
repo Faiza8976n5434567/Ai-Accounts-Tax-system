@@ -1,5 +1,5 @@
 /** One client — live from Supabase: overview, journals, approvals, chart of accounts, periods (P1-13/P1-14). */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { FileText, Landmark } from "lucide-react";
 import { Badge, Card, PageHeader } from "../components/ui";
 import { getClient, listAccountingPeriods, listAccounts, listTaxPeriods, MONTHS, nextVatDue, vatSummary, type Account, type AccountingPeriod, type Client, type TaxPeriod } from "../lib/clients";
@@ -11,30 +11,21 @@ import { JournalsTab } from "./JournalsTab";
 import { AccountsTab } from "./AccountsTab";
 import { PeriodsTab } from "./PeriodsTab";
 import { ReportsTab } from "./ReportsTab";
+import { useLoad, useToday } from "./hooks";
 
 const TITLES: Record<ClientTab, string> = { overview: "Overview", journals: "Journals", approvals: "Approvals", reports: "Trial balance & ledger", accounts: "Chart of accounts", periods: "Periods" };
 
 export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab }) {
-  const [client, setClient] = useState<Client | null | undefined>(undefined);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [periods, setPeriods] = useState<AccountingPeriod[]>([]);
-  const [taxPeriods, setTaxPeriods] = useState<TaxPeriod[]>([]);
-  const [perms, setPerms] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const fetchAll = useCallback(() => Promise.all([getClient(clientId), listAccounts(clientId), listAccountingPeriods(clientId), listTaxPeriods(clientId), myPermissions(clientId)]), [clientId]);
+  const { data, error, reload } = useLoad(fetchAll);
+  const today = useToday();
+  const load = async () => reload();
 
-  const load = useCallback(async () => {
-    try {
-      const [c, a, p, t, m] = await Promise.all([getClient(clientId), listAccounts(clientId), listAccountingPeriods(clientId), listTaxPeriods(clientId), myPermissions(clientId)]);
-      setClient(c); setAccounts(a); setPeriods(p); setTaxPeriods(t); setPerms(m); setError(null);
-    } catch { setError("Could not load this client. Check your connection and try again."); }
-  }, [clientId]);
-  useEffect(() => { void load(); }, [load]);
-
-  if (error) return <p role="alert" className="text-sm text-rose-700">{error}</p>;
-  if (client === undefined) return <p className="text-sm text-slate-500">Loading…</p>;
+  if (error) return <p role="alert" className="text-sm text-rose-700">Could not load this client. Check your connection and try again.</p>;
+  if (!data) return <p className="text-sm text-slate-500">Loading…</p>;
+  const [client, accounts, periods, taxPeriods, perms]: [Client | null, Account[], AccountingPeriod[], TaxPeriod[], string[]] = data;
   if (client === null) return <p className="text-sm text-slate-600">This client doesn't exist or you don't have access to it.</p>;
 
-  const today = new Date().toISOString().slice(0, 10);
   const vatDue = nextVatDue(taxPeriods, today);
   const booksStart = periods[0]?.start_date ?? today;
 

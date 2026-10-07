@@ -1,7 +1,7 @@
 /** Admin area (P1-11 · Spec 03 §3). What each person may change is decided by the database:
  *  Super Admin — tax rules, platform, email templates, firm profile, restricted settings;
  *  Firm Admin — firm settings; everyone — their own display name. Others see read-only views. */
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { BadgeCheck, Building, FileCog, Mail, Save, Settings2, ShieldAlert, Stamp, Trash2, UserRound } from "lucide-react";
 import { Badge, Card, Modal, PageHeader } from "../components/ui";
 import { useAuth } from "../components/AuthGate";
@@ -15,6 +15,7 @@ import {
 import { myFirmRole } from "../lib/clients";
 import type { Json } from "../lib/database.types";
 import { useToast } from "./toast";
+import { useLoad, useToday } from "./hooks";
 
 import type { AdminTab } from "./routes";
 const field = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm";
@@ -76,18 +77,15 @@ function ProfileTab() {
 // ── Tax rules (Spec 03 §2 · D-15, D-23) ─────────────────────────────────────────────────
 function TaxRulesTab({ superAdmin }: { superAdmin: boolean }) {
   const toast = useToast();
-  const [keys, setKeys] = useState<ConfigKey[]>([]);
-  const [versions, setVersions] = useState<ConfigVersion[]>([]);
-  const [values, setValues] = useState<ConfigValue[]>([]);
+  const { data, error: loadError, reload } = useLoad(loadTaxRules);
+  const keys: ConfigKey[] = data?.keys ?? [];
+  const versions: ConfigVersion[] = data?.versions ?? [];
+  const values: ConfigValue[] = data?.values ?? [];
   const [selected, setSelected] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [approving, setApproving] = useState(false);
-  const today = new Date().toISOString().slice(0, 10);
-
-  const load = useCallback(async () => {
-    try { const r = await loadTaxRules(); setKeys(r.keys); setVersions(r.versions); setValues(r.values); } catch { toast("Could not load tax rules", "err"); }
-  }, [toast]);
-  useEffect(() => { void load(); }, [load]);
+  const today = useToday();
+  const load = async () => reload();
 
   const inForce = versionInForce(versions, today);
   const version = versions.find((v) => v.id === (selected ?? inForce?.id));
@@ -97,6 +95,7 @@ function TaxRulesTab({ superAdmin }: { superAdmin: boolean }) {
 
   return (
     <div className="grid gap-5 grid-cols-[minmax(0,1fr)]">
+      {loadError !== null && <p role="alert" className="text-sm text-rose-700">Could not load tax rules.</p>}
       {verifyCount > 0 && <p className="rounded-xl bg-amber-50 ring-1 ring-amber-200 text-amber-900 px-4 py-3 text-sm flex gap-2"><ShieldAlert size={16} className="shrink-0 mt-0.5" />
         <span>{verifyCount} rule{verifyCount === 1 ? "" : "s"} in force {verifyCount === 1 ? "is" : "are"} still marked <b>VERIFY</b> (PLAN Q-07). To sign them off, create a new version, untick VERIFY with the date you checked them, and approve it.</span></p>}
       <Card title="Versions" icon={<Stamp size={16} />} pad={false}
@@ -185,9 +184,10 @@ function DraftRow({ k, row, onSaved }: { k: ConfigKey; row: ConfigValue; onSaved
 }
 
 function NewVersionModal({ versions, onClose, onCreate }: { versions: ConfigVersion[]; onClose: () => void; onCreate: (label: string, from: string) => Promise<void> }) {
-  const next = new Date(); next.setUTCMonth(next.getUTCMonth() + 1, 1);
-  const [from, setFrom] = useState(next.toISOString().slice(0, 10));
-  const [label, setLabel] = useState(suggestLabel(next.toISOString().slice(0, 10), versions.map((v) => v.label)));
+  const today = useToday();
+  const firstOfNextMonth = `${today.slice(5, 7) === "12" ? Number(today.slice(0, 4)) + 1 : today.slice(0, 4)}-${String((Number(today.slice(5, 7)) % 12) + 1).padStart(2, "0")}-01`;
+  const [from, setFrom] = useState(firstOfNextMonth);
+  const [label, setLabel] = useState(suggestLabel(firstOfNextMonth, versions.map((v) => v.label)));
   const [busy, setBusy] = useState(false);
   return (
     <Modal open onClose={onClose} title="New tax-rule version"
@@ -235,10 +235,10 @@ const SETTINGS: { key: string; label: string; kind: SettingKind; superOnly?: boo
 
 function FirmTab({ superAdmin, firmAdmin }: { superAdmin: boolean; firmAdmin: boolean }) {
   const toast = useToast();
-  const [firms, setFirms] = useState<Firm[]>([]);
-  const [settings, setSettings] = useState<FirmSetting[]>([]);
-  const load = useCallback(async () => { try { const r = await loadFirmAdmin(); setFirms(r.firms); setSettings(r.settings); } catch { toast("Could not load firm settings", "err"); } }, [toast]);
-  useEffect(() => { void load(); }, [load]);
+  const { data, reload } = useLoad(loadFirmAdmin);
+  const firms: Firm[] = data?.firms ?? [];
+  const settings: FirmSetting[] = data?.settings ?? [];
+  const load = async () => reload();
   const firm = firms.find((f) => settings.some((s) => s.firm_id === f.id)) ?? firms[0];
   if (!firm) return <p className="text-sm text-slate-500">Loading…</p>;
   return (
@@ -341,9 +341,9 @@ function SettingRow({ def, value, canEdit, onSave }: { def: (typeof SETTINGS)[nu
 function PlatformTab() {
   const toast = useToast();
   const auth = useAuth()!;
-  const [settings, setSettings] = useState<PlatformSetting[]>([]);
-  const load = useCallback(async () => { try { setSettings((await loadPlatform()).settings); } catch { toast("Could not load platform settings", "err"); } }, [toast]);
-  useEffect(() => { void load(); }, [load]);
+  const { data, reload } = useLoad(loadPlatform);
+  const settings: PlatformSetting[] = data?.settings ?? [];
+  const load = async () => reload();
   return (
     <Card title="Platform settings" icon={<Settings2 size={16} />} pad={false} sub="Platform-wide, owned by TFS Plus (D-20). The app name is used in titles, emails and exports — never hard-coded.">
       <div className="divide-y divide-slate-100">{settings.map((s) => (
@@ -369,9 +369,9 @@ function PlatformRow({ s, onSave }: { s: PlatformSetting; onSave: (v: Json) => P
 // ── Email templates (Super Admin) ───────────────────────────────────────────────────────
 function EmailTab() {
   const toast = useToast();
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const load = useCallback(async () => { try { setTemplates((await loadPlatform()).templates); } catch { toast("Could not load templates", "err"); } }, [toast]);
-  useEffect(() => { void load(); }, [load]);
+  const { data, reload } = useLoad(loadPlatform);
+  const templates: EmailTemplate[] = data?.templates ?? [];
+  const load = async () => reload();
   return (
     <div className="grid gap-5 grid-cols-[minmax(0,1fr)]">{templates.map((t) => <TemplateCard key={t.key} t={t} onSave={async (subject, body) => {
       try { await saveTemplate(t.key, subject, body); toast("Template saved"); await load(); } catch (e) { toast(friendlyDbError(e), "err"); }

@@ -8,22 +8,19 @@ import type { Account } from "../lib/clients";
 import { drCr, fyStart, generalLedger, tbTotals, trialBalance, type GlRow, type TbRow } from "../lib/live-reports";
 import { getJournal, SOURCE_LABEL, type Journal } from "../lib/journals";
 import { JournalView } from "./JournalsTab";
+import { useLoad, useToday } from "./hooks";
 
 const money = (f: number) => (f ? fmt(f) : "");
 
 export function ReportsTab({ orgId, accounts, fyStartMonth }: { orgId: string; accounts: Account[]; fyStartMonth: number }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = useToday();
   const [from, setFrom] = useState(fyStart(today, fyStartMonth));
   const [to, setTo] = useState(today);
-  const [rows, setRows] = useState<TbRow[] | null>(null);
   const [ledgerAccount, setLedgerAccount] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!from || !to || from > to) return;
-    try { setRows(await trialBalance(orgId, from, to)); setError(null); } catch { setError("Could not load the trial balance."); }
-  }, [orgId, from, to]);
-  useEffect(() => { void load(); }, [load]);
+  const fetchTb = useCallback((): Promise<TbRow[] | null> => (from && to && from <= to ? trialBalance(orgId, from, to) : Promise.resolve(null)), [orgId, from, to]);
+  const { data, error: loadError } = useLoad(fetchTb);
+  const rows = data ?? null;
+  const error = loadError ? "Could not load the trial balance." : null;
   const totals = useMemo(() => tbTotals(rows ?? []), [rows]);
 
   const range = (

@@ -6,6 +6,7 @@ import { shortDate } from "../lib/email";
 import { friendlyDbError, lockPeriod, reopenPeriod } from "../lib/journals";
 import type { AccountingPeriod, TaxPeriod } from "../lib/clients";
 import { useToast } from "./toast";
+import { useToday } from "./hooks";
 
 const monthName = (iso: string) => new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 
@@ -14,7 +15,7 @@ export function PeriodsTab({ periods, taxPeriods, perms, reload }: { periods: Ac
   const [acting, setActing] = useState<{ period: AccountingPeriod; action: "lock" | "reopen" } | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = useToday();
 
   const confirm = async () => {
     if (!acting) return;

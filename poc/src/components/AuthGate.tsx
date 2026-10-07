@@ -17,6 +17,9 @@ const AuthContext = createContext<AuthInfo | null>(null);
 /** The signed-in user, or null in the demo build. */
 export const useAuth = () => useContext(AuthContext);
 
+/** The Supabase client (always present inside <Gate>, which only renders when it is configured). */
+const sb = () => supabase!;
+
 const LAST_ACTIVITY_KEY = "tfs.lastActivity";
 const readActivity = (): number => { try { return Number(localStorage.getItem(LAST_ACTIVITY_KEY)) || 0; } catch { return 0; } };
 const writeActivity = (t: number) => { try { localStorage.setItem(LAST_ACTIVITY_KEY, String(t)); } catch { /* private mode: in-tab timer still works */ } };
@@ -31,7 +34,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
 }
 
 function Gate({ children }: { children: ReactNode }) {
-  const sb = supabase!;
   const [appName, setAppName] = useState("Smart Ledger");
   const [session, setSession] = useState<Session | null>(null);
   const [step, setStep] = useState<Step>("loading");
@@ -43,18 +45,18 @@ function Gate({ children }: { children: ReactNode }) {
 
   // App name is a platform setting (readable before sign-in), never hard-coded (D-20).
   useEffect(() => {
-    void sb.from("platform_settings").select("value").eq("key", "app_name").maybeSingle()
+    void sb().from("platform_settings").select("value").eq("key", "app_name").maybeSingle()
       .then(({ data }) => { if (typeof data?.value === "string") setAppName(data.value); });
-  }, [sb]);
+  }, []);
 
   useEffect(() => {
-    void sb.auth.getSession().then(({ data }) => { setSession(data.session); clearLinkFromAddressBar(); });
-    const { data } = sb.auth.onAuthStateChange((event, s) => {
+    void sb().auth.getSession().then(({ data }) => { setSession(data.session); clearLinkFromAddressBar(); });
+    const { data } = sb().auth.onAuthStateChange((event, s) => {
       if (event === "PASSWORD_RECOVERY") setNeedsPassword(true);
       setSession(s);
     });
     return () => data.subscription.unsubscribe();
-  }, [sb]);
+  }, []);
 
   // Decide the step whenever the session changes.
   useEffect(() => {
@@ -64,26 +66,26 @@ function Gate({ children }: { children: ReactNode }) {
       // A session that went quiet for 30+ minutes (e.g. laptop closed) is ended on return.
       const last = readActivity();
       if (last && isIdle(last, Date.now())) {
-        await sb.auth.signOut({ scope: "local" });
+        await sb().auth.signOut({ scope: "local" });
         if (!cancelled) setNotice("You were signed out after 30 minutes without activity.");
         return;
       }
       // A waiting invitation becomes a firm membership on first sign-in (P1-10); no-op otherwise.
-      await sb.rpc("accept_invitation");
+      await sb().rpc("accept_invitation");
       if (cancelled) return;
       if (needsPassword) { setStep("set_password"); return; }
-      const [{ data: aal }, { data: factors }] = await Promise.all([sb.auth.mfa.getAuthenticatorAssuranceLevel(), sb.auth.mfa.listFactors()]);
+      const [{ data: aal }, { data: factors }] = await Promise.all([sb().auth.mfa.getAuthenticatorAssuranceLevel(), sb().auth.mfa.listFactors()]);
       if (cancelled) return;
       const next = mfaStep(aal?.currentLevel ?? null, (factors?.totp.length ?? 0) > 0);
       if (next !== "done") { setStep("mfa"); return; }
-      const { data: profile } = await sb.from("profiles").select("full_name").eq("id", session.user.id).maybeSingle();
+      const { data: profile } = await sb().from("profiles").select("full_name").eq("id", session.user.id).maybeSingle();
       if (cancelled) return;
       setFullName(profile?.full_name ?? session.user.email ?? "");
       writeActivity(Date.now());
       setStep("ready");
     })();
     return () => { cancelled = true; };
-  }, [session, needsPassword, sb]);
+  }, [session, needsPassword]);
 
   useEffect(() => {
     const titles: Record<Step, string> = { loading: "Loading", signin: "Sign in", forgot: "Reset password", set_password: "Set your password", mfa: "Two-factor sign-in", ready: "" };
@@ -91,10 +93,10 @@ function Gate({ children }: { children: ReactNode }) {
   }, [step, appName]);
 
   const signOut = useCallback(async (message?: string) => {
-    await sb.auth.signOut({ scope: "local" });
+    await sb().auth.signOut({ scope: "local" });
     try { localStorage.removeItem(LAST_ACTIVITY_KEY); } catch { /* ignore */ }
     setNotice(message ?? null);
-  }, [sb]);
+  }, []);
 
   const onIdle = useCallback(() => void signOut("You were signed out after 30 minutes without activity."), [signOut]);
   useIdleSignOut(step === "ready", onIdle);
@@ -109,7 +111,7 @@ function Gate({ children }: { children: ReactNode }) {
       {step === "signin" && <SignIn onForgot={() => { setNotice(null); setStep("forgot"); }} />}
       {step === "forgot" && <Forgot onBack={() => setStep("signin")} />}
       {step === "set_password" && <SetPassword onDone={() => { setNotice(null); setNeedsPassword(false); }} />}
-      {step === "mfa" && session && <TwoFactor onDone={async () => { const { data } = await sb.auth.getSession(); setSession(data.session); }} onCancel={() => void signOut()} email={session.user.email ?? ""} appName={appName} />}
+      {step === "mfa" && session && <TwoFactor onDone={async () => { const { data } = await sb().auth.getSession(); setSession(data.session); }} onCancel={() => void signOut()} email={session.user.email ?? ""} appName={appName} />}
     </Shell>
   );
 }
@@ -231,7 +233,6 @@ function SetPassword({ onDone }: { onDone: () => void }) {
 }
 
 function TwoFactor({ email, appName, onDone, onCancel }: { email: string; appName: string; onDone: () => Promise<void>; onCancel: () => void }) {
-  const sb = supabase!;
   const [factorId, setFactorId] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
   const [qr, setQr] = useState<string | null>(null);
@@ -243,25 +244,25 @@ function TwoFactor({ email, appName, onDone, onCancel }: { email: string; appNam
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const { data } = await sb.auth.mfa.listFactors();
+      const { data } = await sb().auth.mfa.listFactors();
       const verified = data?.totp[0];
       if (verified) { if (!cancelled) setFactorId(verified.id); return; }
       // Remove half-finished set-ups (e.g. the page was closed before the code was entered).
-      for (const f of data?.all ?? []) if (f.factor_type === "totp" && f.status === "unverified") await sb.auth.mfa.unenroll({ factorId: f.id });
-      const { data: enrolled, error: err } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: `${appName} (${email})`, issuer: appName });
+      for (const f of data?.all ?? []) if (f.factor_type === "totp" && f.status === "unverified") await sb().auth.mfa.unenroll({ factorId: f.id });
+      const { data: enrolled, error: err } = await sb().auth.mfa.enroll({ factorType: "totp", friendlyName: `${appName} (${email})`, issuer: appName });
       if (cancelled) return;
       if (err || !enrolled) { setError(friendlyAuthError(err?.message)); return; }
       setEnrolling(true); setFactorId(enrolled.id); setQr(enrolled.totp.qr_code); setSecret(enrolled.totp.secret);
     })();
     return () => { cancelled = true; };
-  }, [sb, email, appName]);
+  }, [email, appName]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!factorId) return;
     if (!isSixDigitCode(code)) { setError("Enter the 6-digit code from your authenticator app."); return; }
     setBusy(true); setError(null);
-    const { error: err } = await sb.auth.mfa.challengeAndVerify({ factorId, code: code.trim() });
+    const { error: err } = await sb().auth.mfa.challengeAndVerify({ factorId, code: code.trim() });
     setBusy(false);
     if (err) { setError(friendlyAuthError(err.message)); setCode(""); return; }
     await onDone();
