@@ -162,7 +162,7 @@ function SignIn({ onForgot }: { onForgot: () => void }) {
     writeActivity(Date.now()); // a fresh sign-in resets the idle clock
     const { error: err } = await supabase!.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
-    if (err) setError(friendlyAuthError(err.message));
+    if (err) { console.warn("[sign-in]", err.status, err.code, err.message); setError(friendlyAuthError(err.message)); }
   };
   return (
     <form onSubmit={submit} noValidate>

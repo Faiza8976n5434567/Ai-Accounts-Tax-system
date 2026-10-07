@@ -11,6 +11,8 @@ const CLIENT = `E2E Trading LLC ${Date.now()}`;
 
 /** Signs in and completes two-factor set-up on first use (computing the code from the shown key). */
 async function signIn(page: Page, email: string) {
+  page.on("console", (m) => { if (m.type() === "warning" || m.type() === "error") console.log(`[browser ${m.type()}] ${m.text()}`); });
+  page.on("response", async (r) => { if (r.url().includes("/auth/v1/") && r.status() >= 400) console.log(`[auth ${r.status()}] ${r.url()} ${await r.text().catch(() => "")}`); });
   await page.goto("/");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(PASSWORD);
