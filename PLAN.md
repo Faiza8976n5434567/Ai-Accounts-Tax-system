@@ -49,6 +49,9 @@
 | D-28 | **Reports before year-end closing:** until a year-end closing journal exists (Phase 5), reports roll earlier financial years' income and expense balances into **Retained earnings** automatically (Xero/QuickBooks style); P&L accounts show only the current year. The ledger itself is never changed. Built with the Phase 2 reports (P2-06). *(Answers Q-24.)* | 2026-10-07 |
 | D-29 | **Tax date of a sales invoice = the invoice date**: the books and the VAT 201 period both use the invoice (issue) date. The supply date is printed on the invoice; the app warns when the supply date falls in an earlier VAT period or the invoice is issued more than `vat.invoice_issue_days` (14) after supply (Art 67). | 2026-10-07 |
 | D-30 | **Credit notes can never exceed what is left on the original invoice** (net and VAT, counting earlier credit notes). Enforced by the database. | 2026-10-07 |
+| D-31 | **Tax date of a purchase bill = the supplier's invoice date** (books and VAT 201 period), like D-29 for sales. | 2026-10-07 |
+| D-32 | **Input VAT recoverability follows the checks:** VAT is automatically *not* recovered (added to the expense) when the supplier has no valid TRN, an unregistered supplier charges VAT, or the 'Tax Invoice' heading is missing. The **approver may override** with a written reason (audit-logged). Lines with the Blocked code (e.g. entertainment, Art 53) are never recoverable. | 2026-10-07 |
+| D-33 | **VAT on bills is always recalculated** at the rate in force (half-up per line), like sales; the supplier's printed VAT is not used. Small differences to the supplier's total are settled at payment (P2-04). | 2026-10-07 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -476,3 +479,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | **P2-01 built:** customers & suppliers (database + screen). 214 database + 172 unit tests. |
 | 2026-10-07 | Decisions D-29 (invoice date is the tax date) and D-30 (credit notes capped at the original invoice). P2-02 started. |
 | 2026-10-07 | **P2-02 built:** sales invoices & credit notes (database calculation, numbering, posting, D-29/D-30), printable tax invoice, client address & details editing. Faizan applied `…101300` in the SQL Editor. Live journey extended to sales invoices. 247 database + 185 unit tests. |
+| 2026-10-07 | Decisions D-31 (bill date is the tax date), D-32 (automatic non-recovery on failed checks, approver override with reason), D-33 (VAT on bills recalculated). P2-03 started. |
