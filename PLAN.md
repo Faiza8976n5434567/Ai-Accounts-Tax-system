@@ -58,7 +58,7 @@
 | Q-04 | VAT 201 emirate boxes (1a–1g): allocate by **our client's establishment** or by **customer location**? → **Decided: emirate selected manually per invoice, pre-filled with head office (D-10).** | Phase 3 | ✅ |
 | Q-05 | Customer overpayments: hold as "customer credit" on account, or refund only? → **Decided: Customer Credit by default + refund option (D-11, §2.1).** | Phase 2 | ✅ |
 | Q-06 | Provide 3–5 real, anonymised worked examples (one VAT quarter, one CT computation) to become the golden test set. | Phase 1 | ⬜ |
-| Q-07 | Confirm every tax setting marked **VERIFY** in `poc/src/lib/config.ts` (VAT return due days, Art 59 threshold, SBR end date, e-invoicing dates). | Phase 3 | 🔍 |
+| Q-07 | Confirm every tax setting marked **VERIFY** (VAT return due days, Art 59 threshold, SBR end date, e-invoicing dates). → **Faizan confirmed all values on 2026-10-07 (unchanged).** Remaining step: approve a new tax-rule version in Admin → Tax rules with VERIFY unticked, so the flags clear in the database. | Phase 3 | 🟡 |
 | Q-08 | Confirm the legal reference for the VAT treatment of advances in §2.1 (date-of-supply rules — Decree-Law Art 25–26 or the Executive Regulation?). The rule itself is agreed; only the citation shown in the app needs confirming. | Phase 2 | 🔍 |
 | Q-09 | Will other tax firms ever use this system? → **Decided: yes, as customers; TFS Plus is the platform owner (D-20).** | Phase 1 | ✅ |
 | Q-10 | Two-person rule for tax-rule changes? → **Decided: yes once a backup Super Admin exists (D-23).** | Phase 1 | ✅ |
@@ -204,7 +204,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P1-13 | Replace browser storage with Supabase data access; remove demo role switcher | — | 🟡 live app (`src/live/`) on Supabase: Clients, client Overview / Chart of accounts / Periods, Users & invites; no demo data or role switcher. Old POC screens kept only in the demo build (`npm run dev -- --mode demo`, port 5182). Remaining live screens: P1-14/P1-15, then Phases 2–3 |
 | P1-14 | Chart of accounts, manual journals, approval queue, reversal, period lock screens | LED-*, RBAC-04 → 09 | ✅ Faizan posted an opening and a manual journal approved by the second Firm Admin (JV-2026-01-0001, JV-2026-10-0002), no self-approval; 18 pgTAP + 20 unit tests |
 | P1-15 | Trial balance & general ledger from database functions | LED-13 | ✅ `…101100_reports.sql` (`trial_balance`, `general_ledger`; 14 pgTAP tests incl. LED-13 with 1,000 random journals) + **Trial balance & ledger** screen with drill-down TB → ledger → journal; checked on Faizan's real client (balanced) |
-| P1-16 | Security headers (CSP, HSTS) in `vercel.json`; Basic Auth removed once logins work | SEC-12 | ⬜ |
+| P1-16 | Security headers (CSP, HSTS) in `vercel.json`; Basic Auth removed once logins work | SEC-12 | ✅ CSP (own scripts only; Supabase + Google Fonts), HSTS 2 years, X-Frame-Options DENY, nosniff, Referrer/Permissions/COOP, `no-store` on `/api`; proven in a real browser with the production build (no violations); SEC-12 unit test on `vercel.json`; site password middleware removed |
 | P1-17 | End-to-end: log in → create client → journal → approve → trial balance | G-9 | ⬜ |
 | P1-18 | Re-enable the React style/performance lint rules switched off in Phase 0 (`poc/.oxlintrc.json`) as screens are rebuilt | G-2 | ⬜ |
 
@@ -309,7 +309,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | SEC-07 | Read-only access past its end date | Denied | D | ⬜ |
 | SEC-08 | Public sign-up attempt | Not possible (invite only) | E | ⬜ |
 | SEC-09 | Firm user logs in without MFA | Blocked until MFA set up | E | ⬜ |
-| SEC-10 | Supabase secret key appears in browser bundle | Never (build check) | U | ⬜ |
+| SEC-10 | Supabase secret key appears in browser bundle | Never (build check) | U | ✅ |
 
 ### 6.3 Receivables & payables (ARAP)
 | ID | Scenario | Expected | Type | Status |
@@ -465,3 +465,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | **P1-14 built.** Journals (new, opening balances, drafts, submit, withdraw, delete), approval queue (approve & post / send back with a reason — the preparer never sees Approve), reversal requests approved by a second Firm Admin (D-26), chart of accounts (add, rename, CT treatment, deactivate), period lock/reopen with reason. Faizan applied `…101000` in the SQL Editor (the app's safety check blocks database changes containing deletes). 186 database + 138 unit tests. |
 | 2026-10-07 | Faizan's tests (invite, clients, journals with maker-checker) recorded → P1-10, P1-12, P1-14 ✅. **P1-15 ✅:** `trial_balance()` / `general_ledger()` (calculated from posted journals each time, RLS applies, reversals net out, drafts never count) + Trial balance & ledger screen with drill-down to the journal; LED-13 proven with 1,000 random journals. Q-24 added (year-end presentation). 200 database + 145 unit tests. |
 | 2026-10-07 | **P1-11 built:** Admin page (profile, tax rules with versioning and VERIFY sign-off flow, firm profile/settings, platform settings, email templates); layout fix so wide tables scroll inside their card. 159 unit tests. |
+| 2026-10-07 | Q-07: Faizan confirmed all VERIFY values (unchanged); the in-app approval of a new version still has to be done to clear the flags. **P1-16 ✅** security headers + site password removed. |

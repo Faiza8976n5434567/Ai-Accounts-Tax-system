@@ -93,7 +93,7 @@ Vercel → your project → **Settings → Environment Variables**. Add each, ch
 Note: this is a Vite app, so browser variables start with `VITE_` — not `NEXT_PUBLIC_` (that prefix is for Next.js).
 
 Never add a `VITE_` prefix to a secret (anything with `VITE_` becomes visible in the browser).
-Remove `SITE_PASSWORD` once real logins are live (Claude will tell you when).
+`SITE_PASSWORD` is no longer used (P1-16, 2026-10-07: real sign-in replaced the site password) — delete it from Vercel if you added it.
 
 **Done when:** a new preview deployment loads the login page.
 
