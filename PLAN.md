@@ -7,10 +7,10 @@
 
 | | |
 |---|---|
-| **Current phase** | Phase 1 — Foundation: all steps built 🔍 waiting for Faizan's sign-off (G-10) |
+| **Current phase** | Phase 2 — Daily bookkeeping (Phase 1 ✅ approved 2026-10-07) |
 | **Overall status** | 🟡 In progress |
 | **Last updated** | 2026-10-07 |
-| **Next milestone** | Faizan signs off Phase 1 → Phase 2 (daily bookkeeping) |
+| **Next milestone** | P2-01 customers & suppliers → P2-02 sales invoices |
 
 **Status legend:** ⏸ Deferred · ⬜ Not started · 🟡 In progress (for tests: written and passing locally, awaiting CI) · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
 
@@ -177,7 +177,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 
 **Exit:** specs approved; CI runs green on the current code; Faizan has supplied Q-06 examples (OA-08).
 
-### Phase 1 — Foundation: database, logins, roles, admin · 🔍 Built — waiting for Faizan's sign-off · target 13 Nov 2026
+### Phase 1 — Foundation: database, logins, roles, admin · ✅ Approved by Faizan 2026-10-07 (target was 13 Nov 2026)
 
 **1A · Database foundation** (Spec 01 §4.1–4.5, 4.11–4.12 · Spec 02 §3)
 | ID | Step | Tests | Status |
@@ -211,7 +211,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 
 **Exit:** all LED, RBAC-01→14, DM, CFG-01→05 tests green; Faizan can log in with MFA, create a client, post and approve journals, and cannot break the rules on purpose.
 
-### Phase 2 — Daily bookkeeping · ⬜ · target 18 Dec 2026 (Spec 01 §4.4–4.9)
+### Phase 2 — Daily bookkeeping · 🟡 In progress · target 18 Dec 2026 (Spec 01 §4.4–4.9)
 | ID | Step | Tests | Status |
 |---|---|---|---|
 | P2-01 | Customers & suppliers (TRN validation, payment terms, default account) | ARAP-07 | ⬜ |
@@ -470,3 +470,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | **P1-17 ✅** live end-to-end journey in CI (G-9 on a temporary Supabase). Local Supabase config fix: in the CLI, `[auth.email] enable_signup=false` also disables email sign-in — sign-ups stay off via `[auth] enable_signup=false`. |
 | 2026-10-07 | **P1-18 ✅** strict React rules on for all rebuilt code (shared `useLoad`/`useToday` hooks; lint 0 findings). P1-13 ✅. **Phase 1: every step built and tested — waiting for Faizan's sign-off.** |
 | 2026-10-07 | Faizan: **work only on branch `faizan`; never touch `main`** unless he asks (CLAUDE.md and §3.2 updated). Q-24 → **D-28** (automatic roll-forward of prior-year P&L into Retained earnings in reports, P2-06). Admin → Tax rules: "Mark all VERIFY as checked today" button for draft versions. |
+| 2026-10-07 | **Phase 1 approved by Faizan (G-10).** Phase 2 started. Still open from Phase 1: approve the VERIFY sign-off tax-rule version (Q-07, a few clicks in Admin → Tax rules). |
