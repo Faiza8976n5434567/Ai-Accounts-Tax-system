@@ -47,6 +47,8 @@
 | D-26 | **Reversing a posted journal needs a second person:** a Firm Admin *requests* the reversal (reason required); it waits as a pending mirror journal that nobody can edit; a **different** Firm Admin approves it, which posts it and marks the original reversed. The request can be cancelled. *(Answers Q-21.)* | 2026-10-07 |
 | D-27 | **Bank account (1010) is a control account:** manual journals cannot post to it; bank entries come from the bank module, opening balances from the opening journal. *(Answers Q-22, confirms Spec 01.)* | 2026-10-07 |
 | D-28 | **Reports before year-end closing:** until a year-end closing journal exists (Phase 5), reports roll earlier financial years' income and expense balances into **Retained earnings** automatically (Xero/QuickBooks style); P&L accounts show only the current year. The ledger itself is never changed. Built with the Phase 2 reports (P2-06). *(Answers Q-24.)* | 2026-10-07 |
+| D-29 | **Tax date of a sales invoice = the invoice date**: the books and the VAT 201 period both use the invoice (issue) date. The supply date is printed on the invoice; the app warns when the supply date falls in an earlier VAT period or the invoice is issued more than `vat.invoice_issue_days` (14) after supply (Art 67). | 2026-10-07 |
+| D-30 | **Credit notes can never exceed what is left on the original invoice** (net and VAT, counting earlier credit notes). Enforced by the database. | 2026-10-07 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -472,3 +474,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | Faizan: **work only on branch `faizan`; never touch `main`** unless he asks (CLAUDE.md and §3.2 updated). Q-24 → **D-28** (automatic roll-forward of prior-year P&L into Retained earnings in reports, P2-06). Admin → Tax rules: "Mark all VERIFY as checked today" button for draft versions. |
 | 2026-10-07 | **Phase 1 approved by Faizan (G-10).** Phase 2 started. Still open from Phase 1: approve the VERIFY sign-off tax-rule version (Q-07, a few clicks in Admin → Tax rules). |
 | 2026-10-07 | **P2-01 built:** customers & suppliers (database + screen). 214 database + 172 unit tests. |
+| 2026-10-07 | Decisions D-29 (invoice date is the tax date) and D-30 (credit notes capped at the original invoice). P2-02 started. |
