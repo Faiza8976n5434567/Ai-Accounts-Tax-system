@@ -1535,6 +1535,29 @@ export type Database = {
         Returns: undefined
       }
       config_value: { Args: { p_key: string; p_on?: string }; Returns: Json }
+      create_client: {
+        Args: {
+          p_accountant_ids?: string[]
+          p_books_start: string
+          p_ct_regime?: Database["public"]["Enums"]["ct_regime"]
+          p_ct_trn?: string
+          p_emirate_code: string
+          p_fy_start_month?: number
+          p_industry?: string
+          p_legal_name: string
+          p_licence_authority?: string
+          p_licence_expiry?: string
+          p_licence_no?: string
+          p_manager_id?: string
+          p_prior_year_revenue?: number
+          p_trade_name?: string
+          p_trn?: string
+          p_vat_first_period_end?: string
+          p_vat_period?: Database["public"]["Enums"]["vat_period"]
+          p_vat_registered?: boolean
+        }
+        Returns: string
+      }
       create_invitation: {
         Args: { p_email: string; p_full_name: string; p_role: string }
         Returns: {

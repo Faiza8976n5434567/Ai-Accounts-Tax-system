@@ -12,7 +12,7 @@ PLAN.md as you go. Screen names in Supabase/Vercel/GitHub may differ slightly ov
 | OA-01 | Answer open questions & approve specs — ✅ done 2026-10-06 | Phase 1 start | — |
 | OA-02 | Turn on two-factor login on all admin accounts | Phase 1 start | 20 min |
 | OA-03 | Rename the project folder | Phase 1 start | 5 min |
-| OA-04 | Supabase: authentication settings | Phase 1 | 15 min |
+| OA-04 | Supabase: authentication settings — ✅ done 2026-10-07 (leaked-password check needs Pro plan → OA-13) | Phase 1 | — |
 | OA-05 | Local `.env.local` file for development — ✅ done by Claude | Phase 1 | — |
 | OA-06 | Vercel environment variables | Phase 1 | 15 min |
 | OA-07 | GitHub: protect the `main` branch | Phase 1 | 10 min |
@@ -24,7 +24,7 @@ PLAN.md as you go. Screen names in Supabase/Vercel/GitHub may differ slightly ov
 | OA-13 | Backups & plan upgrades before real client data | Before pilot | 15 min + cost |
 | OA-14 | Engagement-letter clause on data hosting | Before pilot | legal |
 | OA-15 | Book the independent security review | Before pilot | — |
-| **OA-16** | **Rotate the secret key and Resend key shared in chat** | **Now** | 10 min |
+| **OA-16** | **Rotate the secret key and Resend key shared in chat** | **Before deployment** (Faizan, 2026-10-07: local testing only until then) | 10 min |
 | OA-17 | Create your own login (first Super Admin) — ✅ done 2026-10-07 | — | — |
 
 ---

@@ -7,6 +7,19 @@ export const toFils = (aed: number | string): Fils => {
   return Math.round(n * 100);
 };
 
+/**
+ * Exact conversion of a typed AED amount to fils, without floating point:
+ * "1,234.56" → 123456 · "1234.5" → 123450 · "-10" → -1000. Returns null when the text is not a
+ * valid amount or has more than 2 decimals (a fraction of a fils is never silently rounded — LED-06).
+ */
+export function parseAedToFils(text: string): Fils | null {
+  const m = text.trim().replace(/,/g, "").match(/^(-)?(\d+)(?:\.(\d{0,2}))?$/);
+  if (!m) return null;
+  const fils = Number(m[2]) * 100 + Number((m[3] ?? "").padEnd(2, "0"));
+  if (!Number.isSafeInteger(fils)) return null;
+  return m[1] && fils !== 0 ? -fils : fils;
+}
+
 /** Half-up rounding of a basis-point rate (500 = 5%). */
 export const applyBp = (amount: Fils, bp: number): Fils => {
   const raw = (amount * bp) / 10_000;

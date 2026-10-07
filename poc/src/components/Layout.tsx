@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Menu, X, HandCoins, Wallet, Building2, LayoutDashboard, ScanLine, Receipt, BookOpen, FileBarChart, Landmark, Calculator, Banknote, CalendarClock, ShieldCheck, Settings, ChevronDown, Languages, CheckCircle2, AlertTriangle, Info, Search, Bell, CornerDownLeft, ArrowRight, LogOut, UserPlus } from "lucide-react";
+import { Menu, X, HandCoins, Wallet, Building2, LayoutDashboard, ScanLine, Receipt, BookOpen, FileBarChart, Landmark, Calculator, Banknote, CalendarClock, ShieldCheck, Settings, ChevronDown, Languages, CheckCircle2, AlertTriangle, Info, Search, Bell, CornerDownLeft, ArrowRight } from "lucide-react";
 import { useStore, USERS } from "../lib/store";
-import { useAuth } from "./AuthGate";
 import type { Role } from "../lib/types";
 import { cx } from "./ui";
 
-export type Page = "firm" | "dashboard" | "capture" | "sales" | "ledger" | "ar" | "ap" | "reports" | "vat" | "ct" | "bank" | "calendar" | "audit" | "settings" | "team";
+export type Page = "firm" | "dashboard" | "capture" | "sales" | "ledger" | "ar" | "ap" | "reports" | "vat" | "ct" | "bank" | "calendar" | "audit" | "settings";
 
 const NAV: { section: string; items: { id: Page; label: string; icon: ReactNode; client?: boolean; firmOnly?: boolean }[] }[] = [
   { section: "Workspace", items: [
@@ -29,14 +28,12 @@ const NAV: { section: string; items: { id: Page; label: string; icon: ReactNode;
   { section: "Insights", items: [
     { id: "audit", label: "Audit trail", icon: <ShieldCheck size={17} /> },
     { id: "settings", label: "Settings", icon: <Settings size={17} /> },
-    { id: "team", label: "Users & invites", icon: <UserPlus size={17} />, firmOnly: true },
   ] },
 ];
 export const ALL_ITEMS = NAV.flatMap((s) => s.items);
 
 export function Layout({ page, go, children }: { page: Page; go: (p: Page) => void; children: ReactNode }) {
   const { state, setSession, switchRole, t, toasts } = useStore();
-  const auth = useAuth();
   const { session, orgs } = state;
   const isFirm = USERS[session.role].firm;
   const org = orgs.find((o) => o.id === session.orgId);
@@ -132,8 +129,6 @@ export function Layout({ page, go, children }: { page: Page; go: (p: Page) => vo
             <button onClick={() => go(session.orgId === "FIRM" ? "firm" : "capture")} className="relative size-9 shrink-0 grid place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:-translate-y-px transition cursor-pointer" title={t("Pending approvals")} aria-label={t("Pending approvals: {n}", { n: pendingCount })}>
               <Bell size={16} className="text-slate-600" />{pendingCount > 0 && <span className="absolute -top-1 -end-1 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-semibold grid place-items-center">{pendingCount}</span>}
             </button>
-            {auth && <span className="hidden md:block text-xs text-slate-500 max-w-48 truncate" title={auth.email}>{auth.fullName}</span>}
-            {auth && <button onClick={() => void auth.signOut()} className="btn-ghost !py-1.5 !px-2.5 sm:!px-3.5" aria-label="Sign out"><LogOut size={15} /><span className="hidden sm:inline">Sign out</span></button>}
             <button onClick={() => setSession({ lang: session.lang === "en" ? "ar" : "en" })} className="btn-ghost !py-1.5 !px-2.5 sm:!px-3.5" aria-label={session.lang === "en" ? "التبديل إلى العربية" : "Switch to English"}><Languages size={15} /><span className="hidden sm:inline">{session.lang === "en" ? "العربية" : "English"}</span></button>
           </div>
         </header>

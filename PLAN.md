@@ -10,7 +10,7 @@
 | **Current phase** | Phase 1 — Foundation (1A database ✅ live; 1B logins next) |
 | **Overall status** | 🟡 In progress |
 | **Last updated** | 2026-10-07 |
-| **Next milestone** | P1-10 invites (second Firm Admin needed for maker-checker) |
+| **Next milestone** | P1-14 journals, approval queue, reversal, period locks on live data |
 
 **Status legend:** ⏸ Deferred · ⬜ Not started · 🟡 In progress (for tests: written and passing locally, awaiting CI) · ✅ Done · ⛔ Blocked · 🔍 Needs Faizan's check
 
@@ -195,12 +195,12 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P1-09 | Login, MFA enrolment, password reset, 30-min idle sign-out | SEC-08, SEC-09, SEC-21 | ✅ `components/AuthGate.tsx` + `lib/auth.ts` (22 unit tests); Faizan signed in with password + two-factor on 2026-10-07 |
 | P1-10 | Invite flow (Vercel function + one-time link; sent via Resend **and** a "Copy invite link" button, D-24) | CFG-10, CFG-11, SEC-15, CFG-18 | 🟡 built — DB `…100800_invitations.sql` (23 pgTAP tests, applied), server `poc/api/invite.ts` (12 unit tests), **Users & invites** page; waiting for Faizan's first real invite |
 | P1-11 | Admin area: Users & invites, Firm profile, Settings, **Tax rules** (versioned, with VERIFY flags) | CFG-01 → CFG-05, CFG-13 | ⬜ |
-| P1-12 | Client onboarding wizard (CoA copy, periods, VAT periods, number sequences, staff assignment, opening balances) | CFG-06 | ⬜ |
+| P1-12 | Client onboarding (CoA copy, periods, VAT periods, number sequences, staff assignment, opening balances) | CFG-06 | 🟡 built — `create_client()` (`…100900`, 21 pgTAP tests incl. CFG-06, CT-10; applied) + **Add client** form; opening balances via the opening journal in P1-14; waiting for Faizan's first real client |
 
 **1C · The app on live data**
 | ID | Step | Tests | Status |
 |---|---|---|---|
-| P1-13 | Replace browser storage with Supabase data access; remove demo role switcher | — | ⬜ |
+| P1-13 | Replace browser storage with Supabase data access; remove demo role switcher | — | 🟡 live app (`src/live/`) on Supabase: Clients, client Overview / Chart of accounts / Periods, Users & invites; no demo data or role switcher. Old POC screens kept only in the demo build (`npm run dev -- --mode demo`, port 5182). Remaining live screens: P1-14/P1-15, then Phases 2–3 |
 | P1-14 | Chart of accounts, manual journals, approval queue, reversal, period lock screens | LED-*, RBAC-04 → 09 | ⬜ |
 | P1-15 | Trial balance & general ledger from database functions | LED-13 | ⬜ |
 | P1-16 | Security headers (CSP, HSTS) in `vercel.json`; Basic Auth removed once logins work | SEC-12 | ⬜ |
@@ -460,3 +460,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | **P1-09 sign-in built.** Sign-in gate in front of the app: email + password (no sign-up screen), "forgot / never set your password" email link, set-password page for invite and reset links, two-factor set-up (QR code) and code check, plain-language errors, 30-minute idle sign-out shared across tabs, Sign out button, app name read from `platform_settings`. Two-factor is required for every signed-in user for now (all users are firm users until Phase 3). Automated browser tests (G-9) now run against a separate demo build (`vite build --mode demo`, sample data, no sign-in); normal builds always require sign-in. `@supabase/supabase-js` 2.117.2 added. |
 | 2026-10-07 | P1-09 ✅ — Faizan set his password via the reset link and enrolled two-factor (TOTP factor verified in Supabase). |
 | 2026-10-07 | **P1-10 invites built.** Database decides who may invite whom (Firm Admin → Firm Accountants; Super Admin → Firm Admins; client roles wait for Phase 3), checks email format and allowed domains (CFG-11, list empty for now — Q-23), expiry from `invite_expiry_days` (7); invitation becomes a membership on first sign-in, expired ones refused (CFG-10); copying the link is audit-logged (CFG-18). Server function `/api/invite` (secret key server-side only; 401 without session, 403 when refused — SEC-15) creates the one-time link and emails it via Resend using the editable template; the link is also shown once for "Copy invite link" (D-24). Local dev server now runs `api/` functions and reads `.env.local` from `poc/`. 147 database + 106 unit tests. |
+| 2026-10-07 | OA-04 done by Faizan (public sign-up off; leaked-password protection needs the Pro plan — advisor still warns, tracked under OA-13). OA-16 deferred until deployment (local testing only). **P1-12/P1-13:** `create_client()` creates a client in one call (chart of accounts, monthly periods to end of next FY, VAT periods from the stagger with due dates from config, CT periods, number counters, accountant assignment). New live app frame (`src/live/`) — normal start shows only real-database screens; the demo build keeps the old POC screens. Exact AED→fils parser (`parseAedToFils`, refuses fractions of a fils). 168 database + 118 unit tests. |

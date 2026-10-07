@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode, type InputHTMLAttributes, type SelectHTMLAttributes } from "react";
 import { X, Search, ChevronDown, ChevronUp, ChevronsUpDown, ChevronLeft, ChevronRight, Inbox, SlidersHorizontal } from "lucide-react";
 import { createPortal } from "react-dom";
-import { useStore } from "../lib/store";
+import { useText } from "../lib/store";
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 
@@ -80,7 +80,7 @@ const TONE_GRAD: Record<string, { bg: string; stroke: string; glow: string }> = 
 
 export function Sparkline({ data, color, h = 36 }: { data: number[]; color: string; h?: number }) {
   const id = useId().replace(/:/g, "");
-  const { lang } = useStore();
+  const { lang } = useText();
   if (data.length < 2) return null;
   const w = 120, min = Math.min(...data), max = Math.max(...data), r = max - min || 1;
   const pts = data.map((d, i) => [(i / (data.length - 1)) * w, h - 3 - ((d - min) / r) * (h - 8)] as const);
@@ -153,7 +153,7 @@ export function Ring({ value, color = "#10b981", size = 64, stroke = 7, children
 
 export function Modal({ open, onClose, title, children, wide, footer }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean; footer?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-  const { t } = useStore();
+  const { t } = useText();
   useEffect(() => {
     if (!open) return;
     const prev = document.activeElement as HTMLElement | null;
@@ -262,7 +262,7 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
 }
 
 export function SearchInput({ value, onChange, placeholder, className }: { value: string; onChange: (v: string) => void; placeholder?: string; className?: string }) {
-  const { t } = useStore();
+  const { t } = useText();
   return (
     <div className={cx("relative", className)}>
       <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -287,7 +287,7 @@ export function DataTable<T>({ rows, cols, rowKey, search, filters = [], pageSiz
   onRowClick?: (r: T) => void; actions?: (r: T) => ReactNode; toolbar?: ReactNode; empty?: ReactNode; title?: ReactNode; sub?: ReactNode;
   initialSort?: { key: string; dir: "asc" | "desc" }; rowClass?: (r: T) => string;
 }) {
-  const { t } = useStore();
+  const { t } = useText();
   const [q, setQ] = useState("");
   const [fv, setFv] = useState<Record<string, string>>({});
   const [sort, setSort] = useState(initialSort ?? null);

@@ -202,6 +202,12 @@ type Store = ReturnType<typeof useStoreImpl>;
 const Ctx = createContext<Store | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) { const s = useStoreImpl(); return <Ctx.Provider value={s}>{children}</Ctx.Provider>; }
 export const useStore = () => useContext(Ctx)!;
+/** Text helpers for shared UI components: the demo store's language when present, English otherwise
+ *  (the live app has no demo store). */
+export const useText = (): { t: Store["t"]; lang: "en" | "ar" } => {
+  const s = useContext(Ctx);
+  return s ? { t: s.t, lang: s.state.session.lang } : { t: (k: string, p?: Record<string, string | number>) => tr("en", k, p), lang: "en" };
+};
 
 /** Current org (or null in firm view). */
 export function useOrg() {

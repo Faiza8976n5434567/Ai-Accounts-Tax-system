@@ -1,7 +1,7 @@
 /** Users & invites (P1-10 · Spec 03 §3 "Users & invites" · D-24). Live data from Supabase. */
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Copy, MailCheck, MailWarning, UserPlus, Users, XCircle } from "lucide-react";
-import { useStore } from "../lib/store";
+import { useToast } from "../live/toast";
 import { roleLabel, shortDate } from "../lib/email";
 import { inviteDisplayStatus, inviteStaff, loadTeam, markInviteLinkCopied, revokeInvitation, type InviteResult, type Invitation, type StaffMember } from "../lib/team";
 import { Badge, Card, Modal, PageHeader } from "../components/ui";
@@ -9,7 +9,7 @@ import { Badge, Card, Modal, PageHeader } from "../components/ui";
 const STATUS_TONE: Record<string, string> = { pending: "amber", accepted: "emerald", revoked: "slate", expired: "rose" };
 
 export function TeamPage() {
-  const { toast } = useStore();
+  const toast = useToast();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [canInviteAdmins, setCanInviteAdmins] = useState(false);
