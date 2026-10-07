@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Menu, X, HandCoins, Wallet, Building2, LayoutDashboard, ScanLine, Receipt, BookOpen, FileBarChart, Landmark, Calculator, Banknote, CalendarClock, ShieldCheck, Settings, ChevronDown, Languages, CheckCircle2, AlertTriangle, Info, Search, Bell, CornerDownLeft, ArrowRight, LogOut } from "lucide-react";
+import { Menu, X, HandCoins, Wallet, Building2, LayoutDashboard, ScanLine, Receipt, BookOpen, FileBarChart, Landmark, Calculator, Banknote, CalendarClock, ShieldCheck, Settings, ChevronDown, Languages, CheckCircle2, AlertTriangle, Info, Search, Bell, CornerDownLeft, ArrowRight, LogOut, UserPlus } from "lucide-react";
 import { useStore, USERS } from "../lib/store";
 import { useAuth } from "./AuthGate";
 import type { Role } from "../lib/types";
 import { cx } from "./ui";
 
-export type Page = "firm" | "dashboard" | "capture" | "sales" | "ledger" | "ar" | "ap" | "reports" | "vat" | "ct" | "bank" | "calendar" | "audit" | "settings";
+export type Page = "firm" | "dashboard" | "capture" | "sales" | "ledger" | "ar" | "ap" | "reports" | "vat" | "ct" | "bank" | "calendar" | "audit" | "settings" | "team";
 
 const NAV: { section: string; items: { id: Page; label: string; icon: ReactNode; client?: boolean; firmOnly?: boolean }[] }[] = [
   { section: "Workspace", items: [
@@ -29,6 +29,7 @@ const NAV: { section: string; items: { id: Page; label: string; icon: ReactNode;
   { section: "Insights", items: [
     { id: "audit", label: "Audit trail", icon: <ShieldCheck size={17} /> },
     { id: "settings", label: "Settings", icon: <Settings size={17} /> },
+    { id: "team", label: "Users & invites", icon: <UserPlus size={17} />, firmOnly: true },
   ] },
 ];
 export const ALL_ITEMS = NAV.flatMap((s) => s.items);

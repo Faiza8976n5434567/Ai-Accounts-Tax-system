@@ -14,6 +14,7 @@ import { Bank } from "./pages/Bank";
 import { Calendar } from "./pages/Calendar";
 import { Audit } from "./pages/Audit";
 import { SettingsPage } from "./pages/Settings";
+import { TeamPage } from "./pages/Team";
 
 export function App() {
   const { state } = useStore();
@@ -28,7 +29,7 @@ export function App() {
     const who = org ? (state.session.lang === "ar" ? org.nameAr : org.name) : "TFS Plus";
     document.title = `${t(label)} · ${who} · TFS+ Smart Ledger`; // TODO(P1-13): app name from platform_settings
   }, [page, org, state.session.lang, t]);
-  useEffect(() => { if (!org && !["firm", "calendar", "audit", "settings"].includes(page)) go("firm"); }, [org, page]);
+  useEffect(() => { if (!org && !["firm", "calendar", "audit", "settings", "team"].includes(page)) go("firm"); }, [org, page]);
   const { setSession } = useStore();
   const open = (orgId: string, p: Page = "dashboard") => { setSession({ orgId }); go(p); };
 
@@ -48,6 +49,7 @@ export function App() {
       {page === "calendar" && <Calendar open={open} />}
       {page === "audit" && <Audit />}
       {page === "settings" && <SettingsPage />}
+      {page === "team" && <TeamPage />}
     </Layout>
   );
 }

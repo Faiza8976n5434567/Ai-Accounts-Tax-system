@@ -68,6 +68,9 @@ function Gate({ children }: { children: ReactNode }) {
         if (!cancelled) setNotice("You were signed out after 30 minutes without activity.");
         return;
       }
+      // A waiting invitation becomes a firm membership on first sign-in (P1-10); no-op otherwise.
+      await sb.rpc("accept_invitation");
+      if (cancelled) return;
       if (needsPassword) { setStep("set_password"); return; }
       const [{ data: aal }, { data: factors }] = await Promise.all([sb.auth.mfa.getAuthenticatorAssuranceLevel(), sb.auth.mfa.listFactors()]);
       if (cancelled) return;

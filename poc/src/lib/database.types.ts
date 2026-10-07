@@ -804,13 +804,16 @@ export type Database = {
       invitations: {
         Row: {
           accepted_at: string | null
+          accepted_user_id: string | null
           created_at: string
           created_by: string | null
           email: string
           expires_at: string
           firm_id: string
+          full_name: string | null
           id: string
           invited_by: string | null
+          link_copied_at: string | null
           organization_id: string | null
           role: string
           status: Database["public"]["Enums"]["invitation_status"]
@@ -820,13 +823,16 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          accepted_user_id?: string | null
           created_at?: string
           created_by?: string | null
           email: string
           expires_at: string
           firm_id: string
+          full_name?: string | null
           id?: string
           invited_by?: string | null
+          link_copied_at?: string | null
           organization_id?: string | null
           role: string
           status?: Database["public"]["Enums"]["invitation_status"]
@@ -836,13 +842,16 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          accepted_user_id?: string | null
           created_at?: string
           created_by?: string | null
           email?: string
           expires_at?: string
           firm_id?: string
+          full_name?: string | null
           id?: string
           invited_by?: string | null
+          link_copied_at?: string | null
           organization_id?: string | null
           role?: string
           status?: Database["public"]["Enums"]["invitation_status"]
@@ -851,6 +860,13 @@ export type Database = {
           valid_to?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "invitations_accepted_user_id_fkey"
+            columns: ["accepted_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invitations_firm_id_fkey"
             columns: ["firm_id"]
@@ -1513,13 +1529,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: { Args: never; Returns: string }
       approve_config_version: {
         Args: { p_reason: string; p_version_id: string }
         Returns: undefined
       }
       config_value: { Args: { p_key: string; p_on?: string }; Returns: Json }
+      create_invitation: {
+        Args: { p_email: string; p_full_name: string; p_role: string }
+        Returns: {
+          email: string
+          expires_at: string
+          firm_name: string
+          full_name: string
+          invitation_id: string
+          inviter_name: string
+          role: string
+        }[]
+      }
       lock_period: {
         Args: { p_period_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      mark_invite_link_copied: {
+        Args: { p_invitation_id: string }
         Returns: undefined
       }
       post_journal: { Args: { p_journal_id: string }; Returns: string }
@@ -1530,6 +1563,10 @@ export type Database = {
       reverse_journal: {
         Args: { p_date?: string; p_journal_id: string; p_reason: string }
         Returns: string
+      }
+      revoke_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: undefined
       }
       set_super_admin: {
         Args: { p_reason: string; p_user: string; p_value: boolean }
