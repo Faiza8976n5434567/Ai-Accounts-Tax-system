@@ -4,7 +4,7 @@
  * demo screens remain available only in the demo build (`vite --mode demo`).
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { BookOpen, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, LayoutDashboard, LogOut, Menu, Scale, Settings, UserPlus, X } from "lucide-react";
+import { BookOpen, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, LayoutDashboard, ReceiptText, LogOut, Menu, Scale, Settings, UserPlus, X } from "lucide-react";
 import { useAuth } from "../components/AuthGate";
 import { cx } from "../components/ui";
 import { listClients, type Client } from "../lib/clients";
@@ -43,6 +43,7 @@ export function LiveApp() {
   const clientNav: { label: string; icon: ReactNode; tab: ClientTab }[] = [
     { label: "Overview", icon: <LayoutDashboard size={17} />, tab: "overview" },
     { label: "Customers & suppliers", icon: <Contact size={17} />, tab: "contacts" },
+    { label: "Sales invoices", icon: <ReceiptText size={17} />, tab: "sales" },
     { label: "Journals", icon: <BookOpenCheck size={17} />, tab: "journals" },
     { label: "Approvals", icon: <CheckSquare size={17} />, tab: "approvals" },
     { label: "Trial balance & ledger", icon: <Scale size={17} />, tab: "reports" },

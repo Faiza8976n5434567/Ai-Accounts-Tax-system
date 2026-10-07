@@ -1294,6 +1294,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          address: string | null
           base_currency: string
           brand_color: string | null
           created_at: string
@@ -1321,6 +1322,7 @@ export type Database = {
           vat_registered: boolean
         }
         Insert: {
+          address?: string | null
           base_currency?: string
           brand_color?: string | null
           created_at?: string
@@ -1348,6 +1350,7 @@ export type Database = {
           vat_registered?: boolean
         }
         Update: {
+          address?: string | null
           base_currency?: string
           brand_color?: string | null
           created_at?: string
@@ -1476,6 +1479,235 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      sales_invoice_lines: {
+        Row: {
+          account_id: string
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          line_no: number
+          net: number
+          net_fcy: number
+          organization_id: string
+          quantity: number
+          sales_invoice_id: string
+          tax_code: string
+          unit_price: number
+          updated_at: string
+          updated_by: string | null
+          vat: number
+          vat_fcy: number
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          line_no: number
+          net?: number
+          net_fcy?: number
+          organization_id: string
+          quantity: number
+          sales_invoice_id: string
+          tax_code: string
+          unit_price: number
+          updated_at?: string
+          updated_by?: string | null
+          vat?: number
+          vat_fcy?: number
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          line_no?: number
+          net?: number
+          net_fcy?: number
+          organization_id?: string
+          quantity?: number
+          sales_invoice_id?: string
+          tax_code?: string
+          unit_price?: number
+          updated_at?: string
+          updated_by?: string | null
+          vat?: number
+          vat_fcy?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_invoice_lines_account_id_organization_id_fkey"
+            columns: ["account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "sales_invoice_lines_sales_invoice_id_organization_id_fkey"
+            columns: ["sales_invoice_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoices"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "sales_invoice_lines_tax_code_fkey"
+            columns: ["tax_code"]
+            isOneToOne: false
+            referencedRelation: "tax_codes"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      sales_invoices: {
+        Row: {
+          approved_by: string | null
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_reference: string | null
+          doc_type: Database["public"]["Enums"]["sales_doc_type"]
+          due_date: string
+          fx_rate: number
+          gross_total: number
+          gross_total_fcy: number
+          id: string
+          invoice_no: string | null
+          issue_date: string
+          journal_id: string | null
+          net_total: number
+          notes: string | null
+          organization_id: string
+          original_invoice_id: string | null
+          posted_at: string | null
+          prepared_by: string | null
+          status: Database["public"]["Enums"]["document_status"]
+          supply_date: string | null
+          supply_emirate: string
+          updated_at: string
+          updated_by: string | null
+          vat_total: number
+        }
+        Insert: {
+          approved_by?: string | null
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_reference?: string | null
+          doc_type?: Database["public"]["Enums"]["sales_doc_type"]
+          due_date: string
+          fx_rate?: number
+          gross_total?: number
+          gross_total_fcy?: number
+          id?: string
+          invoice_no?: string | null
+          issue_date: string
+          journal_id?: string | null
+          net_total?: number
+          notes?: string | null
+          organization_id: string
+          original_invoice_id?: string | null
+          posted_at?: string | null
+          prepared_by?: string | null
+          status?: Database["public"]["Enums"]["document_status"]
+          supply_date?: string | null
+          supply_emirate: string
+          updated_at?: string
+          updated_by?: string | null
+          vat_total?: number
+        }
+        Update: {
+          approved_by?: string | null
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_reference?: string | null
+          doc_type?: Database["public"]["Enums"]["sales_doc_type"]
+          due_date?: string
+          fx_rate?: number
+          gross_total?: number
+          gross_total_fcy?: number
+          id?: string
+          invoice_no?: string | null
+          issue_date?: string
+          journal_id?: string | null
+          net_total?: number
+          notes?: string | null
+          organization_id?: string
+          original_invoice_id?: string | null
+          posted_at?: string | null
+          prepared_by?: string | null
+          status?: Database["public"]["Enums"]["document_status"]
+          supply_date?: string | null
+          supply_emirate?: string
+          updated_at?: string
+          updated_by?: string | null
+          vat_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_invoices_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_invoices_contact_id_organization_id_fkey"
+            columns: ["contact_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "sales_invoices_currency_fkey"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "sales_invoices_journal_id_organization_id_fkey"
+            columns: ["journal_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "journals"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "sales_invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_invoices_original_invoice_id_organization_id_fkey"
+            columns: ["original_invoice_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoices"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "sales_invoices_prepared_by_fkey"
+            columns: ["prepared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_invoices_supply_emirate_fkey"
+            columns: ["supply_emirate"]
+            isOneToOne: false
+            referencedRelation: "emirates"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       tax_codes: {
         Row: {
@@ -1685,6 +1917,7 @@ export type Database = {
           role: string
         }[]
       }
+      delete_sales_invoice: { Args: { p_id: string }; Returns: undefined }
       general_ledger: {
         Args: {
           p_account_id: string
@@ -1716,8 +1949,13 @@ export type Database = {
       }
       my_permissions: { Args: { p_organization_id: string }; Returns: string[] }
       post_journal: { Args: { p_journal_id: string }; Returns: string }
+      post_sales_invoice: { Args: { p_id: string }; Returns: string }
       reject_journal: {
         Args: { p_journal_id: string; p_reason: string }
+        Returns: undefined
+      }
+      reject_sales_invoice: {
+        Args: { p_id: string; p_reason: string }
         Returns: undefined
       }
       reopen_period: {
@@ -1743,6 +1981,10 @@ export type Database = {
         }
         Returns: string
       }
+      save_sales_invoice: {
+        Args: { p_doc: Json; p_id: string; p_organization_id: string }
+        Returns: string
+      }
       set_super_admin: {
         Args: { p_reason: string; p_user: string; p_value: boolean }
         Returns: undefined
@@ -1755,6 +1997,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      submit_sales_invoice: { Args: { p_id: string }; Returns: undefined }
       trial_balance: {
         Args: { p_from: string; p_organization_id: string; p_to: string }
         Returns: {
@@ -1788,6 +2031,7 @@ export type Database = {
         | "credit_note"
         | "receipt"
         | "payment"
+      document_status: "draft" | "pending" | "posted"
       firm_role: "firm_admin" | "firm_accountant"
       firm_status: "active" | "suspended"
       invitation_status: "pending" | "accepted" | "revoked" | "expired"
@@ -1810,6 +2054,7 @@ export type Database = {
         | "read_only"
       org_status: "onboarding" | "active" | "archived"
       period_status: "open" | "locked"
+      sales_doc_type: "invoice" | "credit_note"
       tax_period_kind: "vat" | "ct"
       user_status: "active" | "suspended"
       vat_period: "quarterly" | "monthly"
@@ -1959,6 +2204,7 @@ export const Constants = {
         "receipt",
         "payment",
       ],
+      document_status: ["draft", "pending", "posted"],
       firm_role: ["firm_admin", "firm_accountant"],
       firm_status: ["active", "suspended"],
       invitation_status: ["pending", "accepted", "revoked", "expired"],
@@ -1983,6 +2229,7 @@ export const Constants = {
       ],
       org_status: ["onboarding", "active", "archived"],
       period_status: ["open", "locked"],
+      sales_doc_type: ["invoice", "credit_note"],
       tax_period_kind: ["vat", "ct"],
       user_status: ["active", "suspended"],
       vat_period: ["quarterly", "monthly"],

@@ -58,6 +58,25 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await page.getByRole("cell", { name: "E2E rent accrual" }).click();
   await expect(page.getByRole("button", { name: "Approve and post" })).toHaveCount(0);
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).first().click();
+
+  // Maker: a customer and a sales invoice (P2-02 · VAT-01: net 10,000 → VAT 500)
+  await page.locator("aside").getByRole("button", { name: "Customers & suppliers" }).click();
+  await page.getByRole("button", { name: "Customer", exact: true }).click();
+  const cust = page.getByRole("dialog", { name: "New customer" });
+  await cust.getByLabel("Name (as on their trade licence or invoice)").fill("E2E Buyer LLC");
+  await cust.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByRole("cell", { name: /E2E Buyer LLC/ })).toBeVisible();
+
+  await page.locator("aside").getByRole("button", { name: "Sales invoices" }).click();
+  await page.getByRole("button", { name: "New invoice" }).click();
+  const inv = page.getByRole("dialog", { name: "New invoice" });
+  await inv.getByLabel("Customer").selectOption({ label: "E2E Buyer LLC" });
+  await inv.getByLabel("Line 1 description").fill("E2E consulting");
+  await inv.getByLabel("Line 1 unit price").fill("10,000");
+  await inv.getByLabel("Line 1 account").selectOption({ label: "4010 · Revenue - services" });
+  await expect(inv.getByText("Total AED 10,500.00")).toBeVisible();
+  await inv.getByRole("button", { name: "Submit for approval" }).click();
+  await expect(page.getByRole("cell", { name: "E2E Buyer LLC" })).toBeVisible();
   await signOut(page);
 
   // Checker: approve and post, then read the trial balance
@@ -68,8 +87,21 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await page.getByRole("button", { name: "Approve and post" }).click();
   await expect(page.getByText(/Posted as JV-\d{4}-\d{2}-0001/)).toBeVisible();
 
+  // Checker approves the invoice: numbered INV-…-0001, journal posted (maker-checker R1)
+  await page.locator("aside").getByRole("button", { name: "Sales invoices" }).click();
+  await page.getByRole("cell", { name: "E2E Buyer LLC" }).click();
+  await page.getByRole("button", { name: "Approve and post" }).click();
+  await expect(page.getByText(/Posted as INV-\d{4}-\d{2}-0001/)).toBeVisible();
+  await page.getByRole("cell", { name: "E2E Buyer LLC" }).click();
+  await page.getByRole("button", { name: "Print / PDF" }).click();
+  await expect(page.locator(".print-area")).toContainText("Total payable");
+  await expect(page.locator(".print-area")).toContainText("AED 10,500.00");
+  await page.locator(".print-area").getByRole("button", { name: "Close" }).click();
+
   await page.locator("aside").getByRole("button", { name: "Trial balance & ledger" }).click();
   await expect(page.getByText("Balanced")).toBeVisible();
+  await expect(page.getByRole("row", { name: /1100\s*Trade receivables/ })).toContainText("10,500.00");
+  await expect(page.getByRole("row", { name: /2100\s*VAT output/ })).toContainText("500.00");
   const rent = page.getByRole("row", { name: /6100\s*Rent/ });
   await expect(rent).toContainText("1,000.00");
   const accruals = page.getByRole("row", { name: /2010\s*Accruals/ });

@@ -31,6 +31,13 @@ export const listTaxPeriods = async (orgId: string): Promise<TaxPeriod[]> =>
 export const listEmirates = async (): Promise<Emirate[]> =>
   must(await db().from("emirates").select("*").order("vat_box"));
 
+export type ClientPatch = Pick<Client, "legal_name" | "trade_name" | "address" | "trn" | "ct_trn" | "licence_no" | "licence_authority" | "licence_expiry" | "industry" | "ct_regime" | "prior_year_revenue">;
+/** Firm Admins edit client details (manage_client, RLS). VAT registration and stagger are set at onboarding. */
+export async function updateClient(id: string, patch: Partial<ClientPatch>): Promise<void> {
+  const r = await db().from("organizations").update(patch).eq("id", id);
+  if (r.error) throw r.error;
+}
+
 /** The signed-in user's own firm role (decides whether "Add client" is offered). */
 export async function myFirmRole(): Promise<"firm_admin" | "firm_accountant" | null> {
   const { data: auth } = await db().auth.getUser();

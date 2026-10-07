@@ -217,7 +217,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | ID | Step | Tests | Status |
 |---|---|---|---|
 | P2-01 | Customers & suppliers (TRN validation, payment terms, default account) | ARAP-07 | 🟡 built — `…101200_contacts.sql` (14 pgTAP tests, applied) + **Customers & suppliers** screen (search, filters, add/edit, TRN check, default account/tax code, related-party tag); rules in `lib/contacts.ts` (7 unit tests) |
-| P2-02 | Sales invoices + credit notes with `INV-YYYY-MM-0001` numbering (D-22), supply emirate (D-10), AED or USD (D-21) | ARAP-04, DM-02, VAT-02, NUM-01 → 07, FX-01 | ⬜ |
+| P2-02 | Sales invoices + credit notes with `INV-YYYY-MM-0001` numbering (D-22), supply emirate (D-10), AED or USD (D-21) | ARAP-04, DM-02, VAT-02, NUM-01 → 07, FX-01 | 🟡 built — `…101300_sales_invoices.sql` (31 pgTAP tests: VAT-01/02/09/10, FX-01, NUM-01/02/06/07, DM-15, D-30; applied by Faizan) + `…101400_client_address.sql`; **Sales invoices** screen (editor with live totals matching the database, D-29 warnings, approve/send back, credit notes), **Print / PDF** tax invoice (Art 59 fields), client **Edit details** with address; 13 calculation unit tests; covered by the live journey (invoice → approval → INV number → trial balance → print) |
 | P2-03 | Purchase bills + debit notes, attachments (private storage), compliance checks & risk | ARAP-06, DM-08, SEC-13, SEC-20 | ⬜ |
 | P2-04 | Receipts & payments (AED/USD), allocations, **Customer Credits** (auto-apply, refunds) (D-11) | ARAP-01 → 05, ARAP-08 → 12, DM-05, DM-06, FX-02, FX-03 | ⬜ |
 | P2-05 | Bank accounts, statement upload, duplicate detection, matching, reconciliation | BANK-01 → 03, DM-07 | ⬜ |
@@ -475,3 +475,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | **Phase 1 approved by Faizan (G-10).** Phase 2 started. Still open from Phase 1: approve the VERIFY sign-off tax-rule version (Q-07, a few clicks in Admin → Tax rules). |
 | 2026-10-07 | **P2-01 built:** customers & suppliers (database + screen). 214 database + 172 unit tests. |
 | 2026-10-07 | Decisions D-29 (invoice date is the tax date) and D-30 (credit notes capped at the original invoice). P2-02 started. |
+| 2026-10-07 | **P2-02 built:** sales invoices & credit notes (database calculation, numbering, posting, D-29/D-30), printable tax invoice, client address & details editing. Faizan applied `…101300` in the SQL Editor. Live journey extended to sales invoices. 247 database + 185 unit tests. |

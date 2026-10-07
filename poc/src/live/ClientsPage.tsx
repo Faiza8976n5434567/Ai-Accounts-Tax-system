@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Building2, Plus } from "lucide-react";
 import { Badge, Card, Modal, PageHeader } from "../components/ui";
-import { createClient, listEmirates, MONTHS, myFirmRole, vatSummary, type Client, type Emirate, type NewClient } from "../lib/clients";
+import { createClient, listEmirates, MONTHS, myFirmRole, updateClient, vatSummary, type Client, type Emirate, type NewClient } from "../lib/clients";
 import { loadTeam, type StaffMember } from "../lib/team";
 import { parseAedToFils } from "../lib/money";
 import { useToast } from "./toast";
@@ -52,7 +52,7 @@ function AddClientModal({ onClose, onCreated }: { onClose: () => void; onCreated
   const [emirates, setEmirates] = useState<Emirate[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [f, setF] = useState({
-    legalName: "", tradeName: "", emirateCode: "AUH", industry: "", trn: "", ctTrn: "", licenceNo: "", licenceAuthority: "", licenceExpiry: "",
+    legalName: "", tradeName: "", address: "", emirateCode: "AUH", industry: "", trn: "", ctTrn: "", licenceNo: "", licenceAuthority: "", licenceExpiry: "",
     fyStartMonth: 1, booksStart: `${today().slice(0, 4)}-01-01`,
     vatRegistered: false, vatPeriod: "quarterly" as NewClient["vatPeriod"], vatFirstPeriodEnd: "",
     ctRegime: "standard" as NewClient["ctRegime"], priorYearRevenue: "0", accountantIds: [] as string[], managerId: "",
@@ -73,6 +73,7 @@ function AddClientModal({ onClose, onCreated }: { onClose: () => void; onCreated
     setBusy(true);
     try {
       const id = await createClient({ ...f, priorYearRevenueFils: revenue });
+      if (f.address.trim()) await updateClient(id, { address: f.address.trim() });
       toast(`${f.legalName.trim()} added — chart of accounts, periods and tax deadlines created`);
       await onCreated(id);
     } catch (err) {
@@ -88,6 +89,7 @@ function AddClientModal({ onClose, onCreated }: { onClose: () => void; onCreated
         <Section title="Company">
           <Text label="Legal name (as on the trade licence)" value={f.legalName} onChange={(v) => set("legalName", v)} wide />
           <Text label="Trade name (optional)" value={f.tradeName} onChange={(v) => set("tradeName", v)} />
+          <Text label="Address (printed on tax invoices)" value={f.address} onChange={(v) => set("address", v)} wide />
           <Select label="Head office emirate (default on invoices)" value={f.emirateCode} onChange={(v) => set("emirateCode", v)}
             options={emirates.map((e) => [e.code, e.name])} />
           <Text label="Industry" value={f.industry} onChange={(v) => set("industry", v)} />

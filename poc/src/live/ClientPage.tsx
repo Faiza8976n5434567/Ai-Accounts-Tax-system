@@ -1,6 +1,6 @@
 /** One client — live from Supabase: overview, journals, approvals, chart of accounts, periods (P1-13/P1-14). */
-import { useCallback } from "react";
-import { FileText, Landmark } from "lucide-react";
+import { useCallback, useState } from "react";
+import { FileText, Landmark, Pencil } from "lucide-react";
 import { Badge, Card, PageHeader } from "../components/ui";
 import { getClient, listAccountingPeriods, listAccounts, listTaxPeriods, MONTHS, nextVatDue, vatSummary, type Account, type AccountingPeriod, type Client, type TaxPeriod } from "../lib/clients";
 import { myPermissions } from "../lib/journals";
@@ -12,15 +12,18 @@ import { AccountsTab } from "./AccountsTab";
 import { PeriodsTab } from "./PeriodsTab";
 import { ReportsTab } from "./ReportsTab";
 import { ContactsTab } from "./ContactsTab";
+import { SalesTab } from "./SalesTab";
+import { ClientDetailsForm } from "./ClientDetailsForm";
 import { useLoad, useToday } from "./hooks";
 
-const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", journals: "Journals", approvals: "Approvals", reports: "Trial balance & ledger", accounts: "Chart of accounts", periods: "Periods" };
+const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", sales: "Sales invoices", journals: "Journals", approvals: "Approvals", reports: "Trial balance & ledger", accounts: "Chart of accounts", periods: "Periods" };
 
 export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab }) {
   const fetchAll = useCallback(() => Promise.all([getClient(clientId), listAccounts(clientId), listAccountingPeriods(clientId), listTaxPeriods(clientId), myPermissions(clientId)]), [clientId]);
   const { data, error, reload } = useLoad(fetchAll);
   const today = useToday();
   const load = async () => reload();
+  const [editingDetails, setEditingDetails] = useState(false);
 
   if (error) return <p role="alert" className="text-sm text-rose-700">Could not load this client. Check your connection and try again.</p>;
   if (!data) return <p className="text-sm text-slate-500">Loading…</p>;
@@ -37,11 +40,12 @@ export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab
 
       {tab === "overview" && (
         <div className="grid gap-5 lg:grid-cols-2 max-w-6xl">
-          <Card title="Company" icon={<FileText size={16} />}>
+          <Card title="Company" icon={<FileText size={16} />} actions={perms.includes("manage_client") && <button className="btn-ghost !py-1 !px-2.5 text-xs" onClick={() => setEditingDetails(true)}><Pencil size={13} />Edit details</button>}>
             <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
               <Row k="Legal name" v={client.legal_name} />
               <Row k="Trade name" v={client.trade_name} />
               <Row k="Industry" v={client.industry} />
+              <Row k="Address" v={client.address} />
               <Row k="Trade licence" v={[client.licence_no, client.licence_authority].filter(Boolean).join(" · ") || null} />
               <Row k="Licence expiry" v={client.licence_expiry && shortDate(client.licence_expiry)} />
               <Row k="Financial year" v={`Starts in ${MONTHS[client.fy_start_month - 1]}`} />
@@ -67,7 +71,9 @@ export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab
           </Card>
         </div>
       )}
+      {editingDetails && <ClientDetailsForm client={client} onClose={() => setEditingDetails(false)} onSaved={() => { setEditingDetails(false); reload(); }} />}
       {tab === "contacts" && <ContactsTab orgId={clientId} accounts={accounts} canEdit={perms.includes("prepare")} />}
+      {tab === "sales" && <SalesTab client={client} accounts={accounts} taxPeriods={taxPeriods} perms={perms} />}
       {(tab === "journals" || tab === "approvals") && <JournalsTab key={tab} orgId={clientId} accounts={accounts} perms={perms} booksStart={booksStart} approvalsOnly={tab === "approvals"} />}
       {tab === "reports" && <ReportsTab orgId={clientId} accounts={accounts} fyStartMonth={client.fy_start_month} />}
       {tab === "accounts" && <AccountsTab orgId={clientId} accounts={accounts} canManage={perms.includes("manage_coa")} reload={load} />}
