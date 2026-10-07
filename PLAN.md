@@ -221,7 +221,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 |---|---|---|---|
 | P2-01 | Customers & suppliers (TRN validation, payment terms, default account) | ARAP-07 | 🟡 built — `…101200_contacts.sql` (14 pgTAP tests, applied) + **Customers & suppliers** screen (search, filters, add/edit, TRN check, default account/tax code, related-party tag); rules in `lib/contacts.ts` (7 unit tests) |
 | P2-02 | Sales invoices + credit notes with `INV-YYYY-MM-0001` numbering (D-22), supply emirate (D-10), AED or USD (D-21) | ARAP-04, DM-02, VAT-02, NUM-01 → 07, FX-01 | 🟡 built — `…101300_sales_invoices.sql` (31 pgTAP tests: VAT-01/02/09/10, FX-01, NUM-01/02/06/07, DM-15, D-30; applied by Faizan) + `…101400_client_address.sql`; **Sales invoices** screen (editor with live totals matching the database, D-29 warnings, approve/send back, credit notes), **Print / PDF** tax invoice (Art 59 fields), client **Edit details** with address; 13 calculation unit tests; covered by the live journey (invoice → approval → INV number → trial balance → print) |
-| P2-03 | Purchase bills + debit notes, attachments (private storage), compliance checks & risk | ARAP-06, DM-08, SEC-13, SEC-20 | ⬜ |
+| P2-03 | Purchase bills + debit notes, attachments (private storage), compliance checks & risk | ARAP-06, DM-08, SEC-13, SEC-20 | 🟡 built (database proven in CI; screen awaiting SQL Editor apply) |
 | P2-04 | Receipts & payments (AED/USD), allocations, **Customer Credits** (auto-apply, refunds) (D-11) | ARAP-01 → 05, ARAP-08 → 12, DM-05, DM-06, FX-02, FX-03 | ⬜ |
 | P2-05 | Bank accounts, statement upload, duplicate detection, matching, reconciliation | BANK-01 → 03, DM-07 | ⬜ |
 | P2-06 | Reports: TB, GL, P&L, Balance Sheet, AR/AP ageing, customer statement; Excel/PDF export | RPT-01 → 04, SEC-14, D-28 roll-forward | ⬜ |
@@ -325,7 +325,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | ARAP-03 | AP sub-ledger total vs GL 2000 | Always equal | D | ⬜ |
 | ARAP-04 | Credit note 2,000 + VAT 100 against ARAP-01 invoice | Open balance 4,400; VAT reduced by 100 | D | ⬜ |
 | ARAP-05 | Invoice 10,500 (incl. VAT 500); customer pays 11,000 | Invoice settled; Dr Bank 11,000 / Cr Receivables 10,500 / Cr Customer Credits 500; no VAT on the 500 | D | ⬜ |
-| ARAP-06 | Duplicate supplier bill (same supplier + bill no.) | Blocked | D | ⬜ |
+| ARAP-06 | Duplicate supplier bill (same supplier + bill no.) | Blocked | D | ✅ |
 | ARAP-07 | Invalid TRN format (not 15 digits starting 1) | Warning; input VAT not recoverable | U | ⬜ |
 | ARAP-08 | Customer Credit 500, then new invoice 2,100 (incl. VAT 100) for the same customer | Auto-applied: Dr Customer Credits 500 / Cr Receivables 500; invoice open 1,600; audit entry written | D | ⬜ |
 | ARAP-09 | Credits auto-apply across two open invoices | Oldest invoice settled first; never applied to another customer | D | ⬜ |
@@ -348,10 +348,10 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | VAT-02b | Emirate field left as pre-filled | Allocated to head-office emirate box | U | ⬜ |
 | VAT-03 | Zero-rated export of goods 20,000 | Box 4: 20,000 / VAT 0 | U | ⬜ |
 | VAT-04 | Exempt supply 8,000 | Box 5: 8,000 | U | ⬜ |
-| VAT-05 | Imported service (reverse charge) 6,000 | Box 3: 6,000 / 300 **and** Box 10: 6,000 / 300; net effect 0 | U | ⬜ |
-| VAT-06 | Standard-rated expense 25,000 + 1,250 with valid tax invoice | Box 9: 25,000 / 1,250 | U | ⬜ |
-| VAT-07 | Client entertainment 3,800 + 190 | Not in Box 9; expense 3,990; VAT blocked | U | ⬜ |
-| VAT-08 | Bill with VAT but supplier has no TRN | VAT not recoverable; full amount expensed | U | ⬜ |
+| VAT-05 | Imported service (reverse charge) 6,000 | Box 3: 6,000 / 300 **and** Box 10: 6,000 / 300; net effect 0 | U | 🟡 posting proven (D); box figures checked when VAT 201 is built |
+| VAT-06 | Standard-rated expense 25,000 + 1,250 with valid tax invoice | Box 9: 25,000 / 1,250 | U | 🟡 posting proven (D); box figures checked when VAT 201 is built |
+| VAT-07 | Client entertainment 3,800 + 190 | Not in Box 9; expense 3,990; VAT blocked | U | 🟡 posting proven (D); box figures checked when VAT 201 is built |
+| VAT-08 | Bill with VAT but supplier has no TRN | VAT not recoverable; full amount expensed | U | 🟡 posting proven (D); box figures checked when VAT 201 is built |
 | VAT-09 | Rounding: 3 lines × 33.33 | Line VAT 1.67 each; total VAT 5.01 | U | 🔍 |
 | VAT-10 | Credit note 2,000 against VAT-01 | Box 1: 8,000 / 400 | U+D | ⬜ |
 | VAT-11 | Box 14 | = Box 12 − Box 13 (positive = payable, negative = refundable) | U | ⬜ |
@@ -480,3 +480,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | Decisions D-29 (invoice date is the tax date) and D-30 (credit notes capped at the original invoice). P2-02 started. |
 | 2026-10-07 | **P2-02 built:** sales invoices & credit notes (database calculation, numbering, posting, D-29/D-30), printable tax invoice, client address & details editing. Faizan applied `…101300` in the SQL Editor. Live journey extended to sales invoices. 247 database + 185 unit tests. |
 | 2026-10-07 | Decisions D-31 (bill date is the tax date), D-32 (automatic non-recovery on failed checks, approver override with reason), D-33 (VAT on bills recalculated). P2-03 started. |
+| 2026-10-07 | **P2-03 built:** purchase bills & debit notes, Art 59 checks + risk score, automatic VAT non-recovery with approver override, attachments (private storage, SHA-256 once per client), Purchase bills screen. 282 database tests (35 new). Fixed the live-journey test ("Customer" also matched "Customer reference"). |

@@ -1,6 +1,6 @@
 // P1-17 · G-9 — the real journey on a temporary Supabase (CI only; never the project database, D-18):
-// sign in with two-factor → add a client → enter and submit a journal → a second Firm Admin
-// approves it → the trial balance shows it, balanced. Users are seeded by .github/workflows/ci.yml.
+// sign in with two-factor → add a client → enter and submit a journal, a sales invoice and a purchase
+// bill → a second Firm Admin approves them → the trial balance shows it, balanced. Users are seeded by .github/workflows/ci.yml.
 import { expect, test, type Page } from "@playwright/test";
 import { totp } from "./totp";
 
@@ -8,6 +8,15 @@ const PASSWORD = process.env.E2E_PASSWORD ?? "Ledger-e2e-2026";
 const MAKER = "maker@e2e.test";
 const CHECKER = "checker@e2e.test";
 const CLIENT = `E2E Trading LLC ${Date.now()}`;
+
+/** A weekday in the current year (so the bill's weekend warning never fires), as YYYY-MM-DD. */
+function weekday(): string {
+  const d = new Date();
+  const shift = d.getDay() === 6 ? -1 : d.getDay() === 0 ? -2 : 0;
+  d.setDate(d.getDate() + shift);
+  if (d.getFullYear() !== new Date().getFullYear()) d.setDate(d.getDate() + 3);
+  return d.toISOString().slice(0, 10);
+}
 
 /** Signs in and completes two-factor set-up on first use (computing the code from the shown key). */
 async function signIn(page: Page, email: string) {
@@ -77,6 +86,31 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await expect(inv.getByText("Total AED 10,500.00")).toBeVisible();
   await inv.getByRole("button", { name: "Submit for approval" }).click();
   await expect(page.getByRole("cell", { name: "E2E Buyer LLC" })).toBeVisible();
+
+  // Maker: a supplier and a purchase bill (P2-03 · VAT-06: 25,000 + 1,250, valid TRN and heading → recoverable)
+  await page.locator("aside").getByRole("button", { name: "Customers & suppliers" }).click();
+  await page.getByRole("button", { name: "Supplier", exact: true }).click();
+  const sup = page.getByRole("dialog", { name: "New supplier" });
+  await sup.getByLabel("Name (as on their trade licence or invoice)").fill("E2E Supplier LLC");
+  await sup.getByLabel("TRN (15 digits, if VAT registered)").fill("100300400500003");
+  await sup.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByRole("cell", { name: /E2E Supplier LLC/ }).first()).toBeVisible();
+
+  await page.locator("aside").getByRole("button", { name: "Purchase bills" }).click();
+  await page.getByRole("button", { name: "New bill" }).click();
+  const bill = page.getByRole("dialog", { name: "New bill" });
+  await bill.getByLabel("Supplier", { exact: true }).selectOption({ label: "E2E Supplier LLC · TRN 100300400500003" });
+  await bill.getByLabel("Supplier's invoice number").fill("ES-1001");
+  await bill.getByLabel("Bill date").fill(weekday());
+  await bill.getByLabel("Line 1 description").fill("E2E audit support");
+  await bill.getByLabel("Line 1 unit price").fill("25,000");
+  await bill.getByLabel("Line 1 account").selectOption({ label: "6130 · Professional fees" });
+  await expect(bill.getByText("Payable AED 26,250.00")).toBeVisible();
+  await bill.getByRole("button", { name: "Submit for approval" }).click();
+  const saved = page.getByRole("dialog", { name: /Bill ES-1001/ });
+  await expect(saved.getByText("Compliance checks — 1 to review")).toBeVisible();              // only the round-sum warning
+  await expect(saved.getByText("Low · 10")).toBeVisible();
+  await saved.getByRole("button", { name: "Close" }).first().click();
   await signOut(page);
 
   // Checker: approve and post, then read the trial balance
@@ -98,10 +132,18 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await expect(page.locator(".print-area")).toContainText("AED 10,500.00");
   await page.locator(".print-area").getByRole("button", { name: "Close" }).click();
 
+  // Checker approves the bill: input VAT recovered (box 9)
+  await page.locator("aside").getByRole("button", { name: "Purchase bills" }).click();
+  await page.getByRole("cell", { name: "E2E Supplier LLC" }).click();
+  await page.getByRole("button", { name: "Approve and post" }).click();
+  await expect(page.getByText(/Posted as JV-\d{4}-\d{2}-0003/)).toBeVisible();
+
   await page.locator("aside").getByRole("button", { name: "Trial balance & ledger" }).click();
   await expect(page.getByText("Balanced")).toBeVisible();
   await expect(page.getByRole("row", { name: /1100\s*Trade receivables/ })).toContainText("10,500.00");
   await expect(page.getByRole("row", { name: /2100\s*VAT output/ })).toContainText("500.00");
+  await expect(page.getByRole("row", { name: /1300\s*VAT input/ })).toContainText("1,250.00");
+  await expect(page.getByRole("row", { name: /2000\s*Trade payables/ })).toContainText("26,250.00");
   const rent = page.getByRole("row", { name: /6100\s*Rent/ });
   await expect(rent).toContainText("1,000.00");
   const accruals = page.getByRole("row", { name: /2010\s*Accruals/ });

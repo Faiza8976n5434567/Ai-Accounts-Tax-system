@@ -170,6 +170,86 @@ export type Database = {
           },
         ]
       }
+      attachments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          file_name: string
+          id: string
+          mime_type: string
+          organization_id: string
+          purchase_bill_id: string | null
+          sales_invoice_id: string | null
+          sha256: string
+          size_bytes: number
+          storage_path: string
+          updated_at: string
+          updated_by: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          file_name: string
+          id?: string
+          mime_type: string
+          organization_id: string
+          purchase_bill_id?: string | null
+          sales_invoice_id?: string | null
+          sha256: string
+          size_bytes: number
+          storage_path: string
+          updated_at?: string
+          updated_by?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          file_name?: string
+          id?: string
+          mime_type?: string
+          organization_id?: string
+          purchase_bill_id?: string | null
+          sales_invoice_id?: string | null
+          sha256?: string
+          size_bytes?: number
+          storage_path?: string
+          updated_at?: string
+          updated_by?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attachments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attachments_purchase_bill_id_organization_id_fkey"
+            columns: ["purchase_bill_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "attachments_sales_invoice_id_organization_id_fkey"
+            columns: ["sales_invoice_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoices"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -217,6 +297,59 @@ export type Database = {
           txid?: number
         }
         Relationships: []
+      }
+      bill_checks: {
+        Row: {
+          check_code: string
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          id: string
+          label: string
+          organization_id: string
+          passed: boolean
+          purchase_bill_id: string
+          severity: Database["public"]["Enums"]["check_severity"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          check_code: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          label: string
+          organization_id: string
+          passed: boolean
+          purchase_bill_id: string
+          severity: Database["public"]["Enums"]["check_severity"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          check_code?: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          label?: string
+          organization_id?: string
+          passed?: boolean
+          purchase_bill_id?: string
+          severity?: Database["public"]["Enums"]["check_severity"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_checks_purchase_bill_id_organization_id_fkey"
+            columns: ["purchase_bill_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
       }
       coa_template_accounts: {
         Row: {
@@ -1480,6 +1613,246 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_bill_lines: {
+        Row: {
+          account_id: string
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          line_no: number
+          net: number
+          net_fcy: number
+          organization_id: string
+          purchase_bill_id: string
+          quantity: number
+          recoverable_vat: number
+          tax_code: string
+          unit_price: number
+          updated_at: string
+          updated_by: string | null
+          vat: number
+          vat_fcy: number
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          line_no: number
+          net?: number
+          net_fcy?: number
+          organization_id: string
+          purchase_bill_id: string
+          quantity: number
+          recoverable_vat?: number
+          tax_code: string
+          unit_price: number
+          updated_at?: string
+          updated_by?: string | null
+          vat?: number
+          vat_fcy?: number
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          line_no?: number
+          net?: number
+          net_fcy?: number
+          organization_id?: string
+          purchase_bill_id?: string
+          quantity?: number
+          recoverable_vat?: number
+          tax_code?: string
+          unit_price?: number
+          updated_at?: string
+          updated_by?: string | null
+          vat?: number
+          vat_fcy?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_bill_lines_account_id_organization_id_fkey"
+            columns: ["account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "purchase_bill_lines_purchase_bill_id_organization_id_fkey"
+            columns: ["purchase_bill_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "purchase_bill_lines_tax_code_fkey"
+            columns: ["tax_code"]
+            isOneToOne: false
+            referencedRelation: "tax_codes"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      purchase_bills: {
+        Row: {
+          approved_by: string | null
+          bill_date: string
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          doc_type: Database["public"]["Enums"]["purchase_doc_type"]
+          due_date: string
+          fx_rate: number
+          has_tax_invoice_heading: boolean
+          id: string
+          is_foreign_supplier: boolean
+          journal_id: string | null
+          net_total: number
+          notes: string | null
+          organization_id: string
+          original_bill_id: string | null
+          payable_total: number
+          payable_total_fcy: number
+          posted_at: string | null
+          prepared_by: string | null
+          recoverable_vat: number
+          risk_level: Database["public"]["Enums"]["risk_level"]
+          risk_score: number
+          status: Database["public"]["Enums"]["document_status"]
+          supplier_invoice_no: string
+          supplier_trn_on_invoice: string | null
+          updated_at: string
+          updated_by: string | null
+          vat_override_reason: string | null
+          vat_recoverable_by_checks: boolean
+          vat_total: number
+        }
+        Insert: {
+          approved_by?: string | null
+          bill_date: string
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          doc_type?: Database["public"]["Enums"]["purchase_doc_type"]
+          due_date: string
+          fx_rate?: number
+          has_tax_invoice_heading?: boolean
+          id?: string
+          is_foreign_supplier?: boolean
+          journal_id?: string | null
+          net_total?: number
+          notes?: string | null
+          organization_id: string
+          original_bill_id?: string | null
+          payable_total?: number
+          payable_total_fcy?: number
+          posted_at?: string | null
+          prepared_by?: string | null
+          recoverable_vat?: number
+          risk_level?: Database["public"]["Enums"]["risk_level"]
+          risk_score?: number
+          status?: Database["public"]["Enums"]["document_status"]
+          supplier_invoice_no: string
+          supplier_trn_on_invoice?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vat_override_reason?: string | null
+          vat_recoverable_by_checks?: boolean
+          vat_total?: number
+        }
+        Update: {
+          approved_by?: string | null
+          bill_date?: string
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          doc_type?: Database["public"]["Enums"]["purchase_doc_type"]
+          due_date?: string
+          fx_rate?: number
+          has_tax_invoice_heading?: boolean
+          id?: string
+          is_foreign_supplier?: boolean
+          journal_id?: string | null
+          net_total?: number
+          notes?: string | null
+          organization_id?: string
+          original_bill_id?: string | null
+          payable_total?: number
+          payable_total_fcy?: number
+          posted_at?: string | null
+          prepared_by?: string | null
+          recoverable_vat?: number
+          risk_level?: Database["public"]["Enums"]["risk_level"]
+          risk_score?: number
+          status?: Database["public"]["Enums"]["document_status"]
+          supplier_invoice_no?: string
+          supplier_trn_on_invoice?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vat_override_reason?: string | null
+          vat_recoverable_by_checks?: boolean
+          vat_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_bills_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_bills_contact_id_organization_id_fkey"
+            columns: ["contact_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "purchase_bills_currency_fkey"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "purchase_bills_journal_id_organization_id_fkey"
+            columns: ["journal_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "journals"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "purchase_bills_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_bills_original_bill_id_organization_id_fkey"
+            columns: ["original_bill_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "purchase_bills_prepared_by_fkey"
+            columns: ["prepared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_invoice_lines: {
         Row: {
           account_id: string
@@ -1917,6 +2290,7 @@ export type Database = {
           role: string
         }[]
       }
+      delete_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       delete_sales_invoice: { Args: { p_id: string }; Returns: undefined }
       general_ledger: {
         Args: {
@@ -1949,9 +2323,17 @@ export type Database = {
       }
       my_permissions: { Args: { p_organization_id: string }; Returns: string[] }
       post_journal: { Args: { p_journal_id: string }; Returns: string }
+      post_purchase_bill: {
+        Args: { p_id: string; p_override_reason?: string }
+        Returns: string
+      }
       post_sales_invoice: { Args: { p_id: string }; Returns: string }
       reject_journal: {
         Args: { p_journal_id: string; p_reason: string }
+        Returns: undefined
+      }
+      reject_purchase_bill: {
+        Args: { p_id: string; p_reason: string }
         Returns: undefined
       }
       reject_sales_invoice: {
@@ -1981,6 +2363,10 @@ export type Database = {
         }
         Returns: string
       }
+      save_purchase_bill: {
+        Args: { p_doc: Json; p_id: string; p_organization_id: string }
+        Returns: string
+      }
       save_sales_invoice: {
         Args: { p_doc: Json; p_id: string; p_organization_id: string }
         Returns: string
@@ -1997,6 +2383,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      submit_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       submit_sales_invoice: { Args: { p_id: string }; Returns: undefined }
       trial_balance: {
         Args: { p_from: string; p_organization_id: string; p_to: string }
@@ -2015,6 +2402,7 @@ export type Database = {
     }
     Enums: {
       account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
+      check_severity: "error" | "warn" | "info"
       compliance_anchor:
         | "vat_period_end"
         | "fy_end"
@@ -2054,6 +2442,8 @@ export type Database = {
         | "read_only"
       org_status: "onboarding" | "active" | "archived"
       period_status: "open" | "locked"
+      purchase_doc_type: "bill" | "debit_note"
+      risk_level: "low" | "medium" | "high"
       sales_doc_type: "invoice" | "credit_note"
       tax_period_kind: "vat" | "ct"
       user_status: "active" | "suspended"
@@ -2186,6 +2576,7 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["asset", "liability", "equity", "revenue", "expense"],
+      check_severity: ["error", "warn", "info"],
       compliance_anchor: [
         "vat_period_end",
         "fy_end",
@@ -2229,6 +2620,8 @@ export const Constants = {
       ],
       org_status: ["onboarding", "active", "archived"],
       period_status: ["open", "locked"],
+      purchase_doc_type: ["bill", "debit_note"],
+      risk_level: ["low", "medium", "high"],
       sales_doc_type: ["invoice", "credit_note"],
       tax_period_kind: ["vat", "ct"],
       user_status: ["active", "suspended"],
