@@ -62,7 +62,7 @@ test("sign in with MFA → add client → journal → second admin approves → 
 
   // Checker: approve and post, then read the trial balance
   await signIn(page, CHECKER);
-  await page.getByText(CLIENT).click();
+  await page.getByRole("main").getByText(CLIENT).click();
   await page.locator("aside").getByRole("button", { name: "Approvals" }).click();
   await page.getByRole("cell", { name: "E2E rent accrual" }).click();
   await page.getByRole("button", { name: "Approve and post" }).click();
