@@ -252,6 +252,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P2-08 | Nightly integrity checks (pg_cron) + Integrity page | — | 🟡 built — `…20261008100300_integrity.sql` (14 pgTAP tests incl. deliberate damage caught; applied by Faizan, pg_cron job `nightly-integrity-checks` 22:00 UTC = 02:00 UAE confirmed active): 12 checks (TB, journals, AR/AP/credits/advances = control, documents = journals, numbering gaps, bank warnings), permanent results; **Integrity** page with Run now; in the live journey. E-mail alert switched on with the deployment (Resend, OA-16) |
 
 **Exit:** one pilot client's real past quarter re-keyed; Trial Balance agrees with their existing books **to the fils**.
+_Status (D-55): VAT-return part ✅ passed 2026-10-08 (pilot retail shop, Nov 2025 – Jan 2026); trial-balance part ⬜ waits for a client's trial balances + bank statements._
 
 ### Phase 3 — VAT, alerts, client logins & pilot · ⬜ · target 22 Jan 2027
 | ID | Step | Tests | Status |
@@ -270,6 +271,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P3-11 | Go-live checklist (§7) | — | ⬜ |
 
 **Exit:** one full VAT quarter per pilot client agrees to Faizan's manual workings. **Pilot live with 3–5 clients.**
+_Progress: pilot client 1 (retail shop, Nov 2025 – Jan 2026) ✅ — agrees, with the 0.30 difference from the filed return explained (D-54)._
 
 ### Phase 4 — E-invoicing · ⬜ · target 30 Apr 2027 (SME deadline 1 Jul 2027 — VERIFY)
 - [ ] ASP partner chosen (Q-02); sandbox credentials
@@ -521,3 +523,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-08 | Faizan tested Deadlines, the VAT return (boxes, drill-down, reconciliation, adjustments, approval/freeze/lock, filing, exports) and client logins (invite, roles, 2FA, removal) — all fine. P3-01/02/03/05/06 ✅. Still open in Phase 3: P3-04 golden set, P3-08 → 3-12 (deployment), FAF (later). Phase 2: sign-off + exit test (Q-01). |
 | 2026-10-08 | **D-52 built** (opening documents via 3999, applied by Faizan) + "Opening balances" client tab; `…101100_bank_fk_indexes.sql` closes 4 performance-advisor notices on the bank tables. Exit-test procedure in `docs/PHASE2-EXIT-TEST.md` (D-53 anonymised data). 512 database + 267 unit tests. |
 | 2026-10-08 | Exit-test material received (retail shop, Nov 2025 – Jan 2026). D-54 "Prices include VAT" built (`…101200_prices_include_vat.sql`, applied by Faizan, test `24_prices_include_vat.sql` 9 tests, 5 unit tests, VAT-19); D-55 VAT-return exit test first. 521 database + 272 unit tests. |
+| 2026-10-08 | **Exit test — VAT quarter passed** (Faizan): 19 sales + 4 supplier invoices re-keyed (anonymised); VAT return box 1b 2,471.44 / 123.56, box 9 838.00 / 41.90, payable 81.66 — all figures as expected; integrity clean. Phase 2 exit: trial-balance part still open (D-55). |
