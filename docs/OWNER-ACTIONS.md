@@ -190,3 +190,11 @@ You are the only Super Admin, so keep this safe.
 2. Put the new key in Vercel (and `.env.local`), redeploy.
 3. Ask Claude to review `audit_log` and Supabase logs for the exposure window.
 4. Inform affected clients if any data was accessed.
+
+## OA-18 · At deployment: daily deadline reminders (P3-05)
+The reminder job (`/api/reminders`) runs on Vercel every day at 08:00 UAE (04:00 UTC, `poc/vercel.json`). Before it can run:
+1. In Vercel → Project → Settings → Environment Variables, add **`CRON_SECRET`**: a long random value (Vercel can generate one).
+   Vercel sends it automatically with each scheduled call; nobody else can trigger the job without it.
+2. Make sure `RESEND_API_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_URL` and `APP_BASE_URL` are set for Production.
+3. Finish the email domain (OA-09/10) so reminders reach everyone, not only the Resend account owner.
+Never paste these values in chat.

@@ -1153,6 +1153,53 @@ export type Database = {
         }
         Relationships: []
       }
+      email_log: {
+        Row: {
+          dedupe_key: string | null
+          error: string | null
+          id: string
+          kind: string
+          organization_id: string | null
+          provider_id: string | null
+          sent_at: string
+          status: string
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          dedupe_key?: string | null
+          error?: string | null
+          id?: string
+          kind: string
+          organization_id?: string | null
+          provider_id?: string | null
+          sent_at?: string
+          status: string
+          subject: string
+          to_email: string
+        }
+        Update: {
+          dedupe_key?: string | null
+          error?: string | null
+          id?: string
+          kind?: string
+          organization_id?: string | null
+          provider_id?: string | null
+          sent_at?: string
+          status?: string
+          subject?: string
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           body: string
@@ -3368,6 +3415,22 @@ export type Database = {
           valid_to: string
         }[]
       }
+      compliance_calendar: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          detail: string
+          due_date: string
+          kind: string
+          legal_name: string
+          organization_id: string
+          period_end: string
+          period_start: string
+          rule_key: string
+          status: string
+          tab: string
+          title: string
+        }[]
+      }
       config_value: { Args: { p_key: string; p_on?: string }; Returns: Json }
       contact_statement: {
         Args: {
@@ -3448,6 +3511,22 @@ export type Database = {
       delete_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       delete_sales_invoice: { Args: { p_id: string }; Returns: undefined }
       delete_vat_adjustment: { Args: { p_id: string }; Returns: undefined }
+      due_reminders: {
+        Args: { p_today: string }
+        Returns: {
+          audience: string
+          days_left: number
+          dedupe_key: string
+          detail: string
+          due_date: string
+          email: string
+          full_name: string
+          legal_name: string
+          organization_id: string
+          rule_key: string
+          title: string
+        }[]
+      }
       firm_dashboard: {
         Args: never
         Returns: {

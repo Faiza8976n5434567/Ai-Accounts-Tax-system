@@ -2,7 +2,7 @@
  *  Super Admin — tax rules, platform, email templates, firm profile, restricted settings;
  *  Firm Admin — firm settings; everyone — their own display name. Others see read-only views. */
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { BadgeCheck, Building, FileCog, Mail, Save, Settings2, ShieldAlert, Stamp, Trash2, UserRound } from "lucide-react";
+import { BadgeCheck, Building, FileCog, Mail, Save, Send, Settings2, ShieldAlert, Stamp, Trash2, UserRound } from "lucide-react";
 import { Badge, Card, Modal, PageHeader } from "../components/ui";
 import { useAuth } from "../components/AuthGate";
 import { shortDate, roleLabel } from "../lib/email";
@@ -13,6 +13,7 @@ import {
   versionInForce, type ConfigKey, type ConfigValue, type ConfigVersion, type EmailTemplate, type Firm, type FirmSetting, type PlatformSetting,
 } from "../lib/admin";
 import { myFirmRole } from "../lib/clients";
+import { sendTestEmail } from "../lib/deadlines";
 import type { Json } from "../lib/database.types";
 import { useToast } from "./toast";
 import { useLoad, useToday } from "./hooks";
@@ -394,8 +395,22 @@ function TemplateCard({ t, onSave }: { t: EmailTemplate; onSave: (subject: strin
     <Card title={label} icon={<Mail size={16} />} sub={<>Placeholders: {t.variables.map((v) => <code key={v} className="me-1.5 text-xs">{`{{${v}}}`}</code>)}</>}>
       <label className="block mb-3"><span className="block text-xs font-medium text-slate-600 mb-1.5">Subject</span><input className={field} value={subject} onChange={(e) => setSubject(e.target.value)} /></label>
       <label className="block"><span className="block text-xs font-medium text-slate-600 mb-1.5">Body</span><textarea className={field} rows={6} value={body} onChange={(e) => setBody(e.target.value)} /></label>
-      <button className="btn-primary bg-emerald-600 mt-3" disabled={!subject.trim() || !body.trim() || (subject === t.subject && body === t.body)} onClick={() => void onSave(subject.trim(), body)}><Save size={15} />Save template</button>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button className="btn-primary bg-emerald-600" disabled={!subject.trim() || !body.trim() || (subject === t.subject && body === t.body)} onClick={() => void onSave(subject.trim(), body)}><Save size={15} />Save template</button>
+        <TestEmailButton templateKey={t.key} />
+      </div>
       {t.key === "invite" && <p className="text-xs text-slate-500 mt-2">Used by “Invite staff” ({roleLabel("firm_accountant")} / {roleLabel("firm_admin")}).</p>}
     </Card>
+  );
+}
+
+/** CFG-12 · sends the saved template, filled with sample values, to the Super Admin's own address. */
+function TestEmailButton({ templateKey }: { templateKey: string }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  return (
+    <button className="btn-ghost" disabled={busy} onClick={() => { setBusy(true); void sendTestEmail(templateKey).then(
+      (r) => toast(`Test email sent to ${r.to}`), (e) => toast(e instanceof Error ? e.message : "The test email could not be sent", "err")).finally(() => setBusy(false)); }}>
+      <Send size={15} />{busy ? "Sending…" : "Send test email"}</button>
   );
 }

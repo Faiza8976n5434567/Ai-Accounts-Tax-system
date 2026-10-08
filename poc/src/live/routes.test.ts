@@ -18,13 +18,14 @@ describe("live app page addresses", () => {
   it("reads the team page", () => expect(parseRoute("#/team")).toEqual({ page: "team" }));
   it("reads the integrity page", () => expect(parseRoute("#/integrity")).toEqual({ page: "integrity" }));
   it("reads the dashboard", () => expect(parseRoute("#/dashboard")).toEqual({ page: "dashboard" }));
+  it("reads the deadlines", () => expect(parseRoute("#/deadlines")).toEqual({ page: "deadlines" }));
   it("reads admin tabs, defaulting to My profile", () => {
     expect(parseRoute("#/admin/tax")).toEqual({ page: "admin", tab: "tax" });
     expect(parseRoute("#/admin")).toEqual({ page: "admin", tab: "profile" });
     expect(parseRoute("#/admin/nope")).toEqual({ page: "admin", tab: "profile" });
   });
   it("round-trips", () => {
-    for (const r of [{ page: "clients" }, { page: "team" }, { page: "integrity" }, { page: "dashboard" }, { page: "client", clientId: id, tab: "periods" }, { page: "client", clientId: id, tab: "overview" }, { page: "admin", tab: "email" }] as const)
+    for (const r of [{ page: "clients" }, { page: "team" }, { page: "integrity" }, { page: "dashboard" }, { page: "deadlines" }, { page: "client", clientId: id, tab: "periods" }, { page: "client", clientId: id, tab: "overview" }, { page: "admin", tab: "email" }] as const)
       expect(parseRoute(routeHash(r))).toEqual(r);
   });
 });

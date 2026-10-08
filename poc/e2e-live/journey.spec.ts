@@ -269,6 +269,11 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await expect(icRow).not.toContainText("problem");
   await expect(page.getByText("Trial balance: total debits = total credits")).toBeVisible();
 
+  // P3-05 · deadlines: the client's current VAT quarter appears on the calendar (due 28 days after the quarter)
+  await page.locator("aside").getByRole("button", { name: "Deadlines" }).click();
+  await page.getByLabel("Period").selectOption({ label: "Next 3 months" });
+  await expect(page.getByRole("row", { name: new RegExp(`${CLIENT}.*VAT return and payment`) }).first()).toBeVisible();
+
   // P3-07 · firm dashboard: the client is listed with its figures; it has approvals waiting (the receipt and bank journal)
   await page.locator("aside").getByRole("button", { name: "Dashboard" }).click();
   await expect(page.getByText("Waiting for approval").first()).toBeVisible();
