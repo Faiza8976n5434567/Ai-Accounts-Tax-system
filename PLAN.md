@@ -65,6 +65,7 @@
 | D-44 | **After VAT approval** the quarter's accounting periods are locked. A Firm Admin may reopen one with a reason; VAT documents posted into it afterwards appear in the **next** return as prior-period items for the preparer to review (the approved return stays frozen). Correction in the next return vs voluntary disclosure stays Faizan's call. | 2026-10-08 |
 | D-45 | **VAT Boxes 12/13 include adjustments:** Box 12 = Box 8 VAT + Box 8 adjustment; Box 13 = Box 11 VAT + Box 11 adjustment (Spec 03 F-04 updated). | 2026-10-08 |
 | D-46 | **Full tax invoice check on bills:** above `vat.full_invoice_threshold` (AED 10,000, VERIFY) the preparer ticks "shows our name, address and TRN"; if not ticked → **warning** (risk +10), input VAT is not stopped automatically — the approver decides. Compared amount: supplier's total (net + VAT charged). The FTA Audit File (FAF) export waits (Faizan: later). | 2026-10-08 |
+| D-47 | **VAT clearing on approval:** approving a return posts one journal (source `vat`, dated the quarter end, preparer → approver) that empties 2100, 2110, 1300 and 1310 into new account **2120 VAT payable to / refundable by FTA** (not a control account, so the FTA payment/refund is posted from the bank line). It clears the whole balance at the quarter end (sweeping up late D-44 items and opening VAT balances). Manual return adjustments (D-43) are listed in the reconciliation for the accountant to book against 2120. | 2026-10-08 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -249,7 +250,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 |---|---|---|---|
 | P3-01 | VAT 201: every box incl. 2, 6, 7; 0.00 for empty (D-12); drill-down | VAT-01 → 11, VAT-16 → 18 | 🟡 built — `…20261008100400_vat_return.sql` (27 pgTAP tests, applied by Faizan): all 20 boxes from posted documents by tax code, D-12 zeros, drill-down per box, IMG code (D-42), manual entries with reason (D-43); **VAT return** screen with Excel/Print; 4 unit tests; in the live journey |
 | P3-02 | VAT return workflow: draft → review → approve → **frozen snapshot** → period locked | VAT-13, CFG-02 | 🟡 built — review → maker-checker approval → frozen snapshot (SHA-256 + tax-rule version) → quarter locked → FTA filing reference; prior-period items after reopening (D-44) |
-| P3-03 | VAT reconciliation (return = VAT accounts); FTA Audit File (FAF) export | VAT-14 | ⬜ |
+| P3-03 | VAT reconciliation (return = VAT accounts); FTA Audit File (FAF) export | VAT-14 | 🟡 reconciliation + clearing journal (D-47) built in the database (10 pgTAP tests); screen in progress; **FAF export later** (Faizan) |
 | P3-04 | Golden VAT set from Faizan | VAT-15 | ⬜ |
 | P3-05 | Compliance calendar from rules; email alerts & templates via Resend; daily Vercel cron | CFG-07, CFG-12 | ⬜ |
 | P3-06 | Client logins: Client Owner, Client Staff, Read-only (time-boxed) | RBAC-15, RBAC-16, RBAC-20, SEC-16 | ⬜ |
