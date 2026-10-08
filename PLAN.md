@@ -66,6 +66,8 @@
 | D-45 | **VAT Boxes 12/13 include adjustments:** Box 12 = Box 8 VAT + Box 8 adjustment; Box 13 = Box 11 VAT + Box 11 adjustment (Spec 03 F-04 updated). | 2026-10-08 |
 | D-46 | **Full tax invoice check on bills:** above `vat.full_invoice_threshold` (AED 10,000, VERIFY) the preparer ticks "shows our name, address and TRN"; if not ticked → **warning** (risk +10), input VAT is not stopped automatically — the approver decides. Compared amount: supplier's total (net + VAT charged). The FTA Audit File (FAF) export waits (Faizan: later). | 2026-10-08 |
 | D-47 | **VAT clearing on approval:** approving a return posts one journal (source `vat`, dated the quarter end, preparer → approver) that empties 2100, 2110, 1300 and 1310 into new account **2120 VAT payable to / refundable by FTA** (not a control account, so the FTA payment/refund is posted from the bank line). It clears the whole balance at the quarter end (sweeping up late D-44 items and opening VAT balances). Manual return adjustments (D-43) are listed in the reconciliation for the accountant to book against 2120. | 2026-10-08 |
+| D-48 | **Two-factor sign-in for every user**, client users included (R6 widened); the database refuses any request without it. | 2026-10-08 |
+| D-49 | **Read-only access** (e.g. auditors): end date pre-filled 90 days ahead, at most 1 year ahead (firm settings `read_only_default_days`, `read_only_max_days`); access stops automatically after it (R5). | 2026-10-08 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -253,7 +255,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P3-03 | VAT reconciliation (return = VAT accounts); FTA Audit File (FAF) export | VAT-14 | 🟡 reconciliation + clearing journal (D-47) built and applied (10 pgTAP tests): **Reconciliation** section on the VAT return (each box group vs its VAT account, every difference explained), 2120 cleared on approval, FTA payment from the bank line; full-tax-invoice warning (D-46) on bills; in the live journey. **FAF export later** (Faizan) |
 | P3-04 | Golden VAT set from Faizan | VAT-15 | ⬜ |
 | P3-05 | Compliance calendar from rules; email alerts & templates via Resend; daily Vercel cron | CFG-07, CFG-12 | ⬜ |
-| P3-06 | Client logins: Client Owner, Client Staff, Read-only (time-boxed) | RBAC-15, RBAC-16, RBAC-20, SEC-16 | ⬜ |
+| P3-06 | Client logins: Client Owner, Client Staff, Read-only (time-boxed) | RBAC-15, RBAC-16, RBAC-20, SEC-16 | 🟡 database built (`…100700_client_logins.sql`, 26 pgTAP tests): client invitations (RBAC-15/16), acceptance, removal with reason, D-48/D-49; **matrix gaps fixed** — receipts/payments need `record_payment` (Client Staff no), bank matching/reconciliation need `bank_match` (client users no), statement upload `upload`; full role sweep (RBAC-20). Screen in progress |
 | P3-07 | Firm overview dashboard on live data | — | ⬜ |
 | P3-08 | Nightly encrypted database export (until Pro / self-hosted) + restore test | — | ⬜ |
 | P3-09 | Resend domain & SMTP (OA-09/10), custom domain if wanted (OA-11) | — | ⬜ |

@@ -49,7 +49,7 @@ select is((select count(*)::int from public.journals), 0, 'RBAC-14 · … and no
 select throws_like($$ select public.post_journal((select id from fx where k = 'jfix')) $$,
   'Two-factor sign-in is required%', 'RBAC-14 · … and cannot post');
 select tests.login('staff@test.local', 'aal1');
-select is((select count(*)::int from public.journals), 1, 'Client users are not forced to use MFA (yet)');
+select is((select count(*)::int from public.journals), 0, 'D-48 · client users without two-factor sign-in see nothing either');
 
 -- SEC-16 · a suspended user loses access immediately, even with a valid token
 reset role;
