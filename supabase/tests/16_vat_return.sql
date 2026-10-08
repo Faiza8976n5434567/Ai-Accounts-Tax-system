@@ -2,7 +2,7 @@
 -- Quarter Oct–Dec 2026 for client A (head office Abu Dhabi). Amounts in fils.
 begin;
 \ir fixtures/setup.psql
-select plan(25);
+select plan(27);
 
 create temp table vr (k text primary key, id uuid) on commit drop;
 grant all on vr to authenticated;
@@ -76,6 +76,9 @@ select is((select string_agg(code || ' ' || debit || '/' || credit, '; ' order b
   select a.code, l.debit, l.credit, l.line_no from public.journal_lines l join public.accounts a on a.id = l.account_id
   where l.journal_id = (select journal_id from public.purchase_bills where id = (select id from vr where k = 'b-img'))) x),
   '6130 1000000/0; 1310 50000/0; 2110 0/50000; 2000 0/1000000', 'D-42 · an import-of-goods bill self-assesses VAT like reverse charge: supplier owed 10,000');
+select is((select string_agg(journal_no || ' ' || tax_code || ' ' || amount || '/' || vat, '; ') from public.vat_box_lines((select id from vr where k = 'q4'), '1a')),
+  'JV-2026-10-0002 SR 1000000/50000; JV-2026-11-0006 SR -200000/-10000', 'Drill-down · box 1a is the invoice and its credit note, line by line');
+select is((select sum(vat) from public.vat_box_lines((select id from vr where k = 'q4'), '10')), 80000::numeric, 'Drill-down lines add up to the box (10: 800)');
 select is(jsonb_array_length(public.vat_return_preview((select id from vr where k = 'q4')) -> 'boxes'), 20, 'D-12 · all 20 boxes are always there');
 select is(tests.boxes('q4', array['1c', '1d', '1e', '1f', '1g', '2', '7']), '1c 0/0/0; 1d 0/0/0; 1e 0/0/0; 1f 0/0/0; 1g 0/0/0; 2 0/0/0; 7 0/0/0',
   'VAT-18 · unused boxes are 0/0/0, never missing');

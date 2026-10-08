@@ -595,3 +595,39 @@ revoke all on function public.vat_return_preview(uuid), public.start_vat_return(
 grant execute on function public.vat_return_preview(uuid), public.start_vat_return(uuid), public.add_vat_adjustment(uuid, text, bigint, bigint, bigint, text, text),
   public.delete_vat_adjustment(uuid), public.submit_vat_return(uuid), public.reject_vat_return(uuid, text), public.approve_vat_return(uuid),
   public.mark_vat_return_filed(uuid, text, date) to authenticated;
+
+-- Drill-down (Principle 10): the journal lines behind one box of a VAT period, signed as in the return.
+create or replace function app.vat_box_lines(p_tax_period_id uuid, p_box text)
+returns table (entry_date date, journal_id uuid, journal_no text, source public.journal_source, memo text, description text,
+               tax_code text, amount bigint, vat bigint)
+language plpgsql stable security definer set search_path = '' as $$
+declare tp public.tax_periods := app.vat_return_period(p_tax_period_id);
+begin
+  perform app.require(tp.organization_id, 'view');
+  return query
+  with l as (
+    select j.entry_date, j.id, j.journal_no, j.source, j.memo, ln.description, ln.tax_code, ln.line_no,
+           coalesce(ln.supply_emirate, o.emirate_code) as emirate, ln.debit, ln.credit, ln.vat_amount
+    from public.journal_lines ln
+    join public.journals j on j.id = ln.journal_id
+    join public.organizations o on o.id = ln.organization_id
+    where ln.organization_id = tp.organization_id and j.status in ('posted', 'reversed') and j.entry_date between tp.start_date and tp.end_date
+      and ln.tax_code is not null and j.source in ('sale', 'purchase')
+  )
+  select l.entry_date, l.id, l.journal_no, l.source, l.memo, l.description, l.tax_code,
+         (case when l.source = 'sale' then l.credit - l.debit else l.debit - l.credit end)::bigint,
+         (case when l.tax_code in ('ZR', 'EX') then 0
+               else (case when l.source = 'sale' then sign(l.credit - l.debit) else sign(l.debit - l.credit) end)::bigint * l.vat_amount end)::bigint
+  from l left join public.emirates e on e.code = l.emirate
+  where (l.source = 'sale' and ((l.tax_code = 'SR' and e.vat_box = p_box) or (l.tax_code = 'ZR' and p_box = '4') or (l.tax_code = 'EX' and p_box = '5')))
+     or (l.source = 'purchase' and ((l.tax_code = 'RCS' and p_box in ('3', '10')) or (l.tax_code = 'IMG' and p_box in ('6', '10'))
+                                    or (l.tax_code = 'SR' and p_box = '9')))
+  order by l.entry_date, l.journal_no, l.line_no;
+end $$;
+grant execute on function app.vat_box_lines(uuid, text) to authenticated;
+create function public.vat_box_lines(p_tax_period_id uuid, p_box text)
+returns table (entry_date date, journal_id uuid, journal_no text, source public.journal_source, memo text, description text,
+               tax_code text, amount bigint, vat bigint)
+language sql security invoker set search_path = '' as $$ select * from app.vat_box_lines(p_tax_period_id, p_box) $$;
+revoke all on function public.vat_box_lines(uuid, text) from public, anon;
+grant execute on function public.vat_box_lines(uuid, text) to authenticated;
