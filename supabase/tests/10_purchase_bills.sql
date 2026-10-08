@@ -2,7 +2,7 @@
 -- VAT-05, VAT-06, VAT-07, VAT-08, ARAP-06, DM-08, D-31, D-32, D-33. Amounts in fils (AED 25,000.00 = 2500000).
 begin;
 \ir fixtures/setup.psql
-select plan(35);
+select plan(37);
 
 create temp table pb (k text primary key, id uuid) on commit drop;
 grant all on pb to authenticated;
@@ -41,7 +41,7 @@ grant execute on function tests.save_bill(text, jsonb) to authenticated;
 
 -- VAT-06 · professional fees 25,000 + VAT 1,250 from a registered supplier: all checks pass, VAT recoverable
 select tests.login('acct@test.local');
-select tests.save_bill('b1', tests.bill('sup', 'DC-100', '2026-10-05', array['1|2500000|6130|SR|Audit support']));
+select tests.save_bill('b1', tests.bill('sup', 'DC-100', '2026-10-05', array['1|2500000|6130|SR|Audit support'], '{"shows_recipient_details": true}'));
 select is((select (net_total, vat_total, recoverable_vat, payable_total, due_date, risk_score, risk_level::text, status::text)::text
            from public.purchase_bills where id = (select id from pb where k = 'b1')),
   '(2500000,125000,125000,2625000,2026-11-04,10,low,draft)', 'VAT-06 · net 25,000, VAT 1,250 recoverable, payable 26,250, due +30 days; round-sum warning only → risk low');
@@ -70,9 +70,16 @@ select tests.login('acct@test.local');
 select throws_ok($$ select tests.save_bill('dup', tests.bill('sup', ' dc-100 ', '2026-10-06', array['1|1000|6130|SR|Again'])) $$, '23505', null,
   'ARAP-06 · DC-100 cannot be entered again for the same supplier');
 -- …and the same supplier, date and amount under another number is flagged as a possible duplicate (weight 45 → high)
-select tests.save_bill('dup2', tests.bill('sup', 'DC-100A', '2026-10-05', array['1|2500000|6130|SR|Audit support']));
+select tests.save_bill('dup2', tests.bill('sup', 'DC-100A', '2026-10-05', array['1|2500000|6130|SR|Audit support'], '{"shows_recipient_details": true}'));
 select is((select tests.failed_checks('dup2') || ' ' || risk_score || ' ' || risk_level from public.purchase_bills where id = (select id from pb where k = 'dup2')),
   'duplicate,round_sum 55 high', 'Possible duplicate: failed check, risk high');
+
+-- D-46 · above AED 10,000 the full tax invoice must show our name, address and TRN: a warning, VAT still recovered
+select tests.save_bill('b46', tests.bill('sup', 'DC-146', '2026-10-06', array['1|1123400|6130|SR|Consulting']));
+select is((select tests.failed_checks('b46') || ' ' || recoverable_vat || ' ' || risk_score || ' ' || risk_level from public.purchase_bills where id = (select id from pb where k = 'b46')),
+  'recipient 56170 10 low', 'D-46 · 11,795.70 bill without the tick: warning only (risk +10), input VAT 561.70 still recovered');
+select tests.save_bill('b46b', tests.bill('sup', 'DC-146B', '2026-10-06', array['1|900000|6130|SR|Small consulting']));
+select is(tests.failed_checks('b46b'), '', 'D-46 · 9,450 (under the threshold): no full-invoice check needed');
 
 -- VAT-07 · client entertainment 3,800 + 190: input VAT blocked, the whole 3,990 is expense
 select tests.save_bill('b7', tests.bill('sup', 'DC-107', '2026-10-06', array['1|380000|6140|BLK|Client dinner']));

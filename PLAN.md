@@ -63,6 +63,8 @@
 | D-42 | **Import of goods:** new bill tax code **IMG** (import of goods, reverse charge 5%) → VAT 201 **Box 6** and **Box 10**, self-assessed like RCS; RCS stays for imported services (Box 3 + 10). Box 7 is a manual entry. | 2026-10-08 |
 | D-43 | **Manual VAT entries** only on the adjustment column of Boxes 1a–1g and 9 and on Boxes 2 and 7, each with a mandatory reason (optional legal reference); the approver sees them; they are part of the frozen snapshot. Nothing else is calculated automatically. | 2026-10-08 |
 | D-44 | **After VAT approval** the quarter's accounting periods are locked. A Firm Admin may reopen one with a reason; VAT documents posted into it afterwards appear in the **next** return as prior-period items for the preparer to review (the approved return stays frozen). Correction in the next return vs voluntary disclosure stays Faizan's call. | 2026-10-08 |
+| D-45 | **VAT Boxes 12/13 include adjustments:** Box 12 = Box 8 VAT + Box 8 adjustment; Box 13 = Box 11 VAT + Box 11 adjustment (Spec 03 F-04 updated). | 2026-10-08 |
+| D-46 | **Full tax invoice check on bills:** above `vat.full_invoice_threshold` (AED 10,000, VERIFY) the preparer ticks "shows our name, address and TRN"; if not ticked → **warning** (risk +10), input VAT is not stopped automatically — the approver decides. Compared amount: supplier's total (net + VAT charged). The FTA Audit File (FAF) export waits (Faizan: later). | 2026-10-08 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
