@@ -49,7 +49,7 @@ export function LiveApp() {
     { label: "Bank", icon: <Banknote size={17} />, tab: "bank" },
     { label: "Journals", icon: <BookOpenCheck size={17} />, tab: "journals" },
     { label: "Approvals", icon: <CheckSquare size={17} />, tab: "approvals" },
-    { label: "Trial balance & ledger", icon: <Scale size={17} />, tab: "reports" },
+    { label: "Reports", icon: <Scale size={17} />, tab: "reports" },
     { label: "Chart of accounts", icon: <BookOpen size={17} />, tab: "accounts" },
     { label: "Periods", icon: <CalendarRange size={17} />, tab: "periods" },
   ];

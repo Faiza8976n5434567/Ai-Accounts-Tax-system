@@ -4,7 +4,8 @@ import { ArrowLeft, Scale, ScrollText } from "lucide-react";
 import { Badge, Card } from "../components/ui";
 import { fmt } from "../lib/money";
 import { shortDate } from "../lib/email";
-import type { Account } from "../lib/clients";
+import type { Account, Client } from "../lib/clients";
+import { AgeingView, BalanceSheetView, PnlView, StatementView } from "./FinancialReports";
 import { drCr, fyStart, generalLedger, tbTotals, trialBalance, type GlRow, type TbRow } from "../lib/live-reports";
 import { getJournal, SOURCE_LABEL, type Journal } from "../lib/journals";
 import { JournalView } from "./JournalsTab";
@@ -12,7 +13,46 @@ import { useLoad, useToday } from "./hooks";
 
 const money = (f: number) => (f ? fmt(f) : "");
 
-export function ReportsTab({ orgId, accounts, fyStartMonth }: { orgId: string; accounts: Account[]; fyStartMonth: number }) {
+type ReportKind = "tb" | "pnl" | "bs" | "ageing" | "statement";
+const REPORTS: [ReportKind, string][] = [["tb", "Trial balance"], ["pnl", "Profit & loss"], ["bs", "Balance sheet"], ["ageing", "Ageing"], ["statement", "Statements"]];
+
+/** Reports (P1-15, P2-06): every account figure drills down to its general ledger and journals (RPT-04). */
+export function ReportsTab({ client, accounts }: { client: Client; accounts: Account[] }) {
+  const [kind, setKind] = useState<ReportKind>("tb");
+  const [drill, setDrill] = useState<{ accountId: string; from: string; to: string } | null>(null);
+  const onLedger = (accountId: string, from: string, to: string) => setDrill({ accountId, from, to });
+  if (drill) return <DrillLedger orgId={client.id} accounts={accounts} start={drill} onBack={() => setDrill(null)} />;
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap gap-1.5 no-print">
+        {REPORTS.map(([k, label]) => (
+          <button key={k} onClick={() => setKind(k)} className={`rounded-full px-3 py-1 text-xs ring-1 cursor-pointer ${kind === k ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-200"}`}>{label}</button>
+        ))}
+      </div>
+      {kind === "tb" && <TrialBalanceView orgId={client.id} accounts={accounts} fyStartMonth={client.fy_start_month} />}
+      {kind === "pnl" && <PnlView client={client} onLedger={onLedger} />}
+      {kind === "bs" && <BalanceSheetView client={client} onLedger={onLedger} />}
+      {kind === "ageing" && <AgeingView client={client} />}
+      {kind === "statement" && <StatementView client={client} />}
+    </>
+  );
+}
+
+/** The general ledger opened from a P&L or balance-sheet figure, with its own date range. */
+function DrillLedger({ orgId, accounts, start, onBack }: { orgId: string; accounts: Account[]; start: { accountId: string; from: string; to: string }; onBack: () => void }) {
+  const [accountId, setAccountId] = useState(start.accountId);
+  const [from, setFrom] = useState(start.from);
+  const [to, setTo] = useState(start.to);
+  const range = (
+    <div className="flex flex-wrap items-end gap-3">
+      <label><span className="block text-xs font-medium text-slate-600 mb-1">From</span><input type="date" className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
+      <label><span className="block text-xs font-medium text-slate-600 mb-1">To</span><input type="date" className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm" value={to} onChange={(e) => setTo(e.target.value)} /></label>
+    </div>
+  );
+  return <LedgerView orgId={orgId} accounts={accounts} accountId={accountId} from={from} to={to} range={range} onBack={onBack} onPick={setAccountId} backLabel="Back to the report" />;
+}
+
+function TrialBalanceView({ orgId, accounts, fyStartMonth }: { orgId: string; accounts: Account[]; fyStartMonth: number }) {
   const today = useToday();
   const [from, setFrom] = useState(fyStart(today, fyStartMonth));
   const [to, setTo] = useState(today);
@@ -66,13 +106,13 @@ export function ReportsTab({ orgId, accounts, fyStartMonth }: { orgId: string; a
           )}
         </tbody>
       </table></div>
-      <p className="px-5 py-3 text-xs text-slate-500">Year-end closing is not built yet (Phase 5): income and expense balances from earlier years still show in their own accounts.</p>
+      <p className="px-5 py-3 text-xs text-slate-500">The trial balance shows every account as booked. The balance sheet presents earlier years' income and expenses inside equity until the year-end closing (D-28, Phase 5).</p>
     </Card>
   );
 }
 
-function LedgerView({ orgId, accounts, accountId, from, to, range, onBack, onPick }: {
-  orgId: string; accounts: Account[]; accountId: string; from: string; to: string; range: ReactNode; onBack: () => void; onPick: (id: string) => void;
+function LedgerView({ orgId, accounts, accountId, from, to, range, onBack, onPick, backLabel = "Trial balance" }: {
+  orgId: string; accounts: Account[]; accountId: string; from: string; to: string; range: ReactNode; onBack: () => void; onPick: (id: string) => void; backLabel?: string;
 }) {
   const [rows, setRows] = useState<GlRow[] | null>(null);
   const [journal, setJournal] = useState<Journal | null>(null);
@@ -93,7 +133,7 @@ function LedgerView({ orgId, accounts, accountId, from, to, range, onBack, onPic
     <>
       <Card title={`General ledger — ${account ? `${account.code} · ${account.name}` : ""}`} icon={<ScrollText size={16} />} pad={false}
         actions={<div className="flex flex-wrap items-end gap-3">
-          <button className="btn-ghost" onClick={onBack}><ArrowLeft size={15} />Trial balance</button>
+          <button className="btn-ghost" onClick={onBack}><ArrowLeft size={15} />{backLabel}</button>
           <label><span className="block text-xs font-medium text-slate-600 mb-1">Account</span>
             <select className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm bg-white max-w-64" value={accountId} onChange={(e) => onPick(e.target.value)}>
               {accounts.map((a) => <option key={a.id} value={a.id}>{a.code} · {a.name}</option>)}

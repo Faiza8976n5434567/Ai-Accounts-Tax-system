@@ -2927,6 +2927,22 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: never; Returns: string }
+      ageing: {
+        Args: { p_as_of: string; p_organization_id: string; p_side: string }
+        Returns: {
+          contact_id: string
+          contact_name: string
+          currency: string
+          days_overdue: number
+          doc_date: string
+          doc_no: string
+          document_id: string
+          due_date: string
+          open_aed: number
+          open_fcy: number
+          total_aed: number
+        }[]
+      }
       approve_bank_reconciliation: {
         Args: { p_id: string }
         Returns: undefined
@@ -2936,11 +2952,44 @@ export type Database = {
         Returns: undefined
       }
       auto_match_bank: { Args: { p_bank_account_id: string }; Returns: number }
+      balance_sheet: {
+        Args: { p_as_of: string; p_organization_id: string }
+        Returns: {
+          account_id: string
+          amount: number
+          code: string
+          name: string
+          report_group: string
+          row_kind: string
+          section: string
+        }[]
+      }
       bank_reconciliation_preview: {
         Args: { p_bank_account_id: string; p_end: string }
         Returns: Json
       }
       config_value: { Args: { p_key: string; p_on?: string }; Returns: Json }
+      contact_statement: {
+        Args: {
+          p_contact_id: string
+          p_from: string
+          p_organization_id: string
+          p_side: string
+          p_to: string
+        }
+        Returns: {
+          balance: number
+          credit: number
+          debit: number
+          description: string
+          entry_date: string
+          journal_id: string
+          journal_no: string
+          memo: string
+          row_kind: string
+          source: Database["public"]["Enums"]["journal_source"]
+        }[]
+      }
       create_client: {
         Args: {
           p_accountant_ids?: string[]
@@ -2980,6 +3029,10 @@ export type Database = {
       delete_payment: { Args: { p_id: string }; Returns: undefined }
       delete_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       delete_sales_invoice: { Args: { p_id: string }; Returns: undefined }
+      fy_start_of: {
+        Args: { p_date: string; p_month: number }
+        Returns: string
+      }
       general_ledger: {
         Args: {
           p_account_id: string
@@ -3035,6 +3088,17 @@ export type Database = {
         Returns: string
       }
       post_sales_invoice: { Args: { p_id: string }; Returns: string }
+      profit_and_loss: {
+        Args: { p_from: string; p_organization_id: string; p_to: string }
+        Returns: {
+          account_id: string
+          amount: number
+          code: string
+          name: string
+          report_group: string
+          type: Database["public"]["Enums"]["account_type"]
+        }[]
+      }
       reject_journal: {
         Args: { p_journal_id: string; p_reason: string }
         Returns: undefined

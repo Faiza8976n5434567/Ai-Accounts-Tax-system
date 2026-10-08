@@ -180,7 +180,7 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await other.getByRole("button", { name: "Send for approval" }).click();
   await expect(page.getByText("Sent for approval — it is matched once a second person approves it")).toBeVisible();
 
-  await page.locator("aside").getByRole("button", { name: "Trial balance & ledger" }).click();
+  await page.locator("aside").getByRole("button", { name: "Reports" }).click();
   await expect(page.getByText("Balanced")).toBeVisible();
   await expect(page.getByRole("row", { name: /1100\s*Trade receivables/ })).toContainText("10,500.00");
   await expect(page.getByRole("row", { name: /2100\s*VAT output/ })).toContainText("500.00");
@@ -196,6 +196,17 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await expect(page.getByText("General ledger — 6100 · Rent")).toBeVisible();
   await page.getByRole("cell", { name: /JV-\d{4}-\d{2}-0001/ }).click();
   await expect(page.getByRole("dialog")).toContainText("E2E rent accrual");
+
+  // P2-06 · balance sheet balances (RPT-01) and the P&L shows the year's result; figures drill to the ledger (RPT-04)
+  await page.getByRole("dialog").getByRole("button", { name: "Close" }).first().click();
+  await page.getByRole("button", { name: "Trial balance", exact: true }).last().click();          // back from the ledger
+  await page.getByRole("button", { name: "Balance sheet", exact: true }).click();
+  await expect(page.getByText("Total liabilities and equity")).toBeVisible();
+  await expect(page.getByText("Balanced", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Profit & loss", exact: true }).click();
+  await expect(page.getByText("Net profit / (loss) for the period")).toBeVisible();
+  await page.getByRole("row", { name: /4010\s*Revenue - services/ }).click();
+  await expect(page.getByText("General ledger — 4010 · Revenue - services")).toBeVisible();
 });
 
 test("SEC-08 · there is no way to sign up from the app", async ({ page }) => {

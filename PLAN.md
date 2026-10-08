@@ -232,7 +232,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P2-03 | Purchase bills + debit notes, attachments (private storage), compliance checks & risk | ARAP-06, DM-08, SEC-13, SEC-20 | 🟡 built — live in Supabase (Faizan applied `…101500`), screen + live journey green; awaiting Faizan's check |
 | P2-04 | Receipts & payments (AED/USD), allocations, **Customer Credits** (auto-apply, refunds) (D-11) | ARAP-01 → 05, ARAP-08 → 12, DM-05, DM-06, FX-02, FX-03 | 🟡 built — `…101600_receipts_payments.sql` (37 pgTAP tests, applied by Faizan): receipts, supplier payments, refunds, oldest-first and chosen allocations, Customer Credits / Supplier advances auto-applied on the next invoice/bill, bank charges and small write-offs (D-34), exchange differences (D-37), open items with ageing; **Receipts & payments** screen; 12 unit tests; receipt step in the live journey. Follow-up: undo a posted receipt (with P2-05) |
 | P2-05 | Bank accounts, statement upload, duplicate detection, matching, reconciliation | BANK-01 → 03, DM-07 | 🟡 built — `…20261008100000_bank.sql` (31 pgTAP tests, applied by Faizan): bank accounts, CSV/Excel upload with remembered column mapping, duplicate protection, auto/manual matching, bank-line journals (no VAT), receipts/payments from bank lines, **reverse receipt/payment with approval (D-40)**, approved & frozen month-end reconciliation; **Bank** screen; 13 unit tests; bank step in the live journey |
-| P2-06 | Reports: TB, GL, P&L, Balance Sheet, AR/AP ageing, customer statement; Excel/PDF export | RPT-01 → 04, SEC-14, D-28 roll-forward | ⬜ |
+| P2-06 | Reports: TB, GL, P&L, Balance Sheet, AR/AP ageing, customer statement; Excel/PDF export | RPT-01 → 04, SEC-14, D-28 roll-forward | 🟡 built — `…20261008100100_reports.sql` (17 pgTAP tests, applied): P&L, balance sheet with the D-28 roll-forward, AR/AP ageing at any date (= control accounts), customer/supplier statements; **Reports** screen with tabs, drill-down to ledger/journal, Excel export (formula-safe, SEC-14) and Print/PDF; 7 unit tests; live journey checks the balance sheet balances and P&L drill-down |
 | P2-07 | Opening-balance & contacts import from one Excel template (Spec 05) | — | ⬜ |
 | P2-08 | Nightly integrity checks (pg_cron) + Integrity page | — | ⬜ |
 
@@ -339,7 +339,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | ARAP-09 | Credits auto-apply across two open invoices | Oldest invoice settled first; never applied to another customer | D | ✅ |
 | ARAP-10 | Refund a credit of 500 | Dr Customer Credits 500 / Cr Bank 500; needs approval by someone other than the preparer | D | ✅ |
 | ARAP-11 | Refund more than the credit balance | Rejected | D | ✅ |
-| ARAP-12 | Balance sheet presentation | Customer Credits shown under liabilities, not netted against receivables | D | 🟡 separate liability account proven (D); statement layout checked in P2-06 |
+| ARAP-12 | Balance sheet presentation | Customer Credits shown under liabilities, not netted against receivables | D | ✅ |
 
 ### 6.4 Bank (BANK)
 | ID | Scenario | Expected | Type | Status |
@@ -389,10 +389,10 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 ### 6.7 Reports (RPT)
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
-| RPT-01 | Balance sheet | Assets = Liabilities + Equity (+ current-year profit) | D | ⬜ |
-| RPT-02 | Year-end close | P&L net profit moves to retained earnings; P&L accounts zero | D | ⬜ |
-| RPT-03 | Excel/PDF export | Totals equal on-screen totals | E | ⬜ |
-| RPT-04 | Drill-down from any report figure | Lists exactly the journals that make it up | E | ⬜ |
+| RPT-01 | Balance sheet | Assets = Liabilities + Equity (+ current-year profit) | D | ✅ |
+| RPT-02 | Year-end close | P&L net profit moves to retained earnings; P&L accounts zero | D | 🟡 reports roll it forward (D-28, proven); the closing journal itself is Phase 5 |
+| RPT-03 | Excel/PDF export | Totals equal on-screen totals | E | ✅ |
+| RPT-04 | Drill-down from any report figure | Lists exactly the journals that make it up | E | ✅ |
 
 ### 6.8 E-invoicing (EINV) — detailed once ASP is chosen
 | ID | Scenario | Expected | Type | Status |
@@ -492,3 +492,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | Decisions D-34 (AED 1.00 write-off limit + bank charges box), D-35 (advances with VAT deferred to the VAT return work), D-36 (Supplier advances), D-37 (exchange differences to 4310/6410). |
 | 2026-10-08 | **P2-04 built:** receipts, supplier payments and refunds; allocations (automatic oldest-first or chosen); Customer Credits and Supplier advances applied automatically to the next invoice/bill; open items with ageing; new accounts 1160, 4310, 6190, 6410 added to every client. Faizan applied `…101600`. 319 database + 206 unit tests. |
 | 2026-10-08 | Decisions D-38 (statement column mapping), D-39 (no VAT from bank lines), D-40 (reverse receipts/payments with approval), D-41 (approved, frozen reconciliations). **P2-05 built** and applied (`…20261008100000_bank.sql`); SheetJS added for Excel statements (loaded only on upload). 350 database + 218 unit tests. |
+| 2026-10-08 | **P2-06 built:** P&L, balance sheet (D-28 roll-forward: earlier years' results shown in equity, ledger unchanged), ageing at any date, customer/supplier statements, Excel/PDF export; applied by Claude (additive SQL only). 367 database + 225 unit tests. |
