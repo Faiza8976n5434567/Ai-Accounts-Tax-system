@@ -395,9 +395,10 @@ Rules enforced by functions: allocations never exceed the payment amount or the 
 
 | Table | Key columns | Rules |
 |---|---|---|
-| **`bank_accounts`** | id, organization_id, account_id (FK → GL bank account), bank_name, iban_last4, currency | one GL account per bank account |
-| **`bank_statements`** | id, organization_id, bank_account_id, period_start, period_end, opening_balance, closing_balance, attachment_id, uploaded_by | |
-| **`bank_transactions`** | id, organization_id, statement_id, txn_date, description, amount (signed fils), dedupe_hash (U per bank account), status enum `unmatched`/`matched`/`posted`/`ignored`, journal_id (FK), matched_by | duplicates rejected by the unique hash |
+| **`bank_accounts`** | id, organization_id, account_id (FK → GL bank account), name, bank_name, iban_last4, currency, column_mapping (D-38) | one GL account per bank account |
+| **`bank_statements`** | id, organization_id, bank_account_id, file_name, file_sha256 (U per bank account — BANK-01), period_start, period_end, closing_balance, line/imported/duplicate counts, uploaded_by | the file itself is not stored |
+| **`bank_transactions`** | id, organization_id, statement_id, txn_date, description, amount (signed fils), dedupe_hash (U per bank account), status enum `unmatched`/`matched`, journal_line_id (FK, U — one-to-one, BANK-02), matched_by | hash = date, amount, description, balance, n-th identical line in the file; lines are never edited or deleted |
+| **`bank_reconciliations`** | id, organization_id, bank_account_id, period_end (U per account), statement_balance, book_balance, unreconciled_bank, unreconciled_book, snapshot, status pending/posted, prepared_by ≠ approved_by | CK book + bank items − book items = statement (BANK-03); approved = frozen (D-41) |
 
 ### 4.10 VAT returns
 
