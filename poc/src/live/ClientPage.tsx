@@ -14,10 +14,11 @@ import { ReportsTab } from "./ReportsTab";
 import { ContactsTab } from "./ContactsTab";
 import { SalesTab } from "./SalesTab";
 import { BillsTab } from "./BillsTab";
+import { PaymentsTab } from "./PaymentsTab";
 import { ClientDetailsForm } from "./ClientDetailsForm";
 import { useLoad, useToday } from "./hooks";
 
-const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", sales: "Sales invoices", bills: "Purchase bills", journals: "Journals", approvals: "Approvals", reports: "Trial balance & ledger", accounts: "Chart of accounts", periods: "Periods" };
+const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", sales: "Sales invoices", bills: "Purchase bills", payments: "Receipts & payments", journals: "Journals", approvals: "Approvals", reports: "Trial balance & ledger", accounts: "Chart of accounts", periods: "Periods" };
 
 export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab }) {
   const fetchAll = useCallback(() => Promise.all([getClient(clientId), listAccounts(clientId), listAccountingPeriods(clientId), listTaxPeriods(clientId), myPermissions(clientId)]), [clientId]);
@@ -76,6 +77,7 @@ export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab
       {tab === "contacts" && <ContactsTab orgId={clientId} accounts={accounts} canEdit={perms.includes("prepare")} />}
       {tab === "sales" && <SalesTab client={client} accounts={accounts} taxPeriods={taxPeriods} perms={perms} />}
       {tab === "bills" && <BillsTab client={client} accounts={accounts} perms={perms} />}
+      {tab === "payments" && <PaymentsTab client={client} accounts={accounts} perms={perms} />}
       {(tab === "journals" || tab === "approvals") && <JournalsTab key={tab} orgId={clientId} accounts={accounts} perms={perms} booksStart={booksStart} approvalsOnly={tab === "approvals"} />}
       {tab === "reports" && <ReportsTab orgId={clientId} accounts={accounts} fyStartMonth={client.fy_start_month} />}
       {tab === "accounts" && <AccountsTab orgId={clientId} accounts={accounts} canManage={perms.includes("manage_coa")} reload={load} />}

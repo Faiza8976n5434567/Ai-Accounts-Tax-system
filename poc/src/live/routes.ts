@@ -1,9 +1,9 @@
 /** Page addresses of the live app, kept in the URL after `#` so Back/Forward and bookmarks work. */
-export type ClientTab = "overview" | "contacts" | "sales" | "bills" | "journals" | "approvals" | "reports" | "accounts" | "periods";
+export type ClientTab = "overview" | "contacts" | "sales" | "bills" | "payments" | "journals" | "approvals" | "reports" | "accounts" | "periods";
 export type AdminTab = "profile" | "tax" | "firm" | "platform" | "email";
 export type Route = { page: "clients" } | { page: "team" } | { page: "admin"; tab: AdminTab } | { page: "client"; clientId: string; tab: ClientTab };
 
-const TABS: ClientTab[] = ["overview", "contacts", "sales", "bills", "journals", "approvals", "reports", "accounts", "periods"];
+const TABS: ClientTab[] = ["overview", "contacts", "sales", "bills", "payments", "journals", "approvals", "reports", "accounts", "periods"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function parseRoute(hash: string): Route {

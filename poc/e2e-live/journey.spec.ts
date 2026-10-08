@@ -138,6 +138,20 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await page.getByRole("button", { name: "Approve and post" }).click();
   await expect(page.getByText(/Posted as JV-\d{4}-\d{2}-0003/)).toBeVisible();
 
+  // P2-04 · ARAP-05: the customer pays 11,000 for the 10,500 invoice → 500 Customer Credit. Prepared by the
+  // checker, so the checker sees no "Approve and post" on it (maker-checker R1).
+  await page.locator("aside").getByRole("button", { name: "Receipts & payments" }).click();
+  await page.getByRole("main").getByRole("button", { name: "Receipt", exact: true }).click();
+  const rc = page.getByRole("dialog", { name: "New customer receipt" });
+  await rc.getByLabel("Contact").selectOption({ label: "E2E Buyer LLC" });
+  await rc.getByLabel("Amount", { exact: true }).fill("11,000");
+  await expect(rc.getByText("Settles AED 10,500.00 · customer credit 500.00")).toBeVisible();
+  await rc.getByRole("button", { name: "Submit for approval" }).click();
+  const receipt = page.getByRole("dialog", { name: /Customer receipt \(draft\) · E2E Buyer LLC/ });
+  await expect(receipt.getByText("Waiting for approval")).toBeVisible();
+  await expect(receipt.getByRole("button", { name: "Approve and post" })).toHaveCount(0);
+  await receipt.getByRole("button", { name: "Close" }).first().click();
+
   await page.locator("aside").getByRole("button", { name: "Trial balance & ledger" }).click();
   await expect(page.getByText("Balanced")).toBeVisible();
   await expect(page.getByRole("row", { name: /1100\s*Trade receivables/ })).toContainText("10,500.00");

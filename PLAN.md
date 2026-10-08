@@ -226,7 +226,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P2-01 | Customers & suppliers (TRN validation, payment terms, default account) | ARAP-07 | 🟡 built — `…101200_contacts.sql` (14 pgTAP tests, applied) + **Customers & suppliers** screen (search, filters, add/edit, TRN check, default account/tax code, related-party tag); rules in `lib/contacts.ts` (7 unit tests) |
 | P2-02 | Sales invoices + credit notes with `INV-YYYY-MM-0001` numbering (D-22), supply emirate (D-10), AED or USD (D-21) | ARAP-04, DM-02, VAT-02, NUM-01 → 07, FX-01 | 🟡 built — `…101300_sales_invoices.sql` (31 pgTAP tests: VAT-01/02/09/10, FX-01, NUM-01/02/06/07, DM-15, D-30; applied by Faizan) + `…101400_client_address.sql`; **Sales invoices** screen (editor with live totals matching the database, D-29 warnings, approve/send back, credit notes), **Print / PDF** tax invoice (Art 59 fields), client **Edit details** with address; 13 calculation unit tests; covered by the live journey (invoice → approval → INV number → trial balance → print) |
 | P2-03 | Purchase bills + debit notes, attachments (private storage), compliance checks & risk | ARAP-06, DM-08, SEC-13, SEC-20 | 🟡 built — live in Supabase (Faizan applied `…101500`), screen + live journey green; awaiting Faizan's check |
-| P2-04 | Receipts & payments (AED/USD), allocations, **Customer Credits** (auto-apply, refunds) (D-11) | ARAP-01 → 05, ARAP-08 → 12, DM-05, DM-06, FX-02, FX-03 | 🟡 in progress (D-34 → D-37) |
+| P2-04 | Receipts & payments (AED/USD), allocations, **Customer Credits** (auto-apply, refunds) (D-11) | ARAP-01 → 05, ARAP-08 → 12, DM-05, DM-06, FX-02, FX-03 | 🟡 built — `…101600_receipts_payments.sql` (37 pgTAP tests, applied by Faizan): receipts, supplier payments, refunds, oldest-first and chosen allocations, Customer Credits / Supplier advances auto-applied on the next invoice/bill, bank charges and small write-offs (D-34), exchange differences (D-37), open items with ageing; **Receipts & payments** screen; 12 unit tests; receipt step in the live journey. Follow-up: undo a posted receipt (with P2-05) |
 | P2-05 | Bank accounts, statement upload, duplicate detection, matching, reconciliation | BANK-01 → 03, DM-07 | ⬜ |
 | P2-06 | Reports: TB, GL, P&L, Balance Sheet, AR/AP ageing, customer statement; Excel/PDF export | RPT-01 → 04, SEC-14, D-28 roll-forward | ⬜ |
 | P2-07 | Opening-balance & contacts import from one Excel template (Spec 05) | — | ⬜ |
@@ -324,18 +324,18 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 ### 6.3 Receivables & payables (ARAP)
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
-| ARAP-01 | Invoice 10,000 + VAT 500, receipt 4,000 | Open balance 6,500; ageing by due date | D | ⬜ |
-| ARAP-02 | AR sub-ledger total vs GL 1100 | Always equal | D | ⬜ |
-| ARAP-03 | AP sub-ledger total vs GL 2000 | Always equal | D | ⬜ |
-| ARAP-04 | Credit note 2,000 + VAT 100 against ARAP-01 invoice | Open balance 4,400; VAT reduced by 100 | D | ⬜ |
-| ARAP-05 | Invoice 10,500 (incl. VAT 500); customer pays 11,000 | Invoice settled; Dr Bank 11,000 / Cr Receivables 10,500 / Cr Customer Credits 500; no VAT on the 500 | D | ⬜ |
+| ARAP-01 | Invoice 10,000 + VAT 500, receipt 4,000 | Open balance 6,500; ageing by due date | D | ✅ |
+| ARAP-02 | AR sub-ledger total vs GL 1100 | Always equal | D | ✅ |
+| ARAP-03 | AP sub-ledger total vs GL 2000 | Always equal | D | ✅ |
+| ARAP-04 | Credit note 2,000 + VAT 100 against ARAP-01 invoice | Open balance 4,400; VAT reduced by 100 | D | ✅ |
+| ARAP-05 | Invoice 10,500 (incl. VAT 500); customer pays 11,000 | Invoice settled; Dr Bank 11,000 / Cr Receivables 10,500 / Cr Customer Credits 500; no VAT on the 500 | D | ✅ |
 | ARAP-06 | Duplicate supplier bill (same supplier + bill no.) | Blocked | D | ✅ |
 | ARAP-07 | Invalid TRN format (not 15 digits starting 1) | Warning; input VAT not recoverable | U | ⬜ |
-| ARAP-08 | Customer Credit 500, then new invoice 2,100 (incl. VAT 100) for the same customer | Auto-applied: Dr Customer Credits 500 / Cr Receivables 500; invoice open 1,600; audit entry written | D | ⬜ |
-| ARAP-09 | Credits auto-apply across two open invoices | Oldest invoice settled first; never applied to another customer | D | ⬜ |
-| ARAP-10 | Refund a credit of 500 | Dr Customer Credits 500 / Cr Bank 500; needs approval by someone other than the preparer | D | ⬜ |
-| ARAP-11 | Refund more than the credit balance | Rejected | D | ⬜ |
-| ARAP-12 | Balance sheet presentation | Customer Credits shown under liabilities, not netted against receivables | D | ⬜ |
+| ARAP-08 | Customer Credit 500, then new invoice 2,100 (incl. VAT 100) for the same customer | Auto-applied: Dr Customer Credits 500 / Cr Receivables 500; invoice open 1,600; audit entry written | D | ✅ |
+| ARAP-09 | Credits auto-apply across two open invoices | Oldest invoice settled first; never applied to another customer | D | ✅ |
+| ARAP-10 | Refund a credit of 500 | Dr Customer Credits 500 / Cr Bank 500; needs approval by someone other than the preparer | D | ✅ |
+| ARAP-11 | Refund more than the credit balance | Rejected | D | ✅ |
+| ARAP-12 | Balance sheet presentation | Customer Credits shown under liabilities, not netted against receivables | D | 🟡 separate liability account proven (D); statement layout checked in P2-06 |
 
 ### 6.4 Bank (BANK)
 | ID | Scenario | Expected | Type | Status |
@@ -405,8 +405,8 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
 | FX-01 | USD invoice, net USD 1,000.00, standard-rated | AED net 3,672.50; VAT 183.63 (5% of 3,672.50 = 183.625, half-up); gross AED 3,856.13; VAT 201 Box 1 shows AED | U | ⬜ |
-| FX-02 | Customer pays USD 1,050.00 for FX-01 | AED 3,856.13 received; invoice fully settled | D | ⬜ |
-| FX-03 | USD payment exactly equal to a USD invoice's USD total | AED settled = invoice AED total — no 0.01 rounding residue left open | D | ⬜ |
+| FX-02 | Customer pays USD 1,050.00 for FX-01 | AED 3,856.13 received; invoice fully settled | D | ✅ |
+| FX-03 | USD payment exactly equal to a USD invoice's USD total | AED settled = invoice AED total — no 0.01 rounding residue left open | D | ✅ |
 | FX-04 | Trial balance, P&L, VAT 201 with mixed AED/USD documents | All in AED; USD amounts shown only as document detail | D | ⬜ |
 | FX-05 | Change `fx.usd_aed` effective a future date | Existing documents unchanged; new documents use the new rate | U | ⬜ |
 | FX-06 | Document in any currency other than AED/USD | Rejected | D | ⬜ |
@@ -485,3 +485,5 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | **P2-02 built:** sales invoices & credit notes (database calculation, numbering, posting, D-29/D-30), printable tax invoice, client address & details editing. Faizan applied `…101300` in the SQL Editor. Live journey extended to sales invoices. 247 database + 185 unit tests. |
 | 2026-10-07 | Decisions D-31 (bill date is the tax date), D-32 (automatic non-recovery on failed checks, approver override with reason), D-33 (VAT on bills recalculated). P2-03 started. |
 | 2026-10-07 | **P2-03 built:** purchase bills & debit notes, Art 59 checks + risk score, automatic VAT non-recovery with approver override, attachments (private storage, SHA-256 once per client), Purchase bills screen. 282 database + 194 unit tests; live journey now includes a bill approved by a second admin (VAT input 1,250 on the trial balance). Fixed the live-journey test ("Customer" also matched "Customer reference"). |
+| 2026-10-07 | Decisions D-34 (AED 1.00 write-off limit + bank charges box), D-35 (advances with VAT deferred to the VAT return work), D-36 (Supplier advances), D-37 (exchange differences to 4310/6410). |
+| 2026-10-08 | **P2-04 built:** receipts, supplier payments and refunds; allocations (automatic oldest-first or chosen); Customer Credits and Supplier advances applied automatically to the next invoice/bill; open items with ageing; new accounts 1160, 4310, 6190, 6410 added to every client. Faizan applied `…101600`. 319 database + 206 unit tests. |

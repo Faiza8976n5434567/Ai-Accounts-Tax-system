@@ -1541,6 +1541,259 @@ export type Database = {
           },
         ]
       }
+      payment_allocations: {
+        Row: {
+          amount: number
+          amount_fcy: number
+          applied_on: string
+          created_at: string
+          created_by: string | null
+          credit_amount: number | null
+          id: string
+          journal_id: string | null
+          organization_id: string
+          payment_id: string
+          purchase_bill_id: string | null
+          refund_id: string | null
+          sales_invoice_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount: number
+          amount_fcy: number
+          applied_on: string
+          created_at?: string
+          created_by?: string | null
+          credit_amount?: number | null
+          id?: string
+          journal_id?: string | null
+          organization_id: string
+          payment_id: string
+          purchase_bill_id?: string | null
+          refund_id?: string | null
+          sales_invoice_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount?: number
+          amount_fcy?: number
+          applied_on?: string
+          created_at?: string
+          created_by?: string | null
+          credit_amount?: number | null
+          id?: string
+          journal_id?: string | null
+          organization_id?: string
+          payment_id?: string
+          purchase_bill_id?: string | null
+          refund_id?: string | null
+          sales_invoice_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_allocations_journal_id_organization_id_fkey"
+            columns: ["journal_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "journals"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_payment_id_organization_id_fkey"
+            columns: ["payment_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "credit_balances"
+            referencedColumns: ["payment_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_payment_id_organization_id_fkey"
+            columns: ["payment_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_purchase_bill_id_organization_id_fkey"
+            columns: ["purchase_bill_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_refund_id_organization_id_fkey"
+            columns: ["refund_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "credit_balances"
+            referencedColumns: ["payment_id", "organization_id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_refund_id_organization_id_fkey"
+            columns: ["refund_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_sales_invoice_id_organization_id_fkey"
+            columns: ["sales_invoice_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoices"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          amount_fcy: number
+          approved_by: string | null
+          auto_allocate: boolean
+          bank_account_id: string
+          bank_charges: number
+          bank_charges_fcy: number
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          credit_aed: number
+          credit_fcy: number
+          currency: string
+          fx_difference: number
+          fx_rate: number
+          id: string
+          journal_id: string | null
+          kind: Database["public"]["Enums"]["payment_kind"]
+          notes: string | null
+          organization_id: string
+          payment_date: string
+          payment_no: string | null
+          posted_at: string | null
+          prepared_by: string | null
+          reference: string | null
+          status: Database["public"]["Enums"]["document_status"]
+          updated_at: string
+          updated_by: string | null
+          writeoff: number
+          writeoff_fcy: number
+        }
+        Insert: {
+          amount?: number
+          amount_fcy: number
+          approved_by?: string | null
+          auto_allocate?: boolean
+          bank_account_id: string
+          bank_charges?: number
+          bank_charges_fcy?: number
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          credit_aed?: number
+          credit_fcy?: number
+          currency?: string
+          fx_difference?: number
+          fx_rate?: number
+          id?: string
+          journal_id?: string | null
+          kind: Database["public"]["Enums"]["payment_kind"]
+          notes?: string | null
+          organization_id: string
+          payment_date: string
+          payment_no?: string | null
+          posted_at?: string | null
+          prepared_by?: string | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["document_status"]
+          updated_at?: string
+          updated_by?: string | null
+          writeoff?: number
+          writeoff_fcy?: number
+        }
+        Update: {
+          amount?: number
+          amount_fcy?: number
+          approved_by?: string | null
+          auto_allocate?: boolean
+          bank_account_id?: string
+          bank_charges?: number
+          bank_charges_fcy?: number
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          credit_aed?: number
+          credit_fcy?: number
+          currency?: string
+          fx_difference?: number
+          fx_rate?: number
+          id?: string
+          journal_id?: string | null
+          kind?: Database["public"]["Enums"]["payment_kind"]
+          notes?: string | null
+          organization_id?: string
+          payment_date?: string
+          payment_no?: string | null
+          posted_at?: string | null
+          prepared_by?: string | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["document_status"]
+          updated_at?: string
+          updated_by?: string | null
+          writeoff?: number
+          writeoff_fcy?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_bank_account_id_organization_id_fkey"
+            columns: ["bank_account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "payments_contact_id_organization_id_fkey"
+            columns: ["contact_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "payments_currency_fkey"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "payments_journal_id_organization_id_fkey"
+            columns: ["journal_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "journals"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_prepared_by_fkey"
+            columns: ["prepared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_settings: {
         Row: {
           created_at: string
@@ -2246,7 +2499,59 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      credit_balances: {
+        Row: {
+          contact_id: string | null
+          currency: string | null
+          kind: Database["public"]["Enums"]["payment_kind"] | null
+          left_aed: number | null
+          left_fcy: number | null
+          organization_id: string | null
+          payment_date: string | null
+          payment_id: string | null
+          payment_no: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_contact_id_organization_id_fkey"
+            columns: ["contact_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "payments_currency_fkey"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      open_documents: {
+        Row: {
+          contact_id: string | null
+          currency: string | null
+          doc_date: string | null
+          doc_kind: string | null
+          doc_no: string | null
+          due_date: string | null
+          id: string | null
+          open_aed: number | null
+          open_fcy: number | null
+          organization_id: string | null
+          total_aed: number | null
+          total_fcy: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_invitation: { Args: never; Returns: string }
@@ -2290,6 +2595,7 @@ export type Database = {
           role: string
         }[]
       }
+      delete_payment: { Args: { p_id: string }; Returns: undefined }
       delete_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       delete_sales_invoice: { Args: { p_id: string }; Returns: undefined }
       general_ledger: {
@@ -2323,6 +2629,7 @@ export type Database = {
       }
       my_permissions: { Args: { p_organization_id: string }; Returns: string[] }
       post_journal: { Args: { p_journal_id: string }; Returns: string }
+      post_payment: { Args: { p_id: string }; Returns: string }
       post_purchase_bill: {
         Args: { p_id: string; p_override_reason?: string }
         Returns: string
@@ -2330,6 +2637,10 @@ export type Database = {
       post_sales_invoice: { Args: { p_id: string }; Returns: string }
       reject_journal: {
         Args: { p_journal_id: string; p_reason: string }
+        Returns: undefined
+      }
+      reject_payment: {
+        Args: { p_id: string; p_reason: string }
         Returns: undefined
       }
       reject_purchase_bill: {
@@ -2363,6 +2674,10 @@ export type Database = {
         }
         Returns: string
       }
+      save_payment: {
+        Args: { p_doc: Json; p_id: string; p_organization_id: string }
+        Returns: string
+      }
       save_purchase_bill: {
         Args: { p_doc: Json; p_id: string; p_organization_id: string }
         Returns: string
@@ -2383,6 +2698,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      submit_payment: { Args: { p_id: string }; Returns: undefined }
       submit_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       submit_sales_invoice: { Args: { p_id: string }; Returns: undefined }
       trial_balance: {
@@ -2441,6 +2757,11 @@ export type Database = {
         | "client_staff"
         | "read_only"
       org_status: "onboarding" | "active" | "archived"
+      payment_kind:
+        | "customer_receipt"
+        | "supplier_payment"
+        | "customer_refund"
+        | "supplier_refund"
       period_status: "open" | "locked"
       purchase_doc_type: "bill" | "debit_note"
       risk_level: "low" | "medium" | "high"
@@ -2619,6 +2940,12 @@ export const Constants = {
         "read_only",
       ],
       org_status: ["onboarding", "active", "archived"],
+      payment_kind: [
+        "customer_receipt",
+        "supplier_payment",
+        "customer_refund",
+        "supplier_refund",
+      ],
       period_status: ["open", "locked"],
       purchase_doc_type: ["bill", "debit_note"],
       risk_level: ["low", "medium", "high"],
