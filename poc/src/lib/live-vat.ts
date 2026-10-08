@@ -12,12 +12,24 @@ export interface VatPreview {
             filed_on: string | null; fta_reference: string | null } | null;
   frozen: boolean; boxes: VatBox[]; adjustments: VatAdjustment[]; prior_period_items: PriorItem[];
 }
+export interface RecRow { group: string; account: string; return: number; ledger: number }
+export interface VatRec {
+  rows: RecRow[]; box14: number; ledger_net: number;
+  adjustments: { box_code: string; amount: number; vat: number; adjustment: number; reason: string }[];
+  other_postings: { entry_date: string; journal_no: string; source: string; memo: string | null; account: string; amount: number }[];
+  clearing_journal: { id: string; journal_no: string; entry_date: string; amount: number } | null;
+}
 export interface BoxLine { entry_date: string; journal_id: string; journal_no: string; source: string; memo: string | null; description: string | null; tax_code: string; amount: number; vat: number }
 
 const db = () => { if (!supabase) throw new Error("Not connected"); return supabase; };
 const ok = <D>(r: { data: D; error: unknown }) => { if (r.error) throw r.error; return r.data; };
 
 export const vatPreview = async (taxPeriodId: string) => ok(await db().rpc("vat_return_preview", { p_tax_period_id: taxPeriodId })) as unknown as VatPreview;
+export const vatReconciliation = async (taxPeriodId: string) => ok(await db().rpc("vat_reconciliation", { p_tax_period_id: taxPeriodId })) as unknown as VatRec;
+/** Total of manual adjustments' effect on box 14 (D-43): output adjustments raise it, input adjustments lower it. */
+export function adjustmentsEffect(adj: VatRec["adjustments"]): number {
+  return adj.reduce((s, a) => s + (["9"].includes(a.box_code) ? -(a.vat + a.adjustment) : a.vat + a.adjustment), 0);
+}
 export const vatBoxLines = async (taxPeriodId: string, box: string) => (ok(await db().rpc("vat_box_lines", { p_tax_period_id: taxPeriodId, p_box: box })) ?? []) as BoxLine[];
 export const startVatReturn = async (taxPeriodId: string) => ok(await db().rpc("start_vat_return", { p_tax_period_id: taxPeriodId })) as string;
 export async function addVatAdjustment(returnId: string, box: string, values: { amount: number; vat: number; adjustment: number }, reason: string, legalReference: string) {

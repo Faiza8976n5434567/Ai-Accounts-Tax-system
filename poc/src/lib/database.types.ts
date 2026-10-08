@@ -2441,6 +2441,7 @@ export type Database = {
           recoverable_vat: number
           risk_level: Database["public"]["Enums"]["risk_level"]
           risk_score: number
+          shows_recipient_details: boolean
           status: Database["public"]["Enums"]["document_status"]
           supplier_invoice_no: string
           supplier_trn_on_invoice: string | null
@@ -2475,6 +2476,7 @@ export type Database = {
           recoverable_vat?: number
           risk_level?: Database["public"]["Enums"]["risk_level"]
           risk_score?: number
+          shows_recipient_details?: boolean
           status?: Database["public"]["Enums"]["document_status"]
           supplier_invoice_no: string
           supplier_trn_on_invoice?: string | null
@@ -2509,6 +2511,7 @@ export type Database = {
           recoverable_vat?: number
           risk_level?: Database["public"]["Enums"]["risk_level"]
           risk_score?: number
+          shows_recipient_details?: boolean
           status?: Database["public"]["Enums"]["document_status"]
           supplier_invoice_no?: string
           supplier_trn_on_invoice?: string | null
@@ -3082,6 +3085,7 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          clearing_journal_id: string | null
           config_version_id: string | null
           created_at: string
           created_by: string | null
@@ -3100,6 +3104,7 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          clearing_journal_id?: string | null
           config_version_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -3118,6 +3123,7 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          clearing_journal_id?: string | null
           config_version_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -3139,6 +3145,13 @@ export type Database = {
             columns: ["approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vat_returns_clearing_journal_id_fkey"
+            columns: ["clearing_journal_id"]
+            isOneToOne: false
+            referencedRelation: "journals"
             referencedColumns: ["id"]
           },
           {
@@ -3612,6 +3625,7 @@ export type Database = {
           vat: number
         }[]
       }
+      vat_reconciliation: { Args: { p_tax_period_id: string }; Returns: Json }
       vat_return_preview: { Args: { p_tax_period_id: string }; Returns: Json }
     }
     Enums: {

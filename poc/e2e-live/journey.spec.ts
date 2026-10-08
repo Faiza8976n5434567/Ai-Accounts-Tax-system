@@ -135,6 +135,7 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await bill.getByLabel("Line 1 unit price").fill("25,000");
   await bill.getByLabel("Line 1 account").selectOption({ label: "6130 · Professional fees" });
   await expect(bill.getByText("Payable AED 26,250.00")).toBeVisible();
+  await bill.getByLabel(/Full tax invoice: shows our name, address and TRN/).check();             // D-46: over AED 10,000
   await bill.getByRole("button", { name: "Submit for approval" }).click();
   const saved = page.getByRole("dialog", { name: /Bill ES-1001/ });
   await expect(saved.getByText("Compliance checks — 1 to review")).toBeVisible();              // only the round-sum warning
@@ -243,6 +244,8 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await expect(page.getByRole("row", { name: /^1a\s/ })).toContainText("10,000.00");
   await expect(page.getByRole("row", { name: /^1a\s/ })).toContainText("500.00");
   await expect(page.getByRole("row", { name: /^1c\s/ })).toContainText("0.00");
+  await expect(page.getByText("Reconciliation with the ledger (VAT-14)")).toBeVisible();          // P3-03
+  await expect(page.getByText("Every difference is explained.")).toBeVisible();
   await page.getByRole("button", { name: "Submit for approval" }).click();
   await expect(page.getByText("Waiting for approval").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Approve and freeze" })).toHaveCount(0);

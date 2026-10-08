@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attachmentPath, billTotals, contentProblem, debitRemaining, sha256Hex, SIGNED_LINK_SECONDS, sniffMime, uploadProblem } from "./bills";
+import { attachmentPath, billTotals, contentProblem, supplierInvoiceTotal, debitRemaining, sha256Hex, SIGNED_LINK_SECONDS, sniffMime, uploadProblem } from "./bills";
 import { lineAmounts } from "./invoices";
 
 describe("purchase bill totals (mirrors app.review_purchase_bill)", () => {
@@ -73,4 +73,10 @@ describe("SEC-13 · the file's content must match its type", () => {
     expect(contentProblem(new TextEncoder().encode("%PDF-1.4"), "application/pdf")).toBeNull();
   });
   it("SEC-20 · document links expire after 60 seconds", () => expect(SIGNED_LINK_SECONDS).toBe(60));
+});
+
+describe("D-46 · supplier invoice total for the full-tax-invoice threshold", () => {
+  it("net + VAT charged; reverse-charge VAT is not on the supplier's invoice", () => {
+    expect(supplierInvoiceTotal([{ taxCode: "SR", net: 1123400, vat: 56170 }, { taxCode: "RCS", net: 100000, vat: 5000 }, { taxCode: "ZR", net: 1000, vat: 0 }])).toBe(1280570);
+  });
 });

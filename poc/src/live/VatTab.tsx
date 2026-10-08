@@ -11,7 +11,7 @@ import type { Client, TaxPeriod } from "../lib/clients";
 import { downloadXlsx, xlsxRow, type Cell } from "../lib/financial";
 import {
   addVatAdjustment, ADJUSTABLE, approveVatReturn, columns, deleteVatAdjustment, markVatFiled, netPosition, rejectVatReturn, startVatReturn,
-  STATUS_LABEL, submitVatReturn, totalsAgree, vatBoxLines, vatPreview, type VatBox, type VatPreview,
+  STATUS_LABEL, submitVatReturn, totalsAgree, vatBoxLines, vatPreview, vatReconciliation, adjustmentsEffect, type VatBox, type VatPreview,
 } from "../lib/live-vat";
 import { useLoad, useToday } from "./hooks";
 import { useToast } from "./toast";
@@ -115,6 +115,8 @@ function VatReturnView({ client, periods, period, perms, onPick }: { client: Cli
           </table></div>
         </Card>
       )}
+
+      {p && <Reconciliation key={`${period.id}-${status}-${p.adjustments.length}`} periodId={period.id} />}
 
       {p && p.prior_period_items.length > 0 && (
         <Card title="From earlier, already approved quarters (D-44)" className="mt-4" pad={false}
@@ -221,5 +223,38 @@ function RecordFiling({ onClose, onSave }: { onClose: () => void; onSave: (ref: 
         <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Filed on</span><input aria-label="Filed on" type="date" className={cls} value={on} onChange={(e) => setOn(e.target.value)} /></label>
       </div>
     </Modal>
+  );
+}
+
+// ── P3-03 · reconciliation with the ledger (VAT-14) and the clearing journal (D-47) ────────
+function Reconciliation({ periodId }: { periodId: string }) {
+  const fetch = useCallback(() => vatReconciliation(periodId), [periodId]);
+  const { data: rec } = useLoad(fetch);
+  if (!rec) return null;
+  const adj = adjustmentsEffect(rec.adjustments);
+  const other = rec.other_postings.reduce((s, o) => s - o.amount, 0);
+  const unexplained = rec.box14 - rec.ledger_net - adj + other;
+  return (
+    <Card title="Reconciliation with the ledger (VAT-14)" className="mt-4" pad={false}
+      sub="Each group of boxes against the movement on its VAT account in the quarter. Any difference must be explained below.">
+      <div className="overflow-x-auto"><table className="w-full min-w-[640px]">
+        <thead><tr><th className="th">Return</th><th className="th">Account</th><th className="th text-end">Return (AED)</th><th className="th text-end">Ledger (AED)</th><th className="th text-end">Difference</th></tr></thead>
+        <tbody>
+          {rec.rows.map((r) => (
+            <tr key={r.account}><td className="td text-sm">{r.group}</td><td className="td font-mono text-xs">{r.account}</td><td className="td text-end num">{fmt(r.return)}</td>
+              <td className="td text-end num">{fmt(r.ledger)}</td><td className={`td text-end num ${r.return === r.ledger ? "text-emerald-700" : "text-amber-700 font-medium"}`}>{fmt(r.return - r.ledger)}</td></tr>
+          ))}
+          <tr className="font-semibold bg-slate-50"><td className="td" colSpan={2}>Net VAT (box 14 vs ledger)</td><td className="td text-end num">{fmt(rec.box14)}</td><td className="td text-end num">{fmt(rec.ledger_net)}</td><td className="td text-end num">{fmt(rec.box14 - rec.ledger_net)}</td></tr>
+        </tbody>
+      </table></div>
+      <div className="px-5 py-3 text-sm space-y-2">
+        {rec.adjustments.length > 0 && <div><b>Manual entries on the return</b> ({fmt(adj)}) — not in the ledger: post their accounting entry by journal against 2120 (e.g. bad-debt relief).
+          <ul className="list-disc ps-6 text-xs text-slate-600">{rec.adjustments.map((a, i) => <li key={i}>Box {a.box_code}: {fmt(a.vat + a.adjustment)} — {a.reason}</li>)}</ul></div>}
+        {rec.other_postings.length > 0 && <div><b>Postings to the VAT accounts not from invoices or bills</b> ({fmt(other)}) — e.g. opening balances; they are in the ledger but not in the return.
+          <ul className="list-disc ps-6 text-xs text-slate-600">{rec.other_postings.map((o, i) => <li key={i}>{shortDate(o.entry_date)} {o.journal_no} ({o.source}) on {o.account}: {fmt(o.amount)} — {o.memo}</li>)}</ul></div>}
+        <p className={unexplained === 0 ? "text-emerald-700" : "text-rose-700 font-medium"}>{unexplained === 0 ? "Every difference is explained." : `Unexplained difference ${fmt(unexplained)} — investigate before approving.`}</p>
+        {rec.clearing_journal && <p className="text-slate-700">Cleared on approval by <span className="font-mono text-xs">{rec.clearing_journal.journal_no}</span> ({shortDate(rec.clearing_journal.entry_date)}): AED {fmt(Math.abs(rec.clearing_journal.amount))} {rec.clearing_journal.amount >= 0 ? "payable to" : "refundable by"} the FTA on account 2120. Record the payment from the bank line (Bank → Other… → 2120).</p>}
+      </div>
+    </Card>
   );
 }

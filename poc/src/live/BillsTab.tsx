@@ -10,7 +10,7 @@ import { listContacts, type Contact } from "../lib/contacts";
 import type { Account, Client } from "../lib/clients";
 import { documentTotals, lineAmounts, parseQuantity } from "../lib/invoices";
 import {
-  attachmentUrl, attachToBill, BILL_TAX_CODES, billTotals, debitRemaining, deleteBill, listBills, postBill, saveBill, sendBackBill, submitBill,
+  attachmentUrl, attachToBill, BILL_TAX_CODES, billTotals, supplierInvoiceTotal, debitRemaining, deleteBill, listBills, postBill, saveBill, sendBackBill, submitBill,
   uploadProblem, VAT_BEARING, type BillDraft, type BillWithDetails,
 } from "../lib/bills";
 import { supabase } from "../lib/supabase";
@@ -23,8 +23,8 @@ type Filter = "all" | "draft" | "pending" | "posted" | "debit_note" | "high";
 
 async function rulesOn(date: string) {
   const get = async (key: string) => (await supabase!.rpc("config_value", { p_key: key, p_on: date })).data;
-  const [vat, fx] = await Promise.all([get("vat.rate_bp"), get("fx.usd_aed")]);
-  return { vatBp: Number(vat ?? 0), usdAed: String(fx ?? "1") };
+  const [vat, fx, full] = await Promise.all([get("vat.rate_bp"), get("fx.usd_aed"), get("vat.full_invoice_threshold")]);
+  return { vatBp: Number(vat ?? 0), usdAed: String(fx ?? "1"), fullInvoice: Number(full ?? 1000000) };
 }
 
 export function BillsTab({ client, accounts, perms }: { client: Client; accounts: Account[]; perms: string[] }) {
@@ -224,10 +224,11 @@ function BillEditor({ orgId, accounts, contacts, bill, debitFor, all, onClose, o
   const [currency, setCurrency] = useState<"AED" | "USD">((base?.currency as "AED" | "USD") ?? "AED");
   const [trnOnInvoice, setTrnOnInvoice] = useState(bill?.supplier_trn_on_invoice ?? debitFor?.supplier_trn_on_invoice ?? "");
   const [heading, setHeading] = useState(bill?.has_tax_invoice_heading ?? true);
+  const [recipient, setRecipient] = useState(bill?.shows_recipient_details ?? false);
   const [notes, setNotes] = useState(bill?.notes ?? "");
   const [lines, setLines] = useState<EditLine[]>(() => bill?.lines.map((l) => toLine(l))
     ?? debitFor?.lines.map((l) => toLine(l, "Return/adjustment: ")) ?? [{ description: "", quantity: "1", price: "", accountId: "", taxCode: "SR" }]);
-  const [rules, setRules] = useState<{ vatBp: number; usdAed: string } | null>(null);
+  const [rules, setRules] = useState<{ vatBp: number; usdAed: string; fullInvoice: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { let live = true; rulesOn(billDate).then((r) => { if (live) setRules(r); }, () => {}); return () => { live = false; }; }, [billDate]);
@@ -266,7 +267,7 @@ function BillEditor({ orgId, accounts, contacts, bill, debitFor, all, onClose, o
     if (remaining && (totals.net > remaining.net || totals.vat > remaining.vat)) { setError(`This debit note is more than what is left on the bill (net ${fmt(remaining.net)}, VAT ${fmt(remaining.vat)}).`); return; }
     const doc: BillDraft = {
       doc_type: isDebit ? "debit_note" : "bill", contact_id: contactId, supplier_invoice_no: number.trim(), bill_date: billDate, due_date: dueDate || null, currency,
-      original_bill_id: isDebit ? (bill?.original_bill_id ?? debitFor?.id ?? null) : null, supplier_trn_on_invoice: trnOnInvoice.trim(), has_tax_invoice_heading: heading, notes,
+      original_bill_id: isDebit ? (bill?.original_bill_id ?? debitFor?.id ?? null) : null, supplier_trn_on_invoice: trnOnInvoice.trim(), has_tax_invoice_heading: heading, shows_recipient_details: recipient, notes,
       lines: lines.map((l) => ({ description: l.description.trim(), quantity: l.quantity.trim().replace(/,/g, ""), unit_price: parseAedToFils(l.price)!, account_id: l.accountId, tax_code: l.taxCode })),
     };
     setBusy(true);
@@ -306,6 +307,9 @@ function BillEditor({ orgId, accounts, contacts, bill, debitFor, all, onClose, o
           <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Supplier TRN shown on the invoice</span>
             <input aria-label="Supplier TRN on invoice" className={cls} inputMode="numeric" value={trnOnInvoice} onChange={(e) => setTrnOnInvoice(e.target.value)} /></label>
           {!isDebit && <label className="sm:col-span-2 flex items-center gap-2 text-sm pt-5"><input type="checkbox" checked={heading} onChange={(e) => setHeading(e.target.checked)} />The document is headed “Tax Invoice” (Art 59)</label>}
+          {!isDebit && vatCharged && supplierInvoiceTotal(lines.flatMap((l, i) => (calc[i] ? [{ taxCode: l.taxCode, ...calc[i]! }] : []))) > (rules?.fullInvoice ?? 1000000) &&
+            <label className="sm:col-span-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={recipient} onChange={(e) => setRecipient(e.target.checked)} />
+              Full tax invoice: shows our name, address and TRN (over AED {fmt(rules?.fullInvoice ?? 1000000)}, D-46)</label>}
         </>}
         <label className="sm:col-span-3"><span className="block text-xs font-medium text-slate-600 mb-1.5">Notes</span><input aria-label="Notes" className={cls} value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
       </div>

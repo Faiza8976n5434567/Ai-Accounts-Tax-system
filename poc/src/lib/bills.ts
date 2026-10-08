@@ -36,6 +36,11 @@ export function billTotals(lines: { taxCode: string; net: number; vat: number }[
   return { net, vat, recoverable, payable };
 }
 
+/** D-46: the supplier's invoice total = net + VAT the supplier charged (reverse-charge VAT is not on their invoice). */
+export function supplierInvoiceTotal(lines: { taxCode: string; net: number; vat: number }[]): number {
+  return lines.reduce((s, l) => s + l.net + (l.taxCode === "SR" || l.taxCode === "BLK" ? l.vat : 0), 0);
+}
+
 /** What is still available on a bill for debit notes, from posted debit notes. */
 export function debitRemaining(bill: Pick<PurchaseBill, "id" | "net_total" | "vat_total">, all: Pick<PurchaseBill, "original_bill_id" | "status" | "net_total" | "vat_total">[]) {
   const dns = all.filter((d) => d.original_bill_id === bill.id && d.status === "posted");
@@ -95,7 +100,7 @@ export async function listBills(orgId: string): Promise<BillWithDetails[]> {
 
 export interface BillDraft {
   doc_type: "bill" | "debit_note"; contact_id: string; supplier_invoice_no: string; bill_date: string; due_date: string | null;
-  currency: "AED" | "USD"; original_bill_id: string | null; supplier_trn_on_invoice: string; has_tax_invoice_heading: boolean; notes: string;
+  currency: "AED" | "USD"; original_bill_id: string | null; supplier_trn_on_invoice: string; has_tax_invoice_heading: boolean; shows_recipient_details: boolean; notes: string;
   lines: { description: string; quantity: string; unit_price: number; account_id: string; tax_code: string }[];
 }
 export async function saveBill(orgId: string, id: string | null, doc: BillDraft): Promise<string> {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { columns, netPosition, totalsAgree, type VatBox } from "./live-vat";
+import { adjustmentsEffect, columns, netPosition, totalsAgree, type VatBox } from "./live-vat";
 
 const box = (box_code: string, amount: number, vat: number, adjustment = 0) => ({ box_code, label: "", sort: 0, amount, vat, adjustment }) as VatBox;
 // The worked quarter of the database test (16_vat_return.sql) after the -100 bad-debt adjustment
@@ -24,5 +24,13 @@ describe("VAT 201 layout", () => {
     expect(columns("14")).toEqual({ amount: false, vat: true, adjustment: false });
     expect(columns("1c")).toEqual({ amount: true, vat: true, adjustment: true });
     expect(columns("6")).toEqual({ amount: true, vat: true, adjustment: false });
+  });
+});
+
+describe("reconciliation (VAT-14)", () => {
+  it("manual adjustments explain the gap between box 14 and the ledger", () => {
+    expect(adjustmentsEffect([{ box_code: "1a", amount: 0, vat: 0, adjustment: -1000, reason: "Bad debt relief" }])).toBe(-1000);
+    expect(adjustmentsEffect([{ box_code: "9", amount: 0, vat: 0, adjustment: 500, reason: "More input VAT" }])).toBe(-500);
+    expect(adjustmentsEffect([{ box_code: "2", amount: 10000, vat: 500, adjustment: 0, reason: "Tourist refunds" }])).toBe(500);
   });
 });
