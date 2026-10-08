@@ -15,8 +15,8 @@ insert into c values ('q', public.create_client(
 
 select is((select (firm_id, status::text)::text from public.organizations where id = (select id from c where k = 'q')),
   ((select id from fx where k = 'tfs'), 'active')::text, 'Client created in the inviter''s firm, active');
-select is((select count(*)::int from public.accounts where organization_id = (select id from c where k = 'q')), 44,
-  'Default chart of accounts copied (44 accounts)');
+select is((select count(*)::int from public.accounts where organization_id = (select id from c where k = 'q')), 45,
+  'Default chart of accounts copied (45 accounts)');
 select ok(exists (select 1 from public.accounts where organization_id = (select id from c where k = 'q') and code = '2150' and is_control),
   'Customer Credits (2150) included as a control account');
 select is((select min(start_date) from public.accounting_periods where organization_id = (select id from c where k = 'q')),
