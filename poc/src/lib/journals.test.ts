@@ -65,7 +65,10 @@ describe("journalActions — maker-checker in the screens (R1)", () => {
 describe("friendlyDbError", () => {
   it("shows our own rule messages", () => expect(friendlyDbError({ code: "P0001", message: "The period containing 2026-04-20 is locked" })).toBe("The period containing 2026-04-20 is locked"));
   it("explains duplicates and bad amounts", () => {
-    expect(friendlyDbError({ code: "23505", message: "duplicate key" })).toMatch(/already used/);
+    expect(friendlyDbError({ code: "23505", message: 'duplicate key value violates unique constraint "accounts_organization_id_code_key"' })).toMatch(/already used/);
+    expect(friendlyDbError({ code: "23505", message: 'duplicate key value violates unique constraint "purchase_bills_no_duplicates"' })).toMatch(/ARAP-06/);
+    expect(friendlyDbError({ code: "23505", message: "This statement file was already uploaded on 08 Oct 2026 — nothing imported" })).toMatch(/already uploaded/);
+    expect(friendlyDbError({ code: "23505", message: 'duplicate key value violates unique constraint "x"' })).toBe("This already exists.");
     expect(friendlyDbError({ code: "22P02", message: "invalid input" })).toMatch(/not valid/);
   });
   it("hides anything unexpected", () => expect(friendlyDbError({ code: "XX000", message: "internal" })).toBe("Something went wrong. Please try again."));

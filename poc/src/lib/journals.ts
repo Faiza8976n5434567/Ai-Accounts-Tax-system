@@ -138,7 +138,15 @@ export async function updateAccount(id: string, a: { name: string; report_group:
 /** Database messages are plain language for our own rules; anything else stays generic. */
 export function friendlyDbError(e: unknown): string {
   const err = e as { code?: string; message?: string };
-  if (err?.code === "23505") return "That code is already used in this client's chart of accounts.";
+  if (err?.code === "23505") {
+    const m = err.message ?? "";
+    if (m && !m.startsWith("duplicate key value")) return m;                       // our own message, e.g. BANK-01
+    if (m.includes("purchase_bills_no_duplicates")) return "This supplier invoice number is already entered for this supplier (ARAP-06).";
+    if (m.includes("attachments_organization_id_sha256")) return "This exact file is already attached to a document of this client.";
+    if (m.includes("payment_allocations_once")) return "The same document is listed twice in this payment.";
+    if (m.includes("accounts_organization_id_code")) return "That code is already used in this client's chart of accounts.";
+    return "This already exists.";
+  }
   if (err?.code === "22P02") return "An amount is not valid — use AED with at most 2 decimals.";
   if (["P0001", "P0002", "23514", "42501"].includes(err?.code ?? "") && err.message) return err.message;
   return "Something went wrong. Please try again.";
