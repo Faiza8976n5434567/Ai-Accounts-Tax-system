@@ -60,6 +60,9 @@
 | D-39 | **Bank lines that are not receipts/payments** (bank charges, salaries, transfers, drawings) are posted from the bank line to a chosen account as a journal approved by a second person — **no VAT is claimed from a bank line**; anything with recoverable VAT is entered as a bill so the D-32 checks apply. | 2026-10-08 |
 | D-40 | **Undo a posted receipt/payment** = reversal with approval (as D-26): one person requests with a reason, a second approves; the settled invoices/bills reopen. Refused while its credit/advance has been used or refunded, or while it is matched to a bank line. | 2026-10-08 |
 | D-41 | **Month-end bank reconciliation** is saved by the preparer when book balance + reconciling items = statement balance, approved by a second person, then frozen (snapshot of the items); matches dated on or before an approved reconciliation can no longer change. | 2026-10-08 |
+| D-42 | **Import of goods:** new bill tax code **IMG** (import of goods, reverse charge 5%) → VAT 201 **Box 6** and **Box 10**, self-assessed like RCS; RCS stays for imported services (Box 3 + 10). Box 7 is a manual entry. | 2026-10-08 |
+| D-43 | **Manual VAT entries** only on the adjustment column of Boxes 1a–1g and 9 and on Boxes 2 and 7, each with a mandatory reason (optional legal reference); the approver sees them; they are part of the frozen snapshot. Nothing else is calculated automatically. | 2026-10-08 |
+| D-44 | **After VAT approval** the quarter's accounting periods are locked. A Firm Admin may reopen one with a reason; VAT documents posted into it afterwards appear in the **next** return as prior-period items for the preparer to review (the approved return stays frozen). Correction in the next return vs voluntary disclosure stays Faizan's call. | 2026-10-08 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -242,8 +245,8 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 ### Phase 3 — VAT, alerts, client logins & pilot · ⬜ · target 22 Jan 2027
 | ID | Step | Tests | Status |
 |---|---|---|---|
-| P3-01 | VAT 201: every box incl. 2, 6, 7; 0.00 for empty (D-12); drill-down | VAT-01 → 11, VAT-16 → 18 | ⬜ |
-| P3-02 | VAT return workflow: draft → review → approve → **frozen snapshot** → period locked | VAT-13, CFG-02 | ⬜ |
+| P3-01 | VAT 201: every box incl. 2, 6, 7; 0.00 for empty (D-12); drill-down | VAT-01 → 11, VAT-16 → 18 | 🟡 in progress (D-42 → D-44) |
+| P3-02 | VAT return workflow: draft → review → approve → **frozen snapshot** → period locked | VAT-13, CFG-02 | 🟡 in progress |
 | P3-03 | VAT reconciliation (return = VAT accounts); FTA Audit File (FAF) export | VAT-14 | ⬜ |
 | P3-04 | Golden VAT set from Faizan | VAT-15 | ⬜ |
 | P3-05 | Compliance calendar from rules; email alerts & templates via Resend; daily Vercel cron | CFG-07, CFG-12 | ⬜ |
