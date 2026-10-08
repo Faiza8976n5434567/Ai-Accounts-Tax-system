@@ -11,6 +11,10 @@ describe("purchase bill totals (mirrors app.review_purchase_bill)", () => {
     const l = lineAmounts(10000n, 600000, 500, "1");
     expect(billTotals([{ taxCode: "RCS", ...l }], false)).toEqual({ net: 600000, vat: 30000, recoverable: 30000, payable: 600000 });
   });
+  it("D-42 · imported goods 10,000: VAT 500 self-assessed like reverse charge, supplier owed 10,000", () => {
+    const l = lineAmounts(10000n, 1000000, 500, "1");
+    expect(billTotals([{ taxCode: "IMG", ...l }], false)).toEqual({ net: 1000000, vat: 50000, recoverable: 50000, payable: 1000000 });
+  });
   it("VAT-07 · blocked entertainment 3,800 + 190: nothing recovered, payable 3,990", () => {
     const l = lineAmounts(10000n, 380000, 500, "1");
     expect(billTotals([{ taxCode: "BLK", ...l }], true)).toEqual({ net: 380000, vat: 19000, recoverable: 0, payable: 399000 });

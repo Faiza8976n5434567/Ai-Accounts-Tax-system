@@ -16,10 +16,11 @@ import { SalesTab } from "./SalesTab";
 import { BillsTab } from "./BillsTab";
 import { PaymentsTab } from "./PaymentsTab";
 import { BankTab } from "./BankTab";
+import { VatTab } from "./VatTab";
 import { ClientDetailsForm } from "./ClientDetailsForm";
 import { useLoad, useToday } from "./hooks";
 
-const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", sales: "Sales invoices", bills: "Purchase bills", payments: "Receipts & payments", bank: "Bank", journals: "Journals", approvals: "Approvals", reports: "Reports", accounts: "Chart of accounts", periods: "Periods" };
+const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", sales: "Sales invoices", bills: "Purchase bills", payments: "Receipts & payments", bank: "Bank", vat: "VAT return", journals: "Journals", approvals: "Approvals", reports: "Reports", accounts: "Chart of accounts", periods: "Periods" };
 
 export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab }) {
   const fetchAll = useCallback(() => Promise.all([getClient(clientId), listAccounts(clientId), listAccountingPeriods(clientId), listTaxPeriods(clientId), myPermissions(clientId)]), [clientId]);
@@ -79,6 +80,7 @@ export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab
       {tab === "sales" && <SalesTab client={client} accounts={accounts} taxPeriods={taxPeriods} perms={perms} />}
       {tab === "bills" && <BillsTab client={client} accounts={accounts} perms={perms} />}
       {tab === "payments" && <PaymentsTab client={client} accounts={accounts} perms={perms} />}
+      {tab === "vat" && <VatTab client={client} taxPeriods={taxPeriods} perms={perms} />}
       {tab === "bank" && <BankTab client={client} accounts={accounts} perms={perms} />}
       {(tab === "journals" || tab === "approvals") && <JournalsTab key={tab} orgId={clientId} accounts={accounts} perms={perms} booksStart={booksStart} approvalsOnly={tab === "approvals"} />}
       {tab === "reports" && <ReportsTab client={client} accounts={accounts} />}

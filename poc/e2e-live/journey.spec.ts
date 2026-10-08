@@ -9,6 +9,21 @@ const MAKER = "maker@e2e.test";
 const CHECKER = "checker@e2e.test";
 const CLIENT = `E2E Trading LLC ${Date.now()}`;
 
+/** Last day of the current calendar quarter (the test client's first VAT period), as YYYY-MM-DD. */
+function quarterEnd(): string {
+  const d = new Date();
+  const end = new Date(Date.UTC(d.getUTCFullYear(), Math.floor(d.getUTCMonth() / 3) * 3 + 3, 0));
+  return end.toISOString().slice(0, 10);
+}
+
+/** The VAT period selector's label for the current quarter, e.g. "1 Oct 2026 – 31 Dec 2026". */
+function currentQuarterLabel(): string {
+  const d = new Date();
+  const start = new Date(Date.UTC(d.getUTCFullYear(), Math.floor(d.getUTCMonth() / 3) * 3, 1));
+  const f = (x: Date) => x.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Dubai" });
+  return `${f(start)} – ${f(new Date(quarterEnd() + "T00:00:00Z"))}`;
+}
+
 /** A weekday in the current year (so the bill's weekend warning never fires), as YYYY-MM-DD. */
 function weekday(): string {
   const d = new Date();
@@ -47,6 +62,9 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await page.getByRole("button", { name: "Add client" }).first().click();
   const add = page.getByRole("dialog", { name: "Add client" });
   await add.getByLabel("Legal name (as on the trade licence)").fill(CLIENT);
+  await add.getByLabel("Registered for VAT").check();
+  await add.getByLabel("VAT TRN (15 digits)").fill("100111222333003");
+  await add.getByLabel("First VAT period ends on (from the registration certificate)").fill(quarterEnd());
   await add.getByRole("button", { name: "Add client" }).click();
   await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
 
@@ -218,6 +236,16 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await expect(page.getByText("Net profit / (loss) for the period")).toBeVisible();
   await page.getByRole("row", { name: /4010\s*Revenue - services/ }).click();
   await expect(page.getByText("General ledger — 4010 · Revenue - services")).toBeVisible();
+
+  // P3-01/02 · VAT 201: the 10,000 invoice is in box 1a (head office Abu Dhabi); the checker submits the return
+  await page.locator("aside").getByRole("button", { name: "VAT return" }).click();
+  await page.getByLabel("VAT period").selectOption({ label: currentQuarterLabel() });
+  await expect(page.getByRole("row", { name: /^1a\s/ })).toContainText("10,000.00");
+  await expect(page.getByRole("row", { name: /^1a\s/ })).toContainText("500.00");
+  await expect(page.getByRole("row", { name: /^1c\s/ })).toContainText("0.00");
+  await page.getByRole("button", { name: "Submit for approval" }).click();
+  await expect(page.getByText("Waiting for approval").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve and freeze" })).toHaveCount(0);
 
   // P2-08 · integrity checks run on demand: no problems (bank housekeeping warnings are possible)
   await page.locator("aside").getByRole("button", { name: "Integrity" }).click();

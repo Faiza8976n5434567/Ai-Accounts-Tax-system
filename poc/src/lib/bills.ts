@@ -11,10 +11,12 @@ export type BillWithDetails = PurchaseBill & {
   lines: BillLine[]; checks: BillCheck[]; attachments: Attachment[]; supplier: string; preparer: string | null; approver: string | null;
 };
 export const BILL_TAX_CODES: [string, string][] = [
-  ["SR", "Standard 5%"], ["ZR", "Zero rated"], ["EX", "Exempt"], ["OS", "Out of scope"], ["RCS", "Reverse charge 5%"], ["BLK", "5% — blocked (not recoverable)"],
+  ["SR", "Standard 5%"], ["ZR", "Zero rated"], ["EX", "Exempt"], ["OS", "Out of scope"], ["RCS", "Reverse charge 5% (services)"], ["IMG", "Import of goods 5% (reverse charge)"], ["BLK", "5% — blocked (not recoverable)"],
 ];
 /** Tax codes that carry VAT at the standard rate. */
-export const VAT_BEARING = new Set(["SR", "RCS", "BLK"]);
+export const VAT_BEARING = new Set(["SR", "RCS", "IMG", "BLK"]);
+/** Reverse charge: VAT self-assessed, recovered, not paid to the supplier (RCS services → box 3, IMG goods → box 6). */
+export const REVERSE_CHARGE = new Set(["RCS", "IMG"]);
 
 const db = () => { if (!supabase) throw new Error("Not connected"); return supabase; };
 
@@ -28,8 +30,8 @@ export function billTotals(lines: { taxCode: string; net: number; vat: number }[
   let net = 0, vat = 0, recoverable = 0, payable = 0;
   for (const l of lines) {
     net += l.net; vat += l.vat;
-    payable += l.net + (l.taxCode === "RCS" ? 0 : l.vat);
-    if (l.taxCode === "RCS" || (l.taxCode === "SR" && srRecoverable)) recoverable += l.vat;
+    payable += l.net + (REVERSE_CHARGE.has(l.taxCode) ? 0 : l.vat);
+    if (REVERSE_CHARGE.has(l.taxCode) || (l.taxCode === "SR" && srRecoverable)) recoverable += l.vat;
   }
   return { net, vat, recoverable, payable };
 }

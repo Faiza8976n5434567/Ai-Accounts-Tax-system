@@ -13,7 +13,7 @@ export const TEMPLATE_COLUMNS = [
   ["Address", "address", ""],
   ["Payment terms (days)", "payment_terms_days", "0–365 (blank = firm default)"],
   ["Default account code", "default_account_code", "e.g. 4010 for customers, 6130 for suppliers"],
-  ["Default tax code", "default_tax_code", "SR, ZR, EX, OS, RCS or BLK"],
+  ["Default tax code", "default_tax_code", "SR, ZR, EX, OS, RCS, IMG or BLK"],
   ["Related party", "is_related_party", "Yes or No (for Corporate Tax transfer pricing)"],
 ] as const;
 export type ContactImportRow = { row: number } & Partial<Record<(typeof TEMPLATE_COLUMNS)[number][1], string>>;

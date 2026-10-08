@@ -13,7 +13,7 @@ import { useToast } from "./toast";
 
 type Filter = "all" | "customer" | "supplier" | "inactive";
 const KIND_LABEL: Record<ContactKind, string> = { customer: "Customer", supplier: "Supplier", both: "Customer & supplier" };
-const TAX_CODES: [string, string][] = [["", "— none —"], ["SR", "Standard rated 5%"], ["ZR", "Zero rated"], ["EX", "Exempt"], ["OS", "Out of scope"], ["RCS", "Reverse charge"], ["BLK", "Blocked input VAT"]];
+const TAX_CODES: [string, string][] = [["", "— none —"], ["SR", "Standard rated 5%"], ["ZR", "Zero rated"], ["EX", "Exempt"], ["OS", "Out of scope"], ["RCS", "Reverse charge (services)"], ["IMG", "Import of goods (reverse charge)"], ["BLK", "Blocked input VAT"]];
 
 export function ContactsTab({ orgId, accounts, canEdit }: { orgId: string; accounts: Account[]; canEdit: boolean }) {
   const fetchContacts = useCallback(() => listContacts(orgId), [orgId]);

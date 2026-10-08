@@ -2961,6 +2961,216 @@ export type Database = {
         }
         Relationships: []
       }
+      vat_return_adjustments: {
+        Row: {
+          adjustment: number
+          amount: number
+          box_code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          legal_reference: string | null
+          organization_id: string
+          reason: string
+          updated_at: string
+          updated_by: string | null
+          vat: number
+          vat_return_id: string
+        }
+        Insert: {
+          adjustment?: number
+          amount?: number
+          box_code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          legal_reference?: string | null
+          organization_id: string
+          reason: string
+          updated_at?: string
+          updated_by?: string | null
+          vat?: number
+          vat_return_id: string
+        }
+        Update: {
+          adjustment?: number
+          amount?: number
+          box_code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          legal_reference?: string | null
+          organization_id?: string
+          reason?: string
+          updated_at?: string
+          updated_by?: string | null
+          vat?: number
+          vat_return_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vat_return_adjustments_box_code_fkey"
+            columns: ["box_code"]
+            isOneToOne: false
+            referencedRelation: "vat_boxes"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "vat_return_adjustments_vat_return_id_organization_id_fkey"
+            columns: ["vat_return_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "vat_returns"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      vat_return_boxes: {
+        Row: {
+          adjustment: number
+          amount: number
+          box_code: string
+          created_at: string
+          created_by: string | null
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+          vat: number
+          vat_return_id: string
+        }
+        Insert: {
+          adjustment?: number
+          amount?: number
+          box_code: string
+          created_at?: string
+          created_by?: string | null
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+          vat?: number
+          vat_return_id: string
+        }
+        Update: {
+          adjustment?: number
+          amount?: number
+          box_code?: string
+          created_at?: string
+          created_by?: string | null
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          vat?: number
+          vat_return_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vat_return_boxes_box_code_fkey"
+            columns: ["box_code"]
+            isOneToOne: false
+            referencedRelation: "vat_boxes"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "vat_return_boxes_vat_return_id_organization_id_fkey"
+            columns: ["vat_return_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "vat_returns"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      vat_returns: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          config_version_id: string | null
+          created_at: string
+          created_by: string | null
+          filed_on: string | null
+          fta_reference: string | null
+          id: string
+          organization_id: string
+          prepared_by: string | null
+          snapshot: Json | null
+          snapshot_sha256: string | null
+          status: Database["public"]["Enums"]["vat_return_status"]
+          tax_period_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          config_version_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          filed_on?: string | null
+          fta_reference?: string | null
+          id?: string
+          organization_id: string
+          prepared_by?: string | null
+          snapshot?: Json | null
+          snapshot_sha256?: string | null
+          status?: Database["public"]["Enums"]["vat_return_status"]
+          tax_period_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          config_version_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          filed_on?: string | null
+          fta_reference?: string | null
+          id?: string
+          organization_id?: string
+          prepared_by?: string | null
+          snapshot?: Json | null
+          snapshot_sha256?: string | null
+          status?: Database["public"]["Enums"]["vat_return_status"]
+          tax_period_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vat_returns_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vat_returns_config_version_id_fkey"
+            columns: ["config_version_id"]
+            isOneToOne: false
+            referencedRelation: "config_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vat_returns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vat_returns_prepared_by_fkey"
+            columns: ["prepared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vat_returns_tax_period_id_fkey"
+            columns: ["tax_period_id"]
+            isOneToOne: true
+            referencedRelation: "tax_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       bank_book_lines: {
@@ -3076,6 +3286,18 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: never; Returns: string }
+      add_vat_adjustment: {
+        Args: {
+          p_adjustment: number
+          p_amount: number
+          p_box: string
+          p_legal_reference?: string
+          p_reason: string
+          p_return_id: string
+          p_vat: number
+        }
+        Returns: string
+      }
       ageing: {
         Args: { p_as_of: string; p_organization_id: string; p_side: string }
         Returns: {
@@ -3100,6 +3322,7 @@ export type Database = {
         Args: { p_reason: string; p_version_id: string }
         Returns: undefined
       }
+      approve_vat_return: { Args: { p_return_id: string }; Returns: string }
       auto_match_bank: { Args: { p_bank_account_id: string }; Returns: number }
       balance_sheet: {
         Args: { p_as_of: string; p_organization_id: string }
@@ -3178,6 +3401,7 @@ export type Database = {
       delete_payment: { Args: { p_id: string }; Returns: undefined }
       delete_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       delete_sales_invoice: { Args: { p_id: string }; Returns: undefined }
+      delete_vat_adjustment: { Args: { p_id: string }; Returns: undefined }
       fy_start_of: {
         Args: { p_date: string; p_month: number }
         Returns: string
@@ -3225,6 +3449,14 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: undefined
       }
+      mark_vat_return_filed: {
+        Args: {
+          p_filed_on: string
+          p_fta_reference: string
+          p_return_id: string
+        }
+        Returns: undefined
+      }
       match_bank_transaction: {
         Args: { p_line_id: string; p_txn_id: string }
         Returns: undefined
@@ -3266,6 +3498,10 @@ export type Database = {
       }
       reject_sales_invoice: {
         Args: { p_id: string; p_reason: string }
+        Returns: undefined
+      }
+      reject_vat_return: {
+        Args: { p_reason: string; p_return_id: string }
         Returns: undefined
       }
       reopen_period: {
@@ -3339,9 +3575,11 @@ export type Database = {
         }
         Returns: undefined
       }
+      start_vat_return: { Args: { p_tax_period_id: string }; Returns: string }
       submit_payment: { Args: { p_id: string }; Returns: undefined }
       submit_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       submit_sales_invoice: { Args: { p_id: string }; Returns: undefined }
+      submit_vat_return: { Args: { p_return_id: string }; Returns: undefined }
       trial_balance: {
         Args: { p_from: string; p_organization_id: string; p_to: string }
         Returns: {
@@ -3360,6 +3598,21 @@ export type Database = {
         Args: { p_txn_id: string }
         Returns: undefined
       }
+      vat_box_lines: {
+        Args: { p_box: string; p_tax_period_id: string }
+        Returns: {
+          amount: number
+          description: string
+          entry_date: string
+          journal_id: string
+          journal_no: string
+          memo: string
+          source: Database["public"]["Enums"]["journal_source"]
+          tax_code: string
+          vat: number
+        }[]
+      }
+      vat_return_preview: { Args: { p_tax_period_id: string }; Returns: Json }
     }
     Enums: {
       account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
@@ -3416,6 +3669,7 @@ export type Database = {
       tax_period_kind: "vat" | "ct"
       user_status: "active" | "suspended"
       vat_period: "quarterly" | "monthly"
+      vat_return_status: "draft" | "in_review" | "approved" | "filed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3602,6 +3856,7 @@ export const Constants = {
       tax_period_kind: ["vat", "ct"],
       user_status: ["active", "suspended"],
       vat_period: ["quarterly", "monthly"],
+      vat_return_status: ["draft", "in_review", "approved", "filed"],
     },
   },
 } as const

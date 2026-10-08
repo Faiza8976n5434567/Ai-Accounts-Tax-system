@@ -245,8 +245,8 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 ### Phase 3 — VAT, alerts, client logins & pilot · ⬜ · target 22 Jan 2027
 | ID | Step | Tests | Status |
 |---|---|---|---|
-| P3-01 | VAT 201: every box incl. 2, 6, 7; 0.00 for empty (D-12); drill-down | VAT-01 → 11, VAT-16 → 18 | 🟡 in progress (D-42 → D-44) |
-| P3-02 | VAT return workflow: draft → review → approve → **frozen snapshot** → period locked | VAT-13, CFG-02 | 🟡 in progress |
+| P3-01 | VAT 201: every box incl. 2, 6, 7; 0.00 for empty (D-12); drill-down | VAT-01 → 11, VAT-16 → 18 | 🟡 built — `…20261008100400_vat_return.sql` (27 pgTAP tests, applied by Faizan): all 20 boxes from posted documents by tax code, D-12 zeros, drill-down per box, IMG code (D-42), manual entries with reason (D-43); **VAT return** screen with Excel/Print; 4 unit tests; in the live journey |
+| P3-02 | VAT return workflow: draft → review → approve → **frozen snapshot** → period locked | VAT-13, CFG-02 | 🟡 built — review → maker-checker approval → frozen snapshot (SHA-256 + tax-rule version) → quarter locked → FTA filing reference; prior-period items after reopening (D-44) |
 | P3-03 | VAT reconciliation (return = VAT accounts); FTA Audit File (FAF) export | VAT-14 | ⬜ |
 | P3-04 | Golden VAT set from Faizan | VAT-15 | ⬜ |
 | P3-05 | Compliance calendar from rules; email alerts & templates via Resend; daily Vercel cron | CFG-07, CFG-12 | ⬜ |
@@ -355,24 +355,24 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 ### 6.5 VAT (VAT) — 5% standard rate
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
-| VAT-01 | Standard-rated sale, net 10,000 | Box 1(emirate) 10,000 / VAT 500 | U+D | ⬜ |
-| VAT-02 | Abu Dhabi client; user selects **Dubai** on a net 10,000 invoice | Box 1b (Dubai): 10,000 / 500; change recorded in audit log | U | ⬜ |
-| VAT-02b | Emirate field left as pre-filled | Allocated to head-office emirate box | U | ⬜ |
-| VAT-03 | Zero-rated export of goods 20,000 | Box 4: 20,000 / VAT 0 | U | ⬜ |
-| VAT-04 | Exempt supply 8,000 | Box 5: 8,000 | U | ⬜ |
-| VAT-05 | Imported service (reverse charge) 6,000 | Box 3: 6,000 / 300 **and** Box 10: 6,000 / 300; net effect 0 | U | 🟡 posting proven (D); box figures checked when VAT 201 is built |
-| VAT-06 | Standard-rated expense 25,000 + 1,250 with valid tax invoice | Box 9: 25,000 / 1,250 | U | 🟡 posting proven (D); box figures checked when VAT 201 is built |
-| VAT-07 | Client entertainment 3,800 + 190 | Not in Box 9; expense 3,990; VAT blocked | U | 🟡 posting proven (D); box figures checked when VAT 201 is built |
-| VAT-08 | Bill with VAT but supplier has no TRN | VAT not recoverable; full amount expensed | U | 🟡 posting proven (D); box figures checked when VAT 201 is built |
+| VAT-01 | Standard-rated sale, net 10,000 | Box 1(emirate) 10,000 / VAT 500 | U+D | ✅ |
+| VAT-02 | Abu Dhabi client; user selects **Dubai** on a net 10,000 invoice | Box 1b (Dubai): 10,000 / 500; change recorded in audit log | U | ✅ |
+| VAT-02b | Emirate field left as pre-filled | Allocated to head-office emirate box | U | ✅ |
+| VAT-03 | Zero-rated export of goods 20,000 | Box 4: 20,000 / VAT 0 | U | ✅ |
+| VAT-04 | Exempt supply 8,000 | Box 5: 8,000 | U | ✅ |
+| VAT-05 | Imported service (reverse charge) 6,000 | Box 3: 6,000 / 300 **and** Box 10: 6,000 / 300; net effect 0 | U | ✅ |
+| VAT-06 | Standard-rated expense 25,000 + 1,250 with valid tax invoice | Box 9: 25,000 / 1,250 | U | ✅ |
+| VAT-07 | Client entertainment 3,800 + 190 | Not in Box 9; expense 3,990; VAT blocked | U | ✅ |
+| VAT-08 | Bill with VAT but supplier has no TRN | VAT not recoverable; full amount expensed | U | ✅ |
 | VAT-09 | Rounding: 3 lines × 33.33 | Line VAT 1.67 each; total VAT 5.01 | U | 🔍 |
-| VAT-10 | Credit note 2,000 against VAT-01 | Box 1: 8,000 / 400 | U+D | ⬜ |
-| VAT-11 | Box 14 | = Box 12 − Box 13 (positive = payable, negative = refundable) | U | ⬜ |
+| VAT-10 | Credit note 2,000 against VAT-01 | Box 1: 8,000 / 400 | U+D | ✅ |
+| VAT-11 | Box 14 | = Box 12 − Box 13 (positive = payable, negative = refundable) | U | ✅ |
 | VAT-12 | Quarter Oct–Dec 2026 | Due 28 Jan 2027 | U | ⬜ |
-| VAT-13 | Return approved | Snapshot frozen; period locked; later posting rejected | D | ⬜ |
+| VAT-13 | Return approved | Snapshot frozen; period locked; later posting rejected | D | ✅ |
 | VAT-14 | Reconciliation | Output VAT on return = movement on VAT output account | D | ⬜ |
 | VAT-15 | Golden set from Faizan (Q-06) | Every box matches manual working to the fils | U | ⬜ |
-| VAT-16 | Plain overpayment of 500 on account | Not in any VAT box until applied to an invoice | U | ⬜ |
-| VAT-18 | Quarter with no zero-rated, exempt or reverse-charge activity | Boxes 2, 3, 4, 5, 6, 7, 10 and every unused emirate box shown as 0.00 / 0.00 — none blank or hidden | U+E | ⬜ |
+| VAT-16 | Plain overpayment of 500 on account | Not in any VAT box until applied to an invoice | U | ✅ |
+| VAT-18 | Quarter with no zero-rated, exempt or reverse-charge activity | Boxes 2, 3, 4, 5, 6, 7, 10 and every unused emirate box shown as 0.00 / 0.00 — none blank or hidden | U+E | ✅ |
 | VAT-17 | Advance of 10,500 received against a specific taxable supply | Output VAT 500 (10,500 × 5/105) in the period of receipt | U | 🔍 |
 
 ### 6.6 Corporate Tax (CT) — 9% above AED 375,000
@@ -499,3 +499,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-08 | **P2-06 built:** P&L, balance sheet (D-28 roll-forward: earlier years' results shown in equity, ledger unchanged), ageing at any date, customer/supplier statements, Excel/PDF export; applied by Claude (additive SQL only). 367 database + 225 unit tests. |
 | 2026-10-08 | **P2-07 (part):** contacts import from the Excel template (skip & list existing — Faizan). Opening balances / open items deferred: Faizan will set the data-migration rules later (Q-25). 376 database + 228 unit tests. |
 | 2026-10-08 | **P2-08 built** — nightly integrity checks (pg_cron, applied by Faizan; job confirmed) and Integrity page. **All Phase 2 items built** (P2-07 opening balances/open items wait for Q-25). 390 database + 230 unit tests. |
+| 2026-10-08 | Decisions D-42 (import-of-goods code IMG → Box 6), D-43 (manual VAT entries with reason), D-44 (lock on approval; prior-period items). **P3-01/P3-02 built:** VAT 201 return with drill-down and approval workflow; applied by Faizan. 417 database + 234 unit tests. Phase 2 awaiting Faizan's sign-off. |
