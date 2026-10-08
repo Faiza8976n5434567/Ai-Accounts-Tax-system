@@ -268,6 +268,13 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await expect(icRow).toContainText(/All checks passed|warning/);
   await expect(icRow).not.toContainText("problem");
   await expect(page.getByText("Trial balance: total debits = total credits")).toBeVisible();
+
+  // P3-07 · firm dashboard: the client is listed with its figures; it has approvals waiting (the receipt and bank journal)
+  await page.locator("aside").getByRole("button", { name: "Dashboard" }).click();
+  await expect(page.getByText("Waiting for approval").first()).toBeVisible();
+  const dashRow = page.getByRole("row", { name: new RegExp(CLIENT) });
+  await expect(dashRow).toContainText("waiting for approval");
+  await expect(dashRow).toContainText("10,000.00");                                                 // revenue this year
 });
 
 test("SEC-08 · there is no way to sign up from the app", async ({ page }) => {

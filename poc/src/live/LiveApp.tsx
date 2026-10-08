@@ -4,7 +4,7 @@
  * demo screens remain available only in the demo build (`vite --mode demo`).
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Banknote, BookOpen, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, FileCheck2, Landmark, LayoutDashboard, ReceiptText, LogOut, Menu, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, Users, X } from "lucide-react";
+import { Banknote, BookOpen, Gauge, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, FileCheck2, Landmark, LayoutDashboard, ReceiptText, LogOut, Menu, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, Users, X } from "lucide-react";
 import { useAuth } from "../components/AuthGate";
 import { cx } from "../components/ui";
 import { listClients, myFirmRole, type Client } from "../lib/clients";
@@ -14,6 +14,7 @@ import { ClientPage } from "./ClientPage";
 import { TeamPage } from "../pages/Team";
 import { AdminPage } from "./AdminPage";
 import { IntegrityPage } from "./IntegrityPage";
+import { DashboardPage } from "./DashboardPage";
 import { useLoad } from "./hooks";
 
 export function LiveApp() {
@@ -32,11 +33,12 @@ export function LiveApp() {
 
   const client = route.page === "client" ? clients.find((c) => c.id === route.clientId) : undefined;
   useEffect(() => {
-    const title = route.page === "admin" ? "Admin" : route.page === "team" ? "Users & invites" : route.page === "integrity" ? "Integrity" : route.page === "client" ? (client?.legal_name ?? "Client") : "Clients";
+    const title = route.page === "admin" ? "Admin" : route.page === "team" ? "Users & invites" : route.page === "integrity" ? "Integrity" : route.page === "dashboard" ? "Dashboard" : route.page === "client" ? (client?.legal_name ?? "Client") : "Clients";
     document.title = `${title} · ${auth.appName}`;
   }, [route, client, auth.appName]);
 
   const allNav: { label: string; icon: ReactNode; to: Route; active: boolean }[] = [
+    { label: "Dashboard", icon: <Gauge size={17} />, to: { page: "dashboard" }, active: route.page === "dashboard" },
     { label: "Clients", icon: <Building2 size={17} />, to: { page: "clients" }, active: route.page === "clients" },
     { label: "Users & invites", icon: <UserPlus size={17} />, to: { page: "team" }, active: route.page === "team" },
     { label: "Integrity", icon: <ShieldCheck size={17} />, to: { page: "integrity" }, active: route.page === "integrity" },
@@ -112,6 +114,7 @@ export function LiveApp() {
             {route.page === "client" && <ClientPage clientId={route.clientId} tab={route.tab} />}
             {route.page === "team" && <TeamPage />}
             {route.page === "integrity" && <IntegrityPage clients={clients} />}
+            {route.page === "dashboard" && <DashboardPage openClient={(id, tab) => go({ page: "client", clientId: id, tab })} />}
             {route.page === "admin" && <AdminPage tab={route.tab} go={(tab) => go({ page: "admin", tab })} />}
           </div>
         </main>

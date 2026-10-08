@@ -1,7 +1,7 @@
 /** Page addresses of the live app, kept in the URL after `#` so Back/Forward and bookmarks work. */
 export type ClientTab = "overview" | "contacts" | "sales" | "bills" | "payments" | "bank" | "vat" | "journals" | "approvals" | "reports" | "accounts" | "periods" | "users";
 export type AdminTab = "profile" | "tax" | "firm" | "platform" | "email";
-export type Route = { page: "clients" } | { page: "team" } | { page: "integrity" } | { page: "admin"; tab: AdminTab } | { page: "client"; clientId: string; tab: ClientTab };
+export type Route = { page: "clients" } | { page: "team" } | { page: "integrity" } | { page: "dashboard" } | { page: "admin"; tab: AdminTab } | { page: "client"; clientId: string; tab: ClientTab };
 
 const TABS: ClientTab[] = ["overview", "contacts", "sales", "bills", "payments", "bank", "vat", "journals", "approvals", "reports", "accounts", "periods", "users"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -10,6 +10,7 @@ export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, "").split("/").filter(Boolean);
   if (parts[0] === "team") return { page: "team" };
   if (parts[0] === "integrity") return { page: "integrity" };
+  if (parts[0] === "dashboard") return { page: "dashboard" };
   if (parts[0] === "admin") {
     const tab = (["profile", "tax", "firm", "platform", "email"] as AdminTab[]).find((t) => t === parts[1]) ?? "profile";
     return { page: "admin", tab };
@@ -24,6 +25,7 @@ export function parseRoute(hash: string): Route {
 export function routeHash(r: Route): string {
   if (r.page === "team") return "#/team";
   if (r.page === "integrity") return "#/integrity";
+  if (r.page === "dashboard") return "#/dashboard";
   if (r.page === "admin") return `#/admin/${r.tab}`;
   if (r.page === "client") return `#/clients/${r.clientId}${r.tab === "overview" ? "" : `/${r.tab}`}`;
   return "#/clients";

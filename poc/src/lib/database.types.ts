@@ -3448,6 +3448,34 @@ export type Database = {
       delete_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       delete_sales_invoice: { Args: { p_id: string }; Returns: undefined }
       delete_vat_adjustment: { Args: { p_id: string }; Returns: undefined }
+      firm_dashboard: {
+        Args: never
+        Returns: {
+          ap_open: number
+          ap_overdue: number
+          ar_open: number
+          ar_overdue: number
+          bank_reconciled_to: string
+          bank_unmatched: number
+          integrity_checked_at: string
+          integrity_status: string
+          legal_name: string
+          organization_id: string
+          pending_bills: number
+          pending_invoices: number
+          pending_journals: number
+          pending_payments: number
+          pending_reconciliations: number
+          pending_vat_returns: number
+          revenue_365: number
+          revenue_ytd: number
+          vat_next_due: string
+          vat_next_period_end: string
+          vat_open_returns: number
+          vat_overdue_returns: number
+          vat_registered: boolean
+        }[]
+      }
       fy_start_of: {
         Args: { p_date: string; p_month: number }
         Returns: string
