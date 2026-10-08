@@ -4,7 +4,7 @@
  * demo screens remain available only in the demo build (`vite --mode demo`).
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Banknote, BookOpen, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, Landmark, LayoutDashboard, ReceiptText, LogOut, Menu, Scale, Settings, ShoppingCart, UserPlus, X } from "lucide-react";
+import { Banknote, BookOpen, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, Landmark, LayoutDashboard, ReceiptText, LogOut, Menu, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, X } from "lucide-react";
 import { useAuth } from "../components/AuthGate";
 import { cx } from "../components/ui";
 import { listClients, type Client } from "../lib/clients";
@@ -13,6 +13,7 @@ import { ClientsPage } from "./ClientsPage";
 import { ClientPage } from "./ClientPage";
 import { TeamPage } from "../pages/Team";
 import { AdminPage } from "./AdminPage";
+import { IntegrityPage } from "./IntegrityPage";
 import { useLoad } from "./hooks";
 
 export function LiveApp() {
@@ -31,13 +32,14 @@ export function LiveApp() {
 
   const client = route.page === "client" ? clients.find((c) => c.id === route.clientId) : undefined;
   useEffect(() => {
-    const title = route.page === "admin" ? "Admin" : route.page === "team" ? "Users & invites" : route.page === "client" ? (client?.legal_name ?? "Client") : "Clients";
+    const title = route.page === "admin" ? "Admin" : route.page === "team" ? "Users & invites" : route.page === "integrity" ? "Integrity" : route.page === "client" ? (client?.legal_name ?? "Client") : "Clients";
     document.title = `${title} · ${auth.appName}`;
   }, [route, client, auth.appName]);
 
   const nav: { label: string; icon: ReactNode; to: Route; active: boolean }[] = [
     { label: "Clients", icon: <Building2 size={17} />, to: { page: "clients" }, active: route.page === "clients" },
     { label: "Users & invites", icon: <UserPlus size={17} />, to: { page: "team" }, active: route.page === "team" },
+    { label: "Integrity", icon: <ShieldCheck size={17} />, to: { page: "integrity" }, active: route.page === "integrity" },
     { label: "Admin", icon: <Settings size={17} />, to: { page: "admin", tab: "profile" }, active: route.page === "admin" },
   ];
   const clientNav: { label: string; icon: ReactNode; tab: ClientTab }[] = [
@@ -104,6 +106,7 @@ export function LiveApp() {
             {route.page === "clients" && <ClientsPage clients={clients} reload={async () => reloadClients()} open={(id) => go({ page: "client", clientId: id, tab: "overview" })} />}
             {route.page === "client" && <ClientPage clientId={route.clientId} tab={route.tab} />}
             {route.page === "team" && <TeamPage />}
+            {route.page === "integrity" && <IntegrityPage clients={clients} />}
             {route.page === "admin" && <AdminPage tab={route.tab} go={(tab) => go({ page: "admin", tab })} />}
           </div>
         </main>

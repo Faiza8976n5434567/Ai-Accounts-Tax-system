@@ -218,6 +218,15 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await expect(page.getByText("Net profit / (loss) for the period")).toBeVisible();
   await page.getByRole("row", { name: /4010\s*Revenue - services/ }).click();
   await expect(page.getByText("General ledger — 4010 · Revenue - services")).toBeVisible();
+
+  // P2-08 · integrity checks run on demand: no problems (bank housekeeping warnings are possible)
+  await page.locator("aside").getByRole("button", { name: "Integrity" }).click();
+  const icRow = page.getByRole("row", { name: new RegExp(CLIENT) });
+  await icRow.getByRole("button", { name: "Run now" }).click();
+  await expect(page.getByText("Checks finished")).toBeVisible();
+  await expect(icRow).toContainText(/All checks passed|warning/);
+  await expect(icRow).not.toContainText("problem");
+  await expect(page.getByText("Trial balance: total debits = total credits")).toBeVisible();
 });
 
 test("SEC-08 · there is no way to sign up from the app", async ({ page }) => {

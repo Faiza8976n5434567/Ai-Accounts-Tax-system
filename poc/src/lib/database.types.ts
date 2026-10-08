@@ -1366,6 +1366,123 @@ export type Database = {
           },
         ]
       }
+      integrity_results: {
+        Row: {
+          check_code: string
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          id: string
+          label: string
+          organization_id: string
+          run_id: string
+          status: Database["public"]["Enums"]["integrity_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          check_code: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          label: string
+          organization_id: string
+          run_id: string
+          status: Database["public"]["Enums"]["integrity_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          check_code?: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          label?: string
+          organization_id?: string
+          run_id?: string
+          status?: Database["public"]["Enums"]["integrity_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrity_results_run_id_organization_id_fkey"
+            columns: ["run_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "integrity_latest"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "integrity_results_run_id_organization_id_fkey"
+            columns: ["run_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "integrity_runs"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      integrity_runs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          errors: number
+          id: string
+          organization_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["integrity_status"]
+          trigger: string
+          triggered_by: string | null
+          updated_at: string
+          updated_by: string | null
+          warnings: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          errors?: number
+          id?: string
+          organization_id: string
+          started_at?: string
+          status: Database["public"]["Enums"]["integrity_status"]
+          trigger: string
+          triggered_by?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          warnings?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          errors?: number
+          id?: string
+          organization_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["integrity_status"]
+          trigger?: string
+          triggered_by?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          warnings?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrity_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrity_runs_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -2907,6 +3024,38 @@ export type Database = {
           },
         ]
       }
+      integrity_latest: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          errors: number | null
+          id: string | null
+          organization_id: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["integrity_status"] | null
+          trigger: string | null
+          triggered_by: string | null
+          updated_at: string | null
+          updated_by: string | null
+          warnings: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrity_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrity_runs_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       open_documents: {
         Row: {
           contact_id: string | null
@@ -3131,6 +3280,10 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: undefined
       }
+      run_integrity_checks: {
+        Args: { p_organization_id: string }
+        Returns: string
+      }
       save_bank_account: {
         Args: { p_doc: Json; p_id: string; p_organization_id: string }
         Returns: string
@@ -3231,6 +3384,7 @@ export type Database = {
       document_status: "draft" | "pending" | "posted"
       firm_role: "firm_admin" | "firm_accountant"
       firm_status: "active" | "suspended"
+      integrity_status: "ok" | "warning" | "error"
       invitation_status: "pending" | "accepted" | "revoked" | "expired"
       journal_source:
         | "manual"
@@ -3413,6 +3567,7 @@ export const Constants = {
       document_status: ["draft", "pending", "posted"],
       firm_role: ["firm_admin", "firm_accountant"],
       firm_status: ["active", "suspended"],
+      integrity_status: ["ok", "warning", "error"],
       invitation_status: ["pending", "accepted", "revoked", "expired"],
       journal_source: [
         "manual",
