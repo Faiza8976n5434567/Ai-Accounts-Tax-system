@@ -69,6 +69,8 @@ jobs:
         run: supabase start -x realtime,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
       - name: G-6 Database tests (pgTAP)
         run: supabase test db
+      - name: NUM-05 Numbering under parallel posting
+        run: bash supabase/tests/concurrency/num05.sh
 
   e2e-live:
     name: G-9 Live journey on a temporary Supabase (MFA sign-in, client, journal, approval, trial balance)

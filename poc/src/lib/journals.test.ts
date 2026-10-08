@@ -71,5 +71,7 @@ describe("friendlyDbError", () => {
     expect(friendlyDbError({ code: "23505", message: 'duplicate key value violates unique constraint "x"' })).toBe("This already exists.");
     expect(friendlyDbError({ code: "22P02", message: "invalid input" })).toMatch(/not valid/);
   });
+  it("shows the app's own check messages", () => expect(friendlyDbError(new Error("This file is not a real PDF"))).toBe("This file is not a real PDF"));
+  it("hides network failures", () => expect(friendlyDbError(new TypeError("Failed to fetch"))).toBe("Something went wrong. Please try again."));
   it("hides anything unexpected", () => expect(friendlyDbError({ code: "XX000", message: "internal" })).toBe("Something went wrong. Please try again."));
 });

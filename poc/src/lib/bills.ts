@@ -46,6 +46,7 @@ export const ALLOWED_UPLOADS: Record<string, string> = {
   "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png",
 };
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+export const SIGNED_LINK_SECONDS = 60;                                     // SEC-20
 
 /** Why a file cannot be attached (null = fine). PDF, JPG or PNG up to 10 MB (S-2.5). */
 export function uploadProblem(file: { type: string; size: number }): string | null {
@@ -53,6 +54,20 @@ export function uploadProblem(file: { type: string; size: number }): string | nu
   if (file.size <= 0) return "That file is empty.";
   if (file.size > MAX_UPLOAD_BYTES) return "The file is larger than 10 MB.";
   return null;
+}
+
+/** SEC-13: what the file really is, from its first bytes (a renamed .exe is not a PDF). */
+export function sniffMime(head: Uint8Array): string | null {
+  const starts = (...b: number[]) => b.every((x, i) => head[i] === x);
+  if (starts(0x25, 0x50, 0x44, 0x46, 0x2d)) return "application/pdf";                     // %PDF-
+  if (starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return "image/png";
+  if (starts(0xff, 0xd8, 0xff)) return "image/jpeg";
+  return null;
+}
+/** Why the content does not match what the file claims to be (null = it matches). */
+export function contentProblem(head: Uint8Array, claimed: string): string | null {
+  const real = sniffMime(head);
+  return real === claimed ? null : "This file is not a real PDF, JPG or PNG (its content does not match its name) — it was not uploaded.";
 }
 
 /** Private storage path: {organization}/bills/{bill}/{sha256}.{ext} — the folder decides who can read it. */
@@ -102,7 +117,10 @@ export async function sendBackBill(id: string, reason: string) { const r = await
 export async function attachToBill(orgId: string, billId: string, file: File): Promise<void> {
   const problem = uploadProblem(file);
   if (problem) throw new Error(problem);
-  const sha = await sha256Hex(await file.arrayBuffer());
+  const data = await file.arrayBuffer();
+  const wrong = contentProblem(new Uint8Array(data.slice(0, 16)), file.type);
+  if (wrong) throw new Error(wrong);
+  const sha = await sha256Hex(data);
   const path = attachmentPath(orgId, billId, sha, file.type);
   const dupe = await db().from("attachments").select("id").eq("organization_id", orgId).eq("sha256", sha).maybeSingle();
   if (dupe.data) throw new Error("This exact file is already attached to a document of this client.");
@@ -114,9 +132,9 @@ export async function attachToBill(orgId: string, billId: string, file: File): P
   if (r.error) throw r.error;
 }
 
-/** A short-lived private link to view an attachment (5 minutes). */
+/** A short-lived private link to view an attachment: 60 seconds (SEC-20). */
 export async function attachmentUrl(path: string): Promise<string> {
-  const r = await db().storage.from("documents").createSignedUrl(path, 300);
+  const r = await db().storage.from("documents").createSignedUrl(path, SIGNED_LINK_SECONDS);
   if (r.error) throw r.error;
   return r.data.signedUrl;
 }

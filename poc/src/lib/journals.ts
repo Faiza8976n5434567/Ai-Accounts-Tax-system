@@ -149,5 +149,6 @@ export function friendlyDbError(e: unknown): string {
   }
   if (err?.code === "22P02") return "An amount is not valid — use AED with at most 2 decimals.";
   if (["P0001", "P0002", "23514", "42501"].includes(err?.code ?? "") && err.message) return err.message;
+  if (e instanceof Error && !err.code && e.message && e.message !== "Failed to fetch") return e.message;   // the app's own checks (e.g. SEC-13)
   return "Something went wrong. Please try again.";
 }

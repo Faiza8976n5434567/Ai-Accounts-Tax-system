@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attachmentPath, billTotals, debitRemaining, sha256Hex, uploadProblem } from "./bills";
+import { attachmentPath, billTotals, contentProblem, debitRemaining, sha256Hex, SIGNED_LINK_SECONDS, sniffMime, uploadProblem } from "./bills";
 import { lineAmounts } from "./invoices";
 
 describe("purchase bill totals (mirrors app.review_purchase_bill)", () => {
@@ -55,4 +55,22 @@ describe("attachments (S-2.5, DM-08)", () => {
   it("SHA-256 of 'abc' is the standard test vector", async () => {
     expect(await sha256Hex(new TextEncoder().encode("abc").buffer as ArrayBuffer)).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
   });
+});
+
+describe("SEC-13 · the file's content must match its type", () => {
+  const bytes = (...b: number[]) => new Uint8Array(b);
+  it("recognises real PDF, PNG and JPG files", () => {
+    expect(sniffMime(new TextEncoder().encode("%PDF-1.7 "))).toBe("application/pdf");
+    expect(sniffMime(bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0))).toBe("image/png");
+    expect(sniffMime(bytes(0xff, 0xd8, 0xff, 0xe0))).toBe("image/jpeg");
+  });
+  it("rejects a Windows program renamed to .pdf", () => {
+    expect(sniffMime(bytes(0x4d, 0x5a, 0x90, 0x00))).toBeNull();                       // "MZ" = .exe
+    expect(contentProblem(bytes(0x4d, 0x5a, 0x90, 0x00), "application/pdf")).toMatch(/not a real PDF/);
+  });
+  it("rejects a PNG claiming to be a PDF, accepts a matching file", () => {
+    expect(contentProblem(bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a), "application/pdf")).not.toBeNull();
+    expect(contentProblem(new TextEncoder().encode("%PDF-1.4"), "application/pdf")).toBeNull();
+  });
+  it("SEC-20 · document links expire after 60 seconds", () => expect(SIGNED_LINK_SECONDS).toBe(60));
 });

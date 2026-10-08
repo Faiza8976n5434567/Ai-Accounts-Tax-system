@@ -324,7 +324,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | SEC-04 | Firm Accountant approves an entry | Rejected | D | ✅ |
 | SEC-05 | Firm Admin approves **own** entry | Rejected (maker-checker) | D | ✅ |
 | SEC-06 | Read-only user inserts a journal | Rejected | D | ✅ |
-| SEC-07 | Read-only access past its end date | Denied | D | ⬜ |
+| SEC-07 | Read-only access past its end date | Denied | D | ✅ |
 | SEC-08 | Public sign-up attempt | Not possible (invite only) | E | ✅ |
 | SEC-09 | Firm user logs in without MFA | Blocked until MFA set up | E | ✅ |
 | SEC-10 | Supabase secret key appears in browser bundle | Never (build check) | U | ✅ |
@@ -338,7 +338,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | ARAP-04 | Credit note 2,000 + VAT 100 against ARAP-01 invoice | Open balance 4,400; VAT reduced by 100 | D | ✅ |
 | ARAP-05 | Invoice 10,500 (incl. VAT 500); customer pays 11,000 | Invoice settled; Dr Bank 11,000 / Cr Receivables 10,500 / Cr Customer Credits 500; no VAT on the 500 | D | ✅ |
 | ARAP-06 | Duplicate supplier bill (same supplier + bill no.) | Blocked | D | ✅ |
-| ARAP-07 | Invalid TRN format (not 15 digits starting 1) | Warning; input VAT not recoverable | U | ⬜ |
+| ARAP-07 | Invalid TRN format (not 15 digits starting 1) | Warning; input VAT not recoverable | U | ✅ stricter: an invalid TRN cannot be saved; a bill without a valid TRN does not recover VAT (D-32) |
 | ARAP-08 | Customer Credit 500, then new invoice 2,100 (incl. VAT 100) for the same customer | Auto-applied: Dr Customer Credits 500 / Cr Receivables 500; invoice open 1,600; audit entry written | D | ✅ |
 | ARAP-09 | Credits auto-apply across two open invoices | Oldest invoice settled first; never applied to another customer | D | ✅ |
 | ARAP-10 | Refund a credit of 500 | Dr Customer Credits 500 / Cr Bank 500; needs approval by someone other than the preparer | D | ✅ |
@@ -364,10 +364,10 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | VAT-06 | Standard-rated expense 25,000 + 1,250 with valid tax invoice | Box 9: 25,000 / 1,250 | U | ✅ |
 | VAT-07 | Client entertainment 3,800 + 190 | Not in Box 9; expense 3,990; VAT blocked | U | ✅ |
 | VAT-08 | Bill with VAT but supplier has no TRN | VAT not recoverable; full amount expensed | U | ✅ |
-| VAT-09 | Rounding: 3 lines × 33.33 | Line VAT 1.67 each; total VAT 5.01 | U | 🔍 |
+| VAT-09 | Rounding: 3 lines × 33.33 | Line VAT 1.67 each; total VAT 5.01 | U | ✅ |
 | VAT-10 | Credit note 2,000 against VAT-01 | Box 1: 8,000 / 400 | U+D | ✅ |
 | VAT-11 | Box 14 | = Box 12 − Box 13 (positive = payable, negative = refundable) | U | ✅ |
-| VAT-12 | Quarter Oct–Dec 2026 | Due 28 Jan 2027 | U | ⬜ |
+| VAT-12 | Quarter Oct–Dec 2026 | Due 28 Jan 2027 | U | ✅ |
 | VAT-13 | Return approved | Snapshot frozen; period locked; later posting rejected | D | ✅ |
 | VAT-14 | Reconciliation | Output VAT on return = movement on VAT output account | D | ⬜ |
 | VAT-15 | Golden set from Faizan (Q-06) | Every box matches manual working to the fils | U | ⬜ |
@@ -412,12 +412,12 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 ### 6.9 Currency (FX) — 1 USD = 3.6725 AED
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
-| FX-01 | USD invoice, net USD 1,000.00, standard-rated | AED net 3,672.50; VAT 183.63 (5% of 3,672.50 = 183.625, half-up); gross AED 3,856.13; VAT 201 Box 1 shows AED | U | ⬜ |
+| FX-01 | USD invoice, net USD 1,000.00, standard-rated | AED net 3,672.50; VAT 183.63 (5% of 3,672.50 = 183.625, half-up); gross AED 3,856.13; VAT 201 Box 1 shows AED | U | ✅ |
 | FX-02 | Customer pays USD 1,050.00 for FX-01 | AED 3,856.13 received; invoice fully settled | D | ✅ |
 | FX-03 | USD payment exactly equal to a USD invoice's USD total | AED settled = invoice AED total — no 0.01 rounding residue left open | D | ✅ |
-| FX-04 | Trial balance, P&L, VAT 201 with mixed AED/USD documents | All in AED; USD amounts shown only as document detail | D | ⬜ |
-| FX-05 | Change `fx.usd_aed` effective a future date | Existing documents unchanged; new documents use the new rate | U | ⬜ |
-| FX-06 | Document in any currency other than AED/USD | Rejected | D | ⬜ |
+| FX-04 | Trial balance, P&L, VAT 201 with mixed AED/USD documents | All in AED; USD amounts shown only as document detail | D | ✅ |
+| FX-05 | Change `fx.usd_aed` effective a future date | Existing documents unchanged; new documents use the new rate | U | ✅ |
+| FX-06 | Document in any currency other than AED/USD | Rejected | D | ✅ |
 
 ### 6.10 Document numbering (NUM) — D-22
 | ID | Scenario | Expected | Type | Status |
@@ -426,7 +426,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | NUM-02 | Second October invoice | `INV-2026-10-0002` | D | ✅ |
 | NUM-03 | October ends at `INV-2026-10-0100`; first November invoice | `INV-2026-11-0101` (counter continues) | D | ✅ |
 | NUM-04 | October invoice back-dated and posted after `INV-2026-11-0101` | `INV-2026-10-0102` (next counter, its own month) | D | ✅ |
-| NUM-05 | Two users post invoices at the same moment | Different numbers, no gaps, no duplicates | D | ⬜ |
+| NUM-05 | Two users post invoices at the same moment | Different numbers, no gaps, no duplicates | D | ✅ |
 | NUM-06 | Draft invoice deleted before posting | No number used (numbers assigned at posting) | D | ✅ |
 | NUM-07 | Two different clients | Each has its own counter starting at 0001 | D | ✅ |
 | NUM-08 | First invoice of a new year | Counter continues (e.g. `INV-2027-01-1245`) | D | ✅ |
@@ -500,3 +500,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-08 | **P2-07 (part):** contacts import from the Excel template (skip & list existing — Faizan). Opening balances / open items deferred: Faizan will set the data-migration rules later (Q-25). 376 database + 228 unit tests. |
 | 2026-10-08 | **P2-08 built** — nightly integrity checks (pg_cron, applied by Faizan; job confirmed) and Integrity page. **All Phase 2 items built** (P2-07 opening balances/open items wait for Q-25). 390 database + 230 unit tests. |
 | 2026-10-08 | Decisions D-42 (import-of-goods code IMG → Box 6), D-43 (manual VAT entries with reason), D-44 (lock on approval; prior-period items). **P3-01/P3-02 built:** VAT 201 return with drill-down and approval workflow; applied by Faizan. 417 database + 234 unit tests. Phase 2 awaiting Faizan's sign-off. |
+| 2026-10-08 | Phase 2 gaps closed: SEC-13 (uploads checked by content — a renamed .exe is refused), SEC-20 (document links 60 s), FX-05, DM-02, VAT-12 tests, NUM-05 (20 parallel connections in CI); already-covered tests ticked; ARAP-07 noted as stricter than written. Remaining for Phase 2: Faizan's test & sign-off, and the exit test (one pilot client's quarter re-keyed, Q-01; opening balances by journal or Q-25). |
