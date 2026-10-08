@@ -4,7 +4,7 @@
  * demo screens remain available only in the demo build (`vite --mode demo`).
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Banknote, BookOpen, CalendarClock, Gauge, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, FileCheck2, Landmark, LayoutDashboard, ReceiptText, LogOut, Menu, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, Users, X } from "lucide-react";
+import { Banknote, BookOpen, CalendarClock, Gauge, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, FileCheck2, Landmark, LayoutDashboard, ReceiptText, LogOut, Menu, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, Users, Waypoints, X } from "lucide-react";
 import { useAuth } from "../components/AuthGate";
 import { cx } from "../components/ui";
 import { listClients, myFirmRole, type Client } from "../lib/clients";
@@ -63,6 +63,7 @@ export function LiveApp() {
     { label: "Chart of accounts", icon: <BookOpen size={17} />, tab: "accounts" },
     { label: "Periods", icon: <CalendarRange size={17} />, tab: "periods" },
     { label: "Client users", icon: <Users size={17} />, tab: "users" },
+    { label: "Opening balances", icon: <Waypoints size={17} />, tab: "opening" },
   ];
 
 

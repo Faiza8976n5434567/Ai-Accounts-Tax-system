@@ -2476,6 +2476,7 @@ export type Database = {
           has_tax_invoice_heading: boolean
           id: string
           is_foreign_supplier: boolean
+          is_opening: boolean
           journal_id: string | null
           net_total: number
           notes: string | null
@@ -2511,6 +2512,7 @@ export type Database = {
           has_tax_invoice_heading?: boolean
           id?: string
           is_foreign_supplier?: boolean
+          is_opening?: boolean
           journal_id?: string | null
           net_total?: number
           notes?: string | null
@@ -2546,6 +2548,7 @@ export type Database = {
           has_tax_invoice_heading?: boolean
           id?: string
           is_foreign_supplier?: boolean
+          is_opening?: boolean
           journal_id?: string | null
           net_total?: number
           notes?: string | null
@@ -2717,6 +2720,7 @@ export type Database = {
           gross_total_fcy: number
           id: string
           invoice_no: string | null
+          is_opening: boolean
           issue_date: string
           journal_id: string | null
           net_total: number
@@ -2746,6 +2750,7 @@ export type Database = {
           gross_total_fcy?: number
           id?: string
           invoice_no?: string | null
+          is_opening?: boolean
           issue_date: string
           journal_id?: string | null
           net_total?: number
@@ -2775,6 +2780,7 @@ export type Database = {
           gross_total_fcy?: number
           id?: string
           invoice_no?: string | null
+          is_opening?: boolean
           issue_date?: string
           journal_id?: string | null
           net_total?: number
@@ -3507,6 +3513,7 @@ export type Database = {
         }[]
       }
       delete_bank_reconciliation: { Args: { p_id: string }; Returns: undefined }
+      delete_opening_document: { Args: { p_id: string }; Returns: undefined }
       delete_payment: { Args: { p_id: string }; Returns: undefined }
       delete_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       delete_sales_invoice: { Args: { p_id: string }; Returns: undefined }
@@ -3615,11 +3622,16 @@ export type Database = {
         Returns: undefined
       }
       my_permissions: { Args: { p_organization_id: string }; Returns: string[] }
+      opening_status: { Args: { p_organization_id: string }; Returns: Json }
       post_bank_line: {
         Args: { p_account_id: string; p_memo?: string; p_txn_id: string }
         Returns: string
       }
       post_journal: { Args: { p_journal_id: string }; Returns: string }
+      post_opening_documents: {
+        Args: { p_date: string; p_organization_id: string }
+        Returns: number
+      }
       post_payment: { Args: { p_id: string }; Returns: string }
       post_purchase_bill: {
         Args: { p_id: string; p_override_reason?: string }
@@ -3707,6 +3719,10 @@ export type Database = {
           p_source: Database["public"]["Enums"]["journal_source"]
         }
         Returns: string
+      }
+      save_opening_documents: {
+        Args: { p_organization_id: string; p_rows: Json }
+        Returns: number
       }
       save_payment: {
         Args: { p_doc: Json; p_id: string; p_organization_id: string }

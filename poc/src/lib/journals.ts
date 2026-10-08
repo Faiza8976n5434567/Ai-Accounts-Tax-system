@@ -11,7 +11,7 @@ export type JournalSource = Database["public"]["Enums"]["journal_source"];
 export interface JournalLine { id: string; line_no: number; account_id: string; debit: Fils; credit: Fils; description: string | null }
 export interface Journal {
   id: string; journal_no: string | null; entry_date: string; source: JournalSource; memo: string | null; status: JournalStatus;
-  reversal_of: string | null; prepared_by: string | null; approved_by: string | null; posted_at: string | null; created_at: string;
+  reversal_of: string | null; contact_id: string | null; prepared_by: string | null; approved_by: string | null; posted_at: string | null; created_at: string;
   preparer: string | null; approver: string | null; lines: JournalLine[];
 }
 
@@ -87,7 +87,7 @@ export const STATUS_LABEL: Record<JournalStatus, string> = { draft: "Draft", pen
 
 // ── Data access ─────────────────────────────────────────────────────────────────────────
 
-const JOURNAL_COLUMNS = "id, journal_no, entry_date, source, memo, status, reversal_of, prepared_by, approved_by, posted_at, created_at, preparer:profiles!journals_prepared_by_fkey(full_name), approver:profiles!journals_approved_by_fkey(full_name), journal_lines(id, line_no, account_id, debit, credit, description)";
+const JOURNAL_COLUMNS = "id, journal_no, entry_date, source, memo, status, reversal_of, contact_id, prepared_by, approved_by, posted_at, created_at, preparer:profiles!journals_prepared_by_fkey(full_name), approver:profiles!journals_approved_by_fkey(full_name), journal_lines(id, line_no, account_id, debit, credit, description)";
 type JournalQueryRow = { preparer: { full_name: string } | null; approver: { full_name: string } | null; journal_lines: JournalLine[] | null } & Omit<Journal, "preparer" | "approver" | "lines">;
 const toJournal = (j: JournalQueryRow): Journal => ({
   ...j, preparer: j.preparer?.full_name ?? null, approver: j.approver?.full_name ?? null,

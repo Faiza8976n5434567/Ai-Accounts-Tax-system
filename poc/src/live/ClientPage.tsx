@@ -6,7 +6,8 @@ import { getClient, listAccountingPeriods, listAccounts, listTaxPeriods, MONTHS,
 import { myPermissions } from "../lib/journals";
 import { shortDate } from "../lib/email";
 import { fmt } from "../lib/money";
-import type { ClientTab } from "./routes";
+import { routeHash, type ClientTab } from "./routes";
+import { OpeningTab } from "./OpeningTab";
 import { JournalsTab } from "./JournalsTab";
 import { AccountsTab } from "./AccountsTab";
 import { PeriodsTab } from "./PeriodsTab";
@@ -21,7 +22,7 @@ import { ClientUsersTab } from "./ClientUsersTab";
 import { ClientDetailsForm } from "./ClientDetailsForm";
 import { useLoad, useToday } from "./hooks";
 
-const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", sales: "Sales invoices", bills: "Purchase bills", payments: "Receipts & payments", bank: "Bank", vat: "VAT return", journals: "Journals", approvals: "Approvals", reports: "Reports", accounts: "Chart of accounts", periods: "Periods", users: "Client users" };
+const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", sales: "Sales invoices", bills: "Purchase bills", payments: "Receipts & payments", bank: "Bank", vat: "VAT return", journals: "Journals", approvals: "Approvals", reports: "Reports", accounts: "Chart of accounts", periods: "Periods", users: "Client users", opening: "Opening balances" };
 
 export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab }) {
   const fetchAll = useCallback(() => Promise.all([getClient(clientId), listAccounts(clientId), listAccountingPeriods(clientId), listTaxPeriods(clientId), myPermissions(clientId)]), [clientId]);
@@ -81,6 +82,7 @@ export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab
       {tab === "sales" && <SalesTab client={client} accounts={accounts} taxPeriods={taxPeriods} perms={perms} />}
       {tab === "bills" && <BillsTab client={client} accounts={accounts} perms={perms} />}
       {tab === "payments" && <PaymentsTab client={client} accounts={accounts} perms={perms} />}
+      {tab === "opening" && <OpeningTab client={client} perms={perms} openTab={(t) => { location.hash = routeHash({ page: "client", clientId, tab: t }); }} />}
       {tab === "users" && <ClientUsersTab client={client} perms={perms} />}
       {tab === "vat" && <VatTab client={client} taxPeriods={taxPeriods} perms={perms} />}
       {tab === "bank" && <BankTab client={client} accounts={accounts} perms={perms} />}

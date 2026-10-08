@@ -53,7 +53,7 @@ export function JournalEditor({ orgId, accounts, journal, source, defaultDate, o
         <button className="btn-primary bg-emerald-600" disabled={busy || check.problems.length > 0} onClick={() => void save(true)}><Send size={15} />Submit for approval</button>
       </>}>
       {error && <p role="alert" className="mb-3 text-sm text-rose-700">{error}</p>}
-      {source === "opening" && <p className="mb-3 text-sm text-slate-600">Enter the balances at the start of the books (from the last trial balance). Bank, receivables, payables and VAT accounts are allowed here. Totals must balance.</p>}
+      {source === "opening" && <p className="mb-3 text-sm text-slate-600">Enter the balances at the start of the books (from the last trial balance), dated the cut-off. Bank and VAT accounts are allowed here. Put customer and supplier balances on 3999 Opening balance clearing — then enter each unpaid invoice/bill under Opening balances (D-52). Totals must balance.</p>}
       <div className="grid gap-3 sm:grid-cols-[180px_1fr] mb-4">
         <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Date</span>
           <input type="date" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={date} onChange={(e) => setDate(e.target.value)} /></label>

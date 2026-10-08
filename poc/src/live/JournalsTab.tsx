@@ -32,7 +32,7 @@ export function JournalsTab({ orgId, accounts, perms, booksStart, approvalsOnly 
   const accountName = useMemo(() => new Map(accounts.map((a) => [a.id, `${a.code} · ${a.name}`])), [accounts]);
   const pendingReversalOf = useMemo(() => new Set((journals ?? []).filter((j) => j.source === "reversal" && j.status === "pending").map((j) => j.reversal_of)), [journals]);
   const shown = (journals ?? []).filter((j) => filter === "all" || j.status === filter || (filter === "posted" && j.status === "reversed"));
-  const hasOpening = (journals ?? []).some((j) => j.source === "opening");
+  const hasOpening = (journals ?? []).some((j) => j.source === "opening" && !j.contact_id);   // opening documents (D-52) carry a contact
   const pendingCount = (journals ?? []).filter((j) => j.status === "pending").length;
 
   const done = async (msg: string) => { toast(msg); setOpen(null); reload(); };
