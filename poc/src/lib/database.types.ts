@@ -3064,6 +3064,10 @@ export type Database = {
         }
         Returns: Json
       }
+      import_contacts: {
+        Args: { p_organization_id: string; p_rows: Json }
+        Returns: Json
+      }
       lock_period: {
         Args: { p_period_id: string; p_reason?: string }
         Returns: undefined

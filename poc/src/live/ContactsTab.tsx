@@ -1,12 +1,14 @@
 /** Customers and suppliers for one client (P2-01). */
 import { useCallback, useMemo, useState } from "react";
-import { Contact as ContactIcon, Pencil, Plus } from "lucide-react";
+import { Contact as ContactIcon, FileDown, FileUp, Pencil, Plus } from "lucide-react";
 import { Badge, Card, Modal } from "../components/ui";
 import { contactProblems, emptyContact, fromContact, listContacts, saveContact, trnStatus, type Contact, type ContactInput, type ContactKind } from "../lib/contacts";
 import { friendlyDbError } from "../lib/journals";
 import type { Account, Emirate } from "../lib/clients";
 import { listEmirates } from "../lib/clients";
 import { useLoad } from "./hooks";
+import { downloadContactsTemplate, importContacts, parseContactsSheet, type ContactImportRow } from "../lib/contactsImport";
+import { readStatementFile } from "../lib/bankImport";
 import { useToast } from "./toast";
 
 type Filter = "all" | "customer" | "supplier" | "inactive";
@@ -20,6 +22,7 @@ export function ContactsTab({ orgId, accounts, canEdit }: { orgId: string; accou
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Contact | ContactKind | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const contacts = useMemo(() => data ?? [], [data]);
   const shown = useMemo(() => contacts.filter((c) => {
@@ -35,7 +38,8 @@ export function ContactsTab({ orgId, accounts, canEdit }: { orgId: string; accou
     <>
       <Card title="Customers & suppliers" icon={<ContactIcon size={16} />} pad={false}
         sub="One list for both. A TRN must be 15 digits starting with 1. Contacts are never deleted — deactivate them instead."
-        actions={canEdit && <div className="flex gap-2">
+        actions={canEdit && <div className="flex flex-wrap gap-2">
+          <button className="btn-ghost" onClick={() => setImporting(true)}><FileUp size={15} />Import from Excel</button>
           <button className="btn-ghost" onClick={() => setEditing("supplier")}><Plus size={15} />Supplier</button>
           <button className="btn-primary bg-emerald-600" onClick={() => setEditing("customer")}><Plus size={15} />Customer</button>
         </div>}>
@@ -72,6 +76,7 @@ export function ContactsTab({ orgId, accounts, canEdit }: { orgId: string; accou
       </Card>
       {editing && <ContactForm orgId={orgId} contact={typeof editing === "string" ? null : editing} kind={typeof editing === "string" ? editing : editing.kind}
         accounts={accounts} emirates={emirates ?? []} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); reload(); }} />}
+      {importing && <ImportContacts orgId={orgId} onClose={() => setImporting(false)} onDone={() => { setImporting(false); reload(); }} />}
     </>
   );
 }
@@ -130,6 +135,50 @@ function ContactForm({ orgId, contact, kind, accounts, emirates, onClose, onSave
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.isRelatedParty} onChange={(e) => set("isRelatedParty", e.target.checked)} />Related party (Corporate Tax transfer pricing)</label>
         {contact && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.isActive} onChange={(e) => set("isActive", e.target.checked)} />Active</label>}
       </div>
+    </Modal>
+  );
+}
+
+// ── Import from the Excel template (P2-07) ──────────────────────────────────────────────
+function ImportContacts({ orgId, onClose, onDone }: { orgId: string; onClose: () => void; onDone: () => void }) {
+  const toast = useToast();
+  const [rows, setRows] = useState<ContactImportRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ imported: number; skipped: { row: number; name: string; reason: string }[] } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const pick = async (f: File | undefined) => {
+    if (!f) return;
+    setError(null); setRows(null); setResult(null);
+    try {
+      const parsed = parseContactsSheet(await readStatementFile(f));
+      if (parsed.errors.length) setError(parsed.errors.join(" ")); else setRows(parsed.rows);
+    } catch { setError("This file could not be read. Use the template (.xlsx) or a CSV with the same columns."); }
+  };
+  const go = async () => {
+    if (!rows) return;
+    setBusy(true); setError(null);
+    try { const r = await importContacts(orgId, rows); setResult(r); toast(`${r.imported} contact(s) imported`); }
+    catch (e) { setError(friendlyDbError(e)); } finally { setBusy(false); }
+  };
+  return (
+    <Modal open wide onClose={result ? onDone : onClose} title="Import customers & suppliers"
+      footer={result ? <button className="btn-primary bg-emerald-600" onClick={onDone}>Done</button> : <>
+        <button className="btn-ghost me-auto" onClick={() => void downloadContactsTemplate().catch(() => toast("The template could not be created", "err"))}><FileDown size={15} />Download template</button>
+        <button className="btn-ghost" onClick={onClose}>Cancel</button>
+        <button className="btn-primary bg-emerald-600" disabled={!rows || busy} onClick={() => void go()}><FileUp size={15} />{busy ? "Importing…" : `Import ${rows?.length ?? ""}`}</button></>}>
+      {!result && <>
+        <p className="text-sm text-slate-600 mb-3">Fill the <b>Contacts</b> sheet of the template (see its Instructions sheet), then choose the file. Contacts that already exist (same name or TRN) are skipped and never changed. If any row has a problem, nothing is imported and every problem is listed.</p>
+        <input aria-label="Contacts file" type="file" accept=".xlsx,.xls,.csv" onChange={(e) => void pick(e.target.files?.[0])} />
+        {rows && <p className="mt-3 text-sm text-slate-700">{rows.length} row(s) ready to import.</p>}
+        {error && <p role="alert" className="mt-3 text-sm text-rose-700 whitespace-pre-line">{error.replace(/; (?=Row \d)/g, "\n")}</p>}
+      </>}
+      {result && <>
+        <p className="text-sm text-slate-800"><b>{result.imported}</b> contact(s) imported.</p>
+        {result.skipped.length > 0 && <>
+          <p className="mt-3 text-sm text-slate-700">{result.skipped.length} skipped because they already exist:</p>
+          <ul className="mt-1 text-xs text-slate-600 list-disc ps-5">{result.skipped.map((s) => <li key={s.row}>Row {s.row}: {s.name} — {s.reason}</li>)}</ul>
+        </>}
+      </>}
     </Modal>
   );
 }

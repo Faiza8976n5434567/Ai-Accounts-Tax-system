@@ -76,6 +76,17 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await cust.getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("cell", { name: /E2E Buyer LLC/ }).first()).toBeVisible();
 
+  // P2-07 · contacts import: one new contact imported, the existing one skipped and listed
+  await page.getByRole("button", { name: "Import from Excel" }).click();
+  const imp = page.getByRole("dialog", { name: "Import customers & suppliers" });
+  await imp.getByLabel("Contacts file").setInputFiles({ name: "contacts.csv", mimeType: "text/csv",
+    buffer: Buffer.from("Type,Name,TRN,Country\nCustomer,E2E Buyer LLC,,AE\nSupplier,E2E Imported Supplier,,US\n") });
+  await imp.getByRole("button", { name: "Import 2" }).click();
+  await expect(imp.getByText("contact(s) imported")).toContainText("1");
+  await expect(imp.getByText("Row 2: E2E Buyer LLC — already exists (same name)")).toBeVisible();
+  await imp.getByRole("button", { name: "Done" }).click();
+  await expect(page.getByRole("cell", { name: /E2E Imported Supplier/ }).first()).toBeVisible();
+
   await page.locator("aside").getByRole("button", { name: "Sales invoices" }).click();
   await page.getByRole("button", { name: "New invoice" }).click();
   const inv = page.getByRole("dialog", { name: "New invoice" });
