@@ -66,7 +66,7 @@ export function InvoicePrint({ inv, original, client, customer, emirates, onClos
 
         <table className="w-full border-collapse">
           <thead><tr className="border-y border-slate-300 text-left text-xs uppercase tracking-wide text-slate-600">
-            <th className="py-2">Description</th><th className="py-2 text-end">Qty</th><th className="py-2 text-end">Unit price ({inv.currency})</th>
+            <th className="py-2">Description</th><th className="py-2 text-end">Qty</th><th className="py-2 text-end">Unit price ({inv.currency}{inv.prices_include_vat ? ", incl. VAT" : ""})</th>
             <th className="py-2 text-end">Taxable amount (AED)</th><th className="py-2 text-end">VAT rate</th><th className="py-2 text-end">VAT (AED)</th></tr></thead>
           <tbody>{inv.lines.map((l) => (
             <tr key={l.id} className="border-b border-slate-200 align-top">

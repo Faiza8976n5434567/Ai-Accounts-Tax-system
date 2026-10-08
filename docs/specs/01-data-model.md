@@ -28,7 +28,7 @@ Every hard-coded item found in `poc/src`, and its new home. Nothing is dropped s
 | 1 | `seed.ts` `ORGS` | 3 demo clients | `organizations` | Demo rows only until production cut-over (PLAN P3-12) |
 | 2 | `seed.ts` `CUSTOMERS`, supplier names in memos | Customers/suppliers as free text | `contacts` | Free-text party names become proper records with TRN |
 | 3 | `seed.ts` journals, `JLine` | Generated ledger | `journals` + `journal_lines` | |
-| 4 | `seed.ts` sales, `SalesInvoice`, `SaleLine` | Sales invoices | `sales_invoices` + `sales_invoice_lines` | Credit notes use the same tables (`doc_type`) |
+| 4 | `seed.ts` sales, `SalesInvoice`, `SaleLine` | Sales invoices | `sales_invoices` + `sales_invoice_lines` | Credit notes use the same tables (`doc_type`); `prices_include_vat` = prices entered incl. VAT (D-54, F-02) |
 | 5 | `PurchaseDoc` (Capture page) | Purchase bills + checks | `purchase_bills` + `purchase_bill_lines` + `bill_checks` | Simulated OCR removed (D-01) |
 | 6 | `BankLine` | Bank lines | `bank_statements` + `bank_transactions` | Uploaded CSV/Excel |
 | 7 | `AuditEntry` | Audit trail (browser) | `audit_log` | Written by database triggers, append-only |

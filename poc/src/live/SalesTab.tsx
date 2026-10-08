@@ -135,7 +135,7 @@ function InvoiceView({ inv, all, accounts, me, canPrepare, canApprove, onClose, 
       </dl>
       {mine && inv.status === "pending" && <p className="mb-3 text-xs text-slate-500">You prepared this, so someone else must approve it (maker-checker).</p>}
       <div className="overflow-x-auto"><table className="w-full min-w-[640px]">
-        <thead><tr><th className="th">Description</th><th className="th">Account</th><th className="th text-end">Qty</th><th className="th text-end">Unit price</th><th className="th">Tax</th><th className="th text-end">Net (AED)</th><th className="th text-end">VAT (AED)</th></tr></thead>
+        <thead><tr><th className="th">Description</th><th className="th">Account</th><th className="th text-end">Qty</th><th className="th text-end">Unit price{inv.prices_include_vat ? " (incl. VAT)" : ""}</th><th className="th">Tax</th><th className="th text-end">Net (AED)</th><th className="th text-end">VAT (AED)</th></tr></thead>
         <tbody>{inv.lines.map((l) => (
           <tr key={l.id}><td className="td">{l.description}</td><td className="td text-xs text-slate-600">{accName.get(l.account_id)}</td><td className="td text-end num">{Number(l.quantity)}</td>
             <td className="td text-end num">{inv.currency} {fmt(l.unit_price)}</td><td className="td">{l.tax_code}</td><td className="td text-end num">{fmt(l.net)}</td><td className="td text-end num">{fmt(l.vat)}</td></tr>
@@ -172,6 +172,7 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, invoi
   const [currency, setCurrency] = useState<"AED" | "USD">((base?.currency as "AED" | "USD") ?? "AED");
   const [ref, setRef] = useState(invoice?.customer_reference ?? "");
   const [notes, setNotes] = useState(invoice?.notes ?? "");
+  const [inclVat, setInclVat] = useState(invoice?.prices_include_vat ?? creditFor?.prices_include_vat ?? false);
   const [lines, setLines] = useState<EditLine[]>(() => (invoice ?? (creditFor ? null : null))?.lines.map((l) => ({ description: l.description, quantity: String(Number(l.quantity)), price: fmtPlain(l.unit_price), accountId: l.account_id, taxCode: l.tax_code }))
     ?? (creditFor ? creditFor.lines.map((l) => ({ description: `Credit: ${l.description}`, quantity: String(Number(l.quantity)), price: fmtPlain(l.unit_price), accountId: l.account_id, taxCode: l.tax_code })) : [{ description: "", quantity: "1", price: "", accountId: "", taxCode: "SR" }]));
   const [rules, setRules] = useState<{ vatBp: number; usdAed: string; issueDays: number } | null>(null);
@@ -190,7 +191,7 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, invoi
   const fx = currency === "USD" ? rules?.usdAed ?? "3.6725" : "1";
   const calc = lines.map((l) => {
     const q = parseQuantity(l.quantity), p = parseAedToFils(l.price);
-    return q !== null && p !== null && p > 0 ? lineAmounts(q, p, l.taxCode === "SR" ? rules?.vatBp ?? 0 : 0, fx) : null;
+    return q !== null && p !== null && p > 0 ? lineAmounts(q, p, l.taxCode === "SR" ? rules?.vatBp ?? 0 : 0, fx, inclVat) : null;
   });
   const totals = documentTotals(calc.filter((c): c is NonNullable<typeof c> => c !== null));
   const remaining = creditFor ? creditRemaining(creditFor, all) : null;
@@ -205,7 +206,7 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, invoi
     const doc: InvoiceDraft = {
       doc_type: isCredit ? "credit_note" : "invoice", contact_id: contactId, issue_date: issueDate, due_date: dueDate || null, supply_date: supplyDate || null,
       supply_emirate: emirate, currency, original_invoice_id: isCredit ? (invoice?.original_invoice_id ?? creditFor?.id ?? null) : null,
-      customer_reference: ref, notes,
+      customer_reference: ref, notes, prices_include_vat: inclVat,
       lines: lines.map((l) => ({ description: l.description.trim(), quantity: l.quantity.trim().replace(/,/g, ""), unit_price: parseAedToFils(l.price)!, account_id: l.accountId, tax_code: l.taxCode })),
     };
     setBusy(true);
@@ -246,9 +247,12 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, invoi
           <select aria-label="Emirate of supply" className={cls} value={emirate} onChange={(e) => setEmirate(e.target.value)}>{emirates.map((e) => <option key={e.code} value={e.code}>{e.name}{e.code === client.emirate_code ? " (head office)" : ""}</option>)}</select></label>
         <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Customer reference / PO</span><input className={cls} value={ref} onChange={(e) => setRef(e.target.value)} /></label>
         <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Notes</span><input className={cls} value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
+        <label className="sm:col-span-3 flex items-start gap-2 text-sm text-slate-700">
+          <input type="checkbox" className="mt-0.5" checked={inclVat} disabled={isCredit} onChange={(e) => setInclVat(e.target.checked)} />
+          <span><b>Prices include VAT</b> — type what the customer pays; the app works out the VAT inside it (amount × 5/105, per line) and the amount before VAT (D-54).</span></label>
       </div>
       <div className="overflow-x-auto"><table className="w-full min-w-[820px]">
-        <thead><tr><th className="th w-[28%]">Description</th><th className="th w-20">Qty</th><th className="th w-32">Unit price ({currency})</th><th className="th">Income account</th><th className="th w-36">Tax</th><th className="th text-end">Net</th><th className="th text-end">VAT</th><th className="th w-8"><span className="sr-only">Remove</span></th></tr></thead>
+        <thead><tr><th className="th w-[28%]">Description</th><th className="th w-20">Qty</th><th className="th w-32">Unit price ({currency}{inclVat ? ", incl. VAT" : ""})</th><th className="th">Income account</th><th className="th w-36">Tax</th><th className="th text-end">Net</th><th className="th text-end">VAT</th><th className="th w-8"><span className="sr-only">Remove</span></th></tr></thead>
         <tbody>{lines.map((l, i) => (
           <tr key={i}>
             <td className="td"><input aria-label={`Line ${i + 1} description`} className={`${cls} !py-1.5`} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} /></td>

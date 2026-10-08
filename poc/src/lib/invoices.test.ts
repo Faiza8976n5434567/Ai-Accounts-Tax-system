@@ -47,3 +47,14 @@ describe("creditRemaining — D-30", () => {
     expect(creditRemaining(inv, docs)).toEqual({ net: 800000, vat: 40000 });
   });
 });
+
+describe("lineAmounts — prices include VAT (D-54, F-02; same as app.sales_line_amounts_gross)", () => {
+  it("paid 60.00 → VAT 2.86, before VAT 57.14", () => expect(lineAmounts(10000n, 6000, SR, "1", true)).toEqual({ netFcy: 5714, vatFcy: 286, net: 5714, vat: 286 }));
+  it("exit-test quarter: 19 invoices paid 2,595.00 → VAT 123.56", () => {
+    const paid = [6000, 4500, 10500, 7500, 30000, 15000, 19500, 12400, 16400, 10000, 7400, 16000, 17000, 20500, 20500, 10400, 7000, 17500, 11400];
+    expect(documentTotals(paid.map((g) => lineAmounts(10000n, g, SR, "1", true)))).toMatchObject({ gross: 259500, vat: 12356, net: 247144 });
+  });
+  it("per line: 15.00 + 45.00 → 0.71 + 2.14", () => expect([1500, 4500].map((g) => lineAmounts(10000n, g, SR, "1", true).vat)).toEqual([71, 214]));
+  it("USD 10.00 incl. VAT → AED 36.73: VAT 1.75, before VAT 34.98", () => expect(lineAmounts(10000n, 1000, SR, "3.6725", true)).toEqual({ netFcy: 952, vatFcy: 48, net: 3498, vat: 175 }));
+  it("zero-rated: no VAT inside", () => expect(lineAmounts(20000n, 1000, 0, "1", true)).toEqual({ netFcy: 2000, vatFcy: 0, net: 2000, vat: 0 }));
+});

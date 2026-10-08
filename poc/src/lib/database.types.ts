@@ -2729,6 +2729,7 @@ export type Database = {
           original_invoice_id: string | null
           posted_at: string | null
           prepared_by: string | null
+          prices_include_vat: boolean
           status: Database["public"]["Enums"]["document_status"]
           supply_date: string | null
           supply_emirate: string
@@ -2759,6 +2760,7 @@ export type Database = {
           original_invoice_id?: string | null
           posted_at?: string | null
           prepared_by?: string | null
+          prices_include_vat?: boolean
           status?: Database["public"]["Enums"]["document_status"]
           supply_date?: string | null
           supply_emirate: string
@@ -2789,6 +2791,7 @@ export type Database = {
           original_invoice_id?: string | null
           posted_at?: string | null
           prepared_by?: string | null
+          prices_include_vat?: boolean
           status?: Database["public"]["Enums"]["document_status"]
           supply_date?: string | null
           supply_emirate?: string

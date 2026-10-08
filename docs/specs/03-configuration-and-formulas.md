@@ -32,7 +32,7 @@ Every calculation the app performs. **Editable** = parameter on the Tax Rules / 
 | ID | Formula | Editable parameters (key) | Default | Legal ref | Tests |
 |---|---|---|---|---|---|
 | **F-01** | Line VAT = round-half-up( net × rate ÷ 10,000 ) | `vat.rate_bp` | 500 (5%) | FDL 8/2017 Art 3 | VAT-01, VAT-09 |
-| **F-02** | VAT inside a gross amount = gross × rate ÷ (10,000 + rate) | `vat.rate_bp` | 500 | — | VAT-17 |
+| **F-02** | VAT inside a gross amount = gross × rate ÷ (10,000 + rate), half-up per line; net = gross − VAT. Used for advances and for sales documents with "prices include VAT" (D-54) | `vat.rate_bp` | 500 | — | VAT-17, VAT-19 |
 | **F-03** | Which VAT 201 box a line goes to (by tax code, sale/purchase, emirate) | `tax_codes.output_box / input_box`, `emirates.vat_box` | per FTA form | VAT 201 form | VAT-01…08 |
 | **F-04** | Box 8 = Σ output boxes; 11 = Σ input boxes; 12 = VAT of 8 + adjustment of 8; 13 = VAT of 11 + adjustment of 11 (D-45); 14 = 12 − 13 | — (fixed) | — | VAT 201 form | VAT-11 |
 | **F-05** | VAT return due date = period end + N days | `vat.return_due_days` | 28 | Exec. Reg. Art 69 — VERIFY | VAT-12 |

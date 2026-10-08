@@ -31,8 +31,17 @@ const rateMicros = (rate: string): bigint => {
 /**
  * One line: net in document currency = quantity × unit price (half-up); AED net = that × rate (half-up,
  * F-24); VAT = AED net × rate ÷ 10,000 (half-up, F-01). VAT in the document currency likewise.
+ * Prices include VAT (D-54, F-02; mirrors app.sales_line_amounts_gross): gross = quantity × unit price,
+ * AED gross = that × rate; VAT = gross × rate ÷ (10,000 + rate), net = gross − VAT.
  */
-export function lineAmounts(quantity: bigint, unitPrice: number, rateBp: number, fxRate: string) {
+export function lineAmounts(quantity: bigint, unitPrice: number, rateBp: number, fxRate: string, pricesIncludeVat = false) {
+  if (pricesIncludeVat) {
+    const grossFcy = mulDivHalfUp(quantity, BigInt(unitPrice), 10000n);
+    const gross = fxRate === "1" ? grossFcy : mulDivHalfUp(grossFcy, rateMicros(fxRate), 1_000_000n);
+    const vatFcy = mulDivHalfUp(grossFcy, BigInt(rateBp), 10000n + BigInt(rateBp));
+    const vat = mulDivHalfUp(gross, BigInt(rateBp), 10000n + BigInt(rateBp));
+    return { netFcy: Number(grossFcy - vatFcy), vatFcy: Number(vatFcy), net: Number(gross - vat), vat: Number(vat) };
+  }
   const netFcy = mulDivHalfUp(quantity, BigInt(unitPrice), 10000n);
   const vatFcy = mulDivHalfUp(netFcy, BigInt(rateBp), 10000n);
   const net = fxRate === "1" ? netFcy : mulDivHalfUp(netFcy, rateMicros(fxRate), 1_000_000n);
@@ -74,6 +83,7 @@ export async function listInvoices(orgId: string): Promise<InvoiceWithLines[]> {
 export interface InvoiceDraft {
   doc_type: "invoice" | "credit_note"; contact_id: string; issue_date: string; due_date: string | null; supply_date: string | null;
   supply_emirate: string; currency: "AED" | "USD"; original_invoice_id: string | null; customer_reference: string; notes: string;
+  prices_include_vat: boolean;
   lines: { description: string; quantity: string; unit_price: number; account_id: string; tax_code: string }[];
 }
 export async function saveInvoice(orgId: string, id: string | null, doc: InvoiceDraft): Promise<string> {

@@ -72,6 +72,8 @@
 | D-51 | The **e-invoicing ASP deadline** (config `einvoicing.asp_by`, VERIFY) is shown on every client's calendar. | 2026-10-08 |
 | D-52 | **Data migration (answers Q-25):** the opening journal (old trial balance at the cut-off) posts receivables/payables to **3999 Opening balance clearing**; each unpaid invoice/bill of the old system is entered as an **opening document** (old number, real dates, open amount, no VAT) — it ages, appears in statements and is settled by receipts/payments. Posting (Firm Admin, maker-checker) moves it from 3999 to 1100/2000 at the conversion date; 3999 must end at zero (integrity warning until it does). AED only for now. | 2026-10-08 |
 | D-53 | **Phase 2 exit test** uses anonymised names (company, customers, suppliers, dummy TRNs) with real amounts and dates — no identifiable client data in the development system before OA-13/14/15. | 2026-10-08 |
+| D-54 | **Prices include VAT** (Faizan, exit-test client): a sales invoice/credit note may be entered with VAT-inclusive prices. Per line: gross = qty × price; VAT = gross × 5/105 half-up (F-02); net = gross − VAT. Credit notes follow their invoice. Default off. The pilot shop writes VAT as 5% *of the total* (e.g. 60 → 3.00); correct is 2.86. | 2026-10-08 |
+| D-55 | **Exit test split** (Faizan): the pilot material (retail shop, VAT quarter Nov 2025 – Jan 2026: 19 sales invoices, 4 supplier invoices, VAT workings) supports a **VAT-return test** now; the full trial-balance test follows when a client's trial balances and bank statements are available. Expected: box 1b 2,471.44 / 123.56; box 9 838.00 / 41.90; payable 81.66 (filed: 81.36 — 0.30 under-declared, for Faizan to advise the client). | 2026-10-08 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -383,6 +385,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | VAT-16 | Plain overpayment of 500 on account | Not in any VAT box until applied to an invoice | U | ✅ |
 | VAT-18 | Quarter with no zero-rated, exempt or reverse-charge activity | Boxes 2, 3, 4, 5, 6, 7, 10 and every unused emirate box shown as 0.00 / 0.00 — none blank or hidden | U+E | ✅ |
 | VAT-17 | Advance of 10,500 received against a specific taxable supply | Output VAT 500 (10,500 × 5/105) in the period of receipt | U | 🔍 |
+| VAT-19 | Invoice with prices including VAT (D-54): paid 60.00 | VAT 2.86, net 57.14; 19 shop invoices paid 2,595.00 → VAT 123.56, net 2,471.44; per line 15 + 45 → 0.71 + 2.14; USD 10.00 → AED 36.73, VAT 1.75 | U+DB | ✅ |
 
 ### 6.6 Corporate Tax (CT) — 9% above AED 375,000
 | ID | Scenario | Expected | Type | Status |
@@ -517,3 +520,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-08 | D-50, D-51. **P3-05 built:** compliance calendar, reminders job, test email, email log. 478 database + 264 unit tests. |
 | 2026-10-08 | Faizan tested Deadlines, the VAT return (boxes, drill-down, reconciliation, adjustments, approval/freeze/lock, filing, exports) and client logins (invite, roles, 2FA, removal) — all fine. P3-01/02/03/05/06 ✅. Still open in Phase 3: P3-04 golden set, P3-08 → 3-12 (deployment), FAF (later). Phase 2: sign-off + exit test (Q-01). |
 | 2026-10-08 | **D-52 built** (opening documents via 3999, applied by Faizan) + "Opening balances" client tab; `…101100_bank_fk_indexes.sql` closes 4 performance-advisor notices on the bank tables. Exit-test procedure in `docs/PHASE2-EXIT-TEST.md` (D-53 anonymised data). 512 database + 267 unit tests. |
+| 2026-10-08 | Exit-test material received (retail shop, Nov 2025 – Jan 2026). D-54 "Prices include VAT" built (`…101200_prices_include_vat.sql`, test `24_prices_include_vat.sql` 9 tests, 5 unit tests, VAT-19); D-55 VAT-return exit test first. 521 database + 272 unit tests. |
