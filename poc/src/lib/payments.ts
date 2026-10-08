@@ -9,7 +9,7 @@ export type Allocation = Database["public"]["Tables"]["payment_allocations"]["Ro
 export type OpenDocument = Database["public"]["Views"]["open_documents"]["Row"];
 export type CreditBalance = Database["public"]["Views"]["credit_balances"]["Row"];
 export type PaymentKind = Database["public"]["Enums"]["payment_kind"];
-export type PaymentWithDetails = Payment & { allocations: Allocation[]; contact: string; preparer: string | null; approver: string | null };
+export type PaymentWithDetails = Payment & { allocations: Allocation[]; contact: string; preparer: string | null; approver: string | null; reversed: boolean };
 
 export const KIND: Record<PaymentKind, { label: string; customer: boolean; moneyIn: boolean; refund: boolean }> = {
   customer_receipt: { label: "Customer receipt", customer: true, moneyIn: true, refund: false },
@@ -56,12 +56,13 @@ export const daysOverdue = (dueDate: string, today: string) => Math.round((Date.
 // ── Data access ─────────────────────────────────────────────────────────────────────────
 export async function listPayments(orgId: string): Promise<PaymentWithDetails[]> {
   const r = await db().from("payments")
-    .select("*, payment_allocations!payment_allocations_payment_id_organization_id_fkey(*), contacts!payments_contact_id_organization_id_fkey(name), preparer:profiles!payments_prepared_by_fkey(full_name), approver:profiles!payments_approved_by_fkey(full_name)")
+    .select("*, payment_allocations!payment_allocations_payment_id_organization_id_fkey(*), contacts!payments_contact_id_organization_id_fkey(name), preparer:profiles!payments_prepared_by_fkey(full_name), approver:profiles!payments_approved_by_fkey(full_name), journal:journals!payments_journal_id_organization_id_fkey(status)")
     .eq("organization_id", orgId).order("payment_date", { ascending: false }).order("created_at", { ascending: false });
   if (r.error) throw r.error;
-  type Row = Payment & { payment_allocations: Allocation[] | null; contacts: { name: string } | null; preparer: { full_name: string } | null; approver: { full_name: string } | null };
-  return ((r.data ?? []) as unknown as Row[]).map(({ payment_allocations, contacts, preparer, approver, ...p }) => ({
+  type Row = Payment & { payment_allocations: Allocation[] | null; contacts: { name: string } | null; preparer: { full_name: string } | null; approver: { full_name: string } | null; journal: { status: string } | null };
+  return ((r.data ?? []) as unknown as Row[]).map(({ payment_allocations, contacts, preparer, approver, journal, ...p }) => ({
     ...p, allocations: payment_allocations ?? [], contact: contacts?.name ?? "", preparer: preparer?.full_name ?? null, approver: approver?.full_name ?? null,
+    reversed: journal?.status === "reversed",
   }));
 }
 export async function listOpenDocuments(orgId: string): Promise<OpenDocument[]> {
@@ -90,6 +91,12 @@ export const deletePayment = (id: string) => call("delete_payment", id);
 export async function postPayment(id: string): Promise<string> { const r = await db().rpc("post_payment", { p_id: id }); if (r.error) throw r.error; return r.data as string; }
 export async function sendBackPayment(id: string, reason: string) { const r = await db().rpc("reject_payment", { p_id: id, p_reason: reason }); if (r.error) throw r.error; }
 /** The firm's write-off limit in fils (D-34); AED 1.00 when not set. */
+/** D-40: asks for the receipt/payment to be reversed; a second Firm Admin approves it under Approvals. */
+export async function requestPaymentReversal(journalId: string, reason: string, date: string) {
+  const r = await db().rpc("reverse_journal", { p_journal_id: journalId, p_reason: reason, p_date: date });
+  if (r.error) throw r.error;
+}
+
 export async function smallDifferenceLimit(firmId: string): Promise<number> {
   const r = await db().from("firm_settings").select("value").eq("firm_id", firmId).eq("key", "small_difference_limit").maybeSingle();
   return r.data ? Number(r.data.value) : 100;

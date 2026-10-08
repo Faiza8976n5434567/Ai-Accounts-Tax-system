@@ -152,6 +152,34 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await expect(receipt.getByRole("button", { name: "Approve and post" })).toHaveCount(0);
   await receipt.getByRole("button", { name: "Close" }).first().click();
 
+  // P2-05 · bank: set up 1010, upload the bank's own CSV (columns guessed, D-38), the same file twice is refused
+  // (BANK-01), and a bank charge is posted to 6400 for a second person's approval (D-39).
+  await page.locator("aside").getByRole("button", { name: "Bank", exact: true }).click();
+  await page.getByRole("button", { name: "Set up bank account" }).click();
+  const setup = page.getByRole("dialog", { name: "Set up bank account" });
+  await setup.getByLabel("Name").fill("Current account");
+  await setup.getByLabel("Bank", { exact: true }).fill("Emirates NBD");
+  await setup.getByRole("button", { name: "Save" }).click();
+  const csv = { name: "enbd-oct.csv", mimeType: "text/csv", buffer: Buffer.from(
+    'Value Date,Narration,Debit,Credit,Balance\n07/10/2026,BANK CHARGE,52.50,,-52.50\n08/10/2026,TRANSFER E2E BUYER,,"11,000.00","10,947.50"\n') };
+  for (const attempt of [1, 2]) {
+    await page.getByRole("button", { name: "Upload statement" }).click();
+    const up = page.getByRole("dialog", { name: "Upload bank statement" });
+    await up.getByLabel("Statement file").setInputFiles(csv);
+    await expect(up.getByText("2 line(s) ready")).toBeVisible();
+    await up.getByRole("button", { name: "Import" }).click();
+    if (attempt === 1) await expect(page.getByText("2 new line(s) imported")).toBeVisible();
+    else {
+      await expect(up.getByRole("alert")).toContainText("already uploaded");
+      await up.getByRole("button", { name: "Cancel" }).click();
+    }
+  }
+  await page.getByRole("row", { name: /BANK CHARGE/ }).getByRole("button", { name: "Other…" }).click();
+  const other = page.getByRole("dialog");
+  await other.getByLabel("Account").selectOption({ label: "6400 · Bank charges" });
+  await other.getByRole("button", { name: "Send for approval" }).click();
+  await expect(page.getByText("Sent for approval — it is matched once a second person approves it")).toBeVisible();
+
   await page.locator("aside").getByRole("button", { name: "Trial balance & ledger" }).click();
   await expect(page.getByText("Balanced")).toBeVisible();
   await expect(page.getByRole("row", { name: /1100\s*Trade receivables/ })).toContainText("10,500.00");

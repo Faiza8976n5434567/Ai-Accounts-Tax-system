@@ -10,7 +10,7 @@ import { friendlyDbError } from "../lib/journals";
 import { listContacts, type Contact } from "../lib/contacts";
 import type { Account, Client } from "../lib/clients";
 import {
-  daysOverdue, deletePayment, KIND, listCredits, listOpenDocuments, listPayments, postPayment, savePayment, sendBackPayment, settlement,
+  daysOverdue, deletePayment, KIND, listCredits, requestPaymentReversal, listOpenDocuments, listPayments, postPayment, savePayment, sendBackPayment, settlement,
   smallDifferenceLimit, submitPayment, suggestAllocations, type CreditBalance, type OpenDocument, type PaymentDraft, type PaymentKind, type PaymentWithDetails,
 } from "../lib/payments";
 import { supabase } from "../lib/supabase";
@@ -74,7 +74,7 @@ export function PaymentsTab({ client, accounts, perms }: { client: Client; accou
                 <td className="td">{shortDate(p.payment_date)}</td>
                 <td className="td"><Badge tone={KIND[p.kind].moneyIn ? "emerald" : "indigo"}>{KIND[p.kind].label}</Badge></td>
                 <td className="td">{p.contact}</td>
-                <td className="td"><Badge tone={STATUS[p.status][1]} dot>{STATUS[p.status][0]}</Badge></td>
+                <td className="td">{p.reversed ? <Badge tone="rose" dot>Reversed</Badge> : <Badge tone={STATUS[p.status][1]} dot>{STATUS[p.status][0]}</Badge>}</td>
                 <td className="td text-end num font-medium">{p.currency} {fmt(p.amount_fcy)}</td>
                 <td className="td text-end num">{fmtCredit(credits ?? [], p.id)}</td>
               </tr>
@@ -124,7 +124,9 @@ export function PaymentsTab({ client, accounts, perms }: { client: Client; accou
         onSubmit={() => act(() => submitPayment(shownPayment.id), "Sent for approval")}
         onDelete={() => act(() => deletePayment(shownPayment.id), "Draft deleted")}
         onApprove={() => act(async () => toast(`Posted as ${await postPayment(shownPayment.id)}`), "Journal posted")}
-        onSendBack={(reason) => act(() => sendBackPayment(shownPayment.id, reason), "Sent back to the preparer")} />}
+        onSendBack={(reason) => act(() => sendBackPayment(shownPayment.id, reason), "Sent back to the preparer")}
+        canReverse={perms.includes("reverse_journal")}
+        onReverse={(reason) => act(() => requestPaymentReversal(shownPayment.journal_id!, reason, today), "Reversal requested — a second Firm Admin approves it under Approvals")} />}
 
       {editing && contacts && open && credits && <PaymentEditor orgId={client.id} kind={editing.kind} payment={editing.payment} accounts={accounts} contacts={contacts}
         open={open} credits={credits} limit={limit ?? 100} onClose={() => setEditing(null)} onSaved={(id) => { setEditing(null); refreshAll(); setOpenId(id); }} />}
@@ -138,11 +140,13 @@ function fmtCredit(credits: CreditBalance[], id: string) {
 }
 
 // ── View ────────────────────────────────────────────────────────────────────────────────
-function PaymentView({ p, names, open, me, canPrepare, canApprove, onClose, onEdit, onSubmit, onDelete, onApprove, onSendBack }: {
-  p: PaymentWithDetails; names: Map<string, string>; open: OpenDocument[]; me: string; canPrepare: boolean; canApprove: boolean;
+function PaymentView({ p, names, open, me, canPrepare, canApprove, canReverse, onClose, onEdit, onSubmit, onDelete, onApprove, onSendBack, onReverse }: {
+  p: PaymentWithDetails; names: Map<string, string>; open: OpenDocument[]; me: string; canPrepare: boolean; canApprove: boolean; canReverse: boolean;
   onClose: () => void; onEdit: () => void; onSubmit: () => void; onDelete: () => void; onApprove: () => void; onSendBack: (reason: string) => void;
+  onReverse: (reason: string) => void;
 }) {
   const [reason, setReason] = useState<string | null>(null);
+  const [revReason, setRevReason] = useState<string | null>(null);
   const [docNos, setDocNos] = useState<Map<string, string>>(new Map());
   const mine = p.prepared_by === me;
   const k = KIND[p.kind];
@@ -174,9 +178,11 @@ function PaymentView({ p, names, open, me, canPrepare, canApprove, onClose, onEd
           <button className="btn-danger" disabled={reason !== null && !reason.trim()} onClick={() => reason === null ? setReason("") : onSendBack(reason.trim())}><XCircle size={15} />Send back</button>
           {!mine && <button className="btn-primary bg-emerald-600" onClick={onApprove}><CheckCircle2 size={15} />Approve and post</button>}
         </>}
+        {p.status === "posted" && !p.reversed && canReverse && <button className="btn-danger" disabled={revReason !== null && !revReason.trim()}
+          onClick={() => revReason === null ? setRevReason("") : onReverse(revReason.trim())}><Undo2 size={15} />Reverse…</button>}
       </>}>
       <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-4">
-        <div><dt className="text-xs text-slate-500">Status</dt><dd><Badge tone={STATUS[p.status][1]} dot>{STATUS[p.status][0]}</Badge></dd></div>
+        <div><dt className="text-xs text-slate-500">Status</dt><dd>{p.reversed ? <Badge tone="rose" dot>Reversed</Badge> : <Badge tone={STATUS[p.status][1]} dot>{STATUS[p.status][0]}</Badge>}</dd></div>
         <div><dt className="text-xs text-slate-500">Date</dt><dd>{shortDate(p.payment_date)}</dd></div>
         <div><dt className="text-xs text-slate-500">Amount</dt><dd className="num">{p.currency} {fmt(p.amount_fcy)}</dd></div>
         <div><dt className="text-xs text-slate-500">Bank charges</dt><dd className="num">{p.currency} {fmt(p.bank_charges_fcy)}</dd></div>
@@ -202,6 +208,8 @@ function PaymentView({ p, names, open, me, canPrepare, canApprove, onClose, onEd
         </ul>)}
       {reason !== null && <label className="block mt-4"><span className="block text-xs font-medium text-slate-600 mb-1.5">Why is it being sent back? Then click “Send back” again.</span>
         <textarea className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} /></label>}
+      {revReason !== null && <label className="block mt-4"><span className="block text-xs font-medium text-slate-600 mb-1.5">Why should it be reversed (D-40)? Then click “Reverse…” again. A second Firm Admin approves it; the {KIND[p.kind].customer ? "invoices" : "bills"} it settled reopen.</span>
+        <textarea aria-label="Reversal reason" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" rows={2} value={revReason} onChange={(e) => setRevReason(e.target.value)} /></label>}
     </Modal>
   );
 }

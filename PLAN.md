@@ -231,7 +231,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P2-02 | Sales invoices + credit notes with `INV-YYYY-MM-0001` numbering (D-22), supply emirate (D-10), AED or USD (D-21) | ARAP-04, DM-02, VAT-02, NUM-01 → 07, FX-01 | 🟡 built — `…101300_sales_invoices.sql` (31 pgTAP tests: VAT-01/02/09/10, FX-01, NUM-01/02/06/07, DM-15, D-30; applied by Faizan) + `…101400_client_address.sql`; **Sales invoices** screen (editor with live totals matching the database, D-29 warnings, approve/send back, credit notes), **Print / PDF** tax invoice (Art 59 fields), client **Edit details** with address; 13 calculation unit tests; covered by the live journey (invoice → approval → INV number → trial balance → print) |
 | P2-03 | Purchase bills + debit notes, attachments (private storage), compliance checks & risk | ARAP-06, DM-08, SEC-13, SEC-20 | 🟡 built — live in Supabase (Faizan applied `…101500`), screen + live journey green; awaiting Faizan's check |
 | P2-04 | Receipts & payments (AED/USD), allocations, **Customer Credits** (auto-apply, refunds) (D-11) | ARAP-01 → 05, ARAP-08 → 12, DM-05, DM-06, FX-02, FX-03 | 🟡 built — `…101600_receipts_payments.sql` (37 pgTAP tests, applied by Faizan): receipts, supplier payments, refunds, oldest-first and chosen allocations, Customer Credits / Supplier advances auto-applied on the next invoice/bill, bank charges and small write-offs (D-34), exchange differences (D-37), open items with ageing; **Receipts & payments** screen; 12 unit tests; receipt step in the live journey. Follow-up: undo a posted receipt (with P2-05) |
-| P2-05 | Bank accounts, statement upload, duplicate detection, matching, reconciliation | BANK-01 → 03, DM-07 | 🟡 in progress (D-38 → D-41) |
+| P2-05 | Bank accounts, statement upload, duplicate detection, matching, reconciliation | BANK-01 → 03, DM-07 | 🟡 built — `…20261008100000_bank.sql` (31 pgTAP tests, applied by Faizan): bank accounts, CSV/Excel upload with remembered column mapping, duplicate protection, auto/manual matching, bank-line journals (no VAT), receipts/payments from bank lines, **reverse receipt/payment with approval (D-40)**, approved & frozen month-end reconciliation; **Bank** screen; 13 unit tests; bank step in the live journey |
 | P2-06 | Reports: TB, GL, P&L, Balance Sheet, AR/AP ageing, customer statement; Excel/PDF export | RPT-01 → 04, SEC-14, D-28 roll-forward | ⬜ |
 | P2-07 | Opening-balance & contacts import from one Excel template (Spec 05) | — | ⬜ |
 | P2-08 | Nightly integrity checks (pg_cron) + Integrity page | — | ⬜ |
@@ -344,9 +344,9 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 ### 6.4 Bank (BANK)
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
-| BANK-01 | Same statement uploaded twice | Duplicates detected, not imported twice | D | ⬜ |
-| BANK-02 | Auto-match: equal amount within ±5 days | Matched one-to-one; never one journal to two lines | U | ⬜ |
-| BANK-03 | Reconciliation at month-end | Book balance + reconciling items = statement balance | D | ⬜ |
+| BANK-01 | Same statement uploaded twice | Duplicates detected, not imported twice | D | ✅ |
+| BANK-02 | Auto-match: equal amount within ±5 days | Matched one-to-one; never one journal to two lines | U | ✅ |
+| BANK-03 | Reconciliation at month-end | Book balance + reconciling items = statement balance | D | ✅ |
 
 ### 6.5 VAT (VAT) — 5% standard rate
 | ID | Scenario | Expected | Type | Status |
@@ -491,3 +491,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-07 | **P2-03 built:** purchase bills & debit notes, Art 59 checks + risk score, automatic VAT non-recovery with approver override, attachments (private storage, SHA-256 once per client), Purchase bills screen. 282 database + 194 unit tests; live journey now includes a bill approved by a second admin (VAT input 1,250 on the trial balance). Fixed the live-journey test ("Customer" also matched "Customer reference"). |
 | 2026-10-07 | Decisions D-34 (AED 1.00 write-off limit + bank charges box), D-35 (advances with VAT deferred to the VAT return work), D-36 (Supplier advances), D-37 (exchange differences to 4310/6410). |
 | 2026-10-08 | **P2-04 built:** receipts, supplier payments and refunds; allocations (automatic oldest-first or chosen); Customer Credits and Supplier advances applied automatically to the next invoice/bill; open items with ageing; new accounts 1160, 4310, 6190, 6410 added to every client. Faizan applied `…101600`. 319 database + 206 unit tests. |
+| 2026-10-08 | Decisions D-38 (statement column mapping), D-39 (no VAT from bank lines), D-40 (reverse receipts/payments with approval), D-41 (approved, frozen reconciliations). **P2-05 built** and applied (`…20261008100000_bank.sql`); SheetJS added for Excel statements (loaded only on upload). 350 database + 218 unit tests. |
