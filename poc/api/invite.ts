@@ -15,8 +15,10 @@ import type { Database } from "../src/lib/database.types";
 import { renderTemplate, roleLabel, shortDate, textToHtml } from "../src/lib/email";
 
 export interface InvitationRow { invitation_id: string; email: string; full_name: string; role: string; expires_at: string; firm_name: string; inviter_name: string }
+/** Firm staff (no organizationId) or a client login (P3-06: organizationId, and validTo for Read-only). */
+export interface InviteInput { email: string; fullName: string; role: string; organizationId?: string; validTo?: string }
 export interface InviteDeps {
-  createInvitation(token: string, input: { email: string; fullName: string; role: string }): Promise<{ row?: InvitationRow; error?: { code?: string; message: string } }>;
+  createInvitation(token: string, input: InviteInput): Promise<{ row?: InvitationRow; error?: { code?: string; message: string } }>;
   generateLink(email: string, fullName: string): Promise<{ link?: string; error?: string }>;
   sendInviteEmail(row: InvitationRow, link: string): Promise<{ sent: boolean; note?: string }>;
 }
@@ -32,14 +34,18 @@ export async function handleInvite(request: Request, deps: InviteDeps): Promise<
   const token = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!token) return json(401, { error: "Please sign in again." });                                  // SEC-15
 
-  let body: { email?: unknown; fullName?: unknown; role?: unknown };
+  let body: { email?: unknown; fullName?: unknown; role?: unknown; organizationId?: unknown; validTo?: unknown };
   try { body = await request.json(); } catch { return json(400, { error: "Invalid request." }); }
-  const { email, fullName, role } = body;
+  const { email, fullName, role, organizationId, validTo } = body;
   if (typeof email !== "string" || typeof fullName !== "string" || typeof role !== "string") {
     return json(400, { error: "Email, name and role are required." });
   }
+  if (organizationId !== undefined && (typeof organizationId !== "string" || !/^[0-9a-f-]{36}$/i.test(organizationId))) return json(400, { error: "Invalid request." });
+  if (validTo !== undefined && validTo !== null && (typeof validTo !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(validTo))) return json(400, { error: "Invalid end date." });
 
-  const { row, error } = await deps.createInvitation(token, { email, fullName, role });
+  const { row, error } = await deps.createInvitation(token, {
+    email, fullName, role, ...(organizationId ? { organizationId } : {}), ...(typeof validTo === "string" ? { validTo } : {}),
+  });
   if (error || !row) {
     const code = error?.code ?? "";
     if (code === "PGRST301" || code === "PGRST302" || /jwt/i.test(error?.message ?? "")) return json(401, { error: "Please sign in again." });
@@ -70,7 +76,10 @@ export function liveDeps(env: Record<string, string | undefined>): InviteDeps {
         auth: { persistSession: false, autoRefreshToken: false },
         global: { headers: { Authorization: `Bearer ${token}` } },
       });
-      const { data, error } = await asUser.rpc("create_invitation", { p_email: input.email, p_full_name: input.fullName, p_role: input.role });
+      const { data, error } = input.organizationId
+        ? await asUser.rpc("create_client_invitation", { p_organization_id: input.organizationId, p_email: input.email, p_full_name: input.fullName,
+            p_role: input.role, ...(input.validTo ? { p_valid_to: input.validTo } : {}) })
+        : await asUser.rpc("create_invitation", { p_email: input.email, p_full_name: input.fullName, p_role: input.role });
       if (error) return { error: { code: error.code, message: error.message } };
       const row = Array.isArray(data) ? data[0] : undefined;
       return row ? { row } : { error: { message: "No invitation returned" } };

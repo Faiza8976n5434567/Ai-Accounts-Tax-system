@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { handleInvite, type InviteDeps, type InvitationRow } from "./invite";
+import { handleInvite, type InviteDeps, type InviteInput, type InvitationRow } from "./invite";
 
 const row: InvitationRow = {
   invitation_id: "11111111-1111-1111-1111-111111111111", email: "aisha@example.com", full_name: "Aisha Khan",
@@ -82,5 +82,30 @@ describe("POST /api/invite — success (D-24)", () => {
     expect(res.status).toBe(200);
     expect(body.emailSent).toBe(false);
     expect(body.emailNote).toBe("copy the link");
+  });
+});
+
+describe("POST /api/invite — client logins (P3-06)", () => {
+  const org = "8f300340-5b2f-4a08-86d5-b8198a9e517b";
+  it("passes the client and the read-only end date to the database", async () => {
+    let seen: InviteInput | null = null;
+    const res = await handleInvite(req({ ...good, role: "read_only", organizationId: org, validTo: "2027-01-06" }),
+      deps({ createInvitation: async (_t, input) => { seen = input; return { row: { ...row, role: "read_only" } }; } }));
+    expect(res.status).toBe(200);
+    expect(seen).toEqual({ email: good.email, fullName: good.fullName, role: "read_only", organizationId: org, validTo: "2027-01-06" });
+  });
+  it("firm staff invitations carry no client", async () => {
+    let seen: InviteInput | null = null;
+    await handleInvite(req(good), deps({ createInvitation: async (_t, input) => { seen = input; return { row }; } }));
+    expect(seen).toEqual(good);
+  });
+  it("rejects a malformed client id or end date", async () => {
+    expect((await handleInvite(req({ ...good, organizationId: "x'; drop" }), deps())).status).toBe(400);
+    expect((await handleInvite(req({ ...good, organizationId: org, validTo: "next week" }), deps())).status).toBe(400);
+  });
+  it("RBAC-15 · the database's refusal is shown as 403", async () => {
+    const res = await handleInvite(req({ ...good, organizationId: org }), deps({ createInvitation: async () => ({ error: { code: "42501", message: "Only a Firm Admin can invite a Client Owner" } }) }));
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "Only a Firm Admin can invite a Client Owner" });
   });
 });

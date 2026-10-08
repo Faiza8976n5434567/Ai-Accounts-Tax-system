@@ -3353,6 +3353,21 @@ export type Database = {
         Args: { p_bank_account_id: string; p_end: string }
         Returns: Json
       }
+      client_users: {
+        Args: { p_organization_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          invited_by_name: string
+          kind: string
+          role: string
+          status: string
+          valid_from: string
+          valid_to: string
+        }[]
+      }
       config_value: { Args: { p_key: string; p_on?: string }; Returns: Json }
       contact_statement: {
         Args: {
@@ -3397,6 +3412,24 @@ export type Database = {
           p_vat_registered?: boolean
         }
         Returns: string
+      }
+      create_client_invitation: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_organization_id: string
+          p_role: string
+          p_valid_to?: string
+        }
+        Returns: {
+          email: string
+          expires_at: string
+          firm_name: string
+          full_name: string
+          invitation_id: string
+          inviter_name: string
+          role: string
+        }[]
       }
       create_invitation: {
         Args: { p_email: string; p_full_name: string; p_role: string }
@@ -3517,6 +3550,10 @@ export type Database = {
         Args: { p_reason: string; p_return_id: string }
         Returns: undefined
       }
+      remove_client_user: {
+        Args: { p_membership_id: string; p_reason: string }
+        Returns: undefined
+      }
       reopen_period: {
         Args: { p_period_id: string; p_reason: string }
         Returns: undefined
@@ -3524,6 +3561,10 @@ export type Database = {
       reverse_journal: {
         Args: { p_date?: string; p_journal_id: string; p_reason: string }
         Returns: string
+      }
+      revoke_client_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: undefined
       }
       revoke_invitation: {
         Args: { p_invitation_id: string }

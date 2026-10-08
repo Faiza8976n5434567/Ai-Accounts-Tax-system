@@ -250,6 +250,16 @@ test("sign in with MFA → add client → journal → second admin approves → 
   await expect(page.getByText("Waiting for approval").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Approve and freeze" })).toHaveCount(0);
 
+  // P3-06 · client logins: a Firm Admin can invite a Client Owner, Staff or Read-only user (end date pre-filled, D-49)
+  await page.locator("aside").getByRole("button", { name: "Client users" }).click();
+  await expect(page.getByText("No client logins yet.")).toBeVisible();
+  await page.getByRole("button", { name: "Invite", exact: true }).click();
+  const invDlg = page.getByRole("dialog", { name: /Invite to/ });
+  await expect(invDlg.getByLabel("Role").locator("option")).toHaveText(["Client Owner", "Client Staff", "Read-only"]);
+  await invDlg.getByLabel("Role").selectOption({ label: "Read-only" });
+  await expect(invDlg.getByLabel("Access ends on")).not.toHaveValue("");
+  await invDlg.getByRole("button", { name: "Cancel" }).click();
+
   // P2-08 · integrity checks run on demand: no problems (bank housekeeping warnings are possible)
   await page.locator("aside").getByRole("button", { name: "Integrity" }).click();
   const icRow = page.getByRole("row", { name: new RegExp(CLIENT) });

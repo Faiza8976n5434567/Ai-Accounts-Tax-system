@@ -4,10 +4,10 @@
  * demo screens remain available only in the demo build (`vite --mode demo`).
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Banknote, BookOpen, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, FileCheck2, Landmark, LayoutDashboard, ReceiptText, LogOut, Menu, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, X } from "lucide-react";
+import { Banknote, BookOpen, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, FileCheck2, Landmark, LayoutDashboard, ReceiptText, LogOut, Menu, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, Users, X } from "lucide-react";
 import { useAuth } from "../components/AuthGate";
 import { cx } from "../components/ui";
-import { listClients, type Client } from "../lib/clients";
+import { listClients, myFirmRole, type Client } from "../lib/clients";
 import { parseRoute, routeHash, type ClientTab, type Route } from "./routes";
 import { ClientsPage } from "./ClientsPage";
 import { ClientPage } from "./ClientPage";
@@ -36,12 +36,15 @@ export function LiveApp() {
     document.title = `${title} · ${auth.appName}`;
   }, [route, client, auth.appName]);
 
-  const nav: { label: string; icon: ReactNode; to: Route; active: boolean }[] = [
+  const allNav: { label: string; icon: ReactNode; to: Route; active: boolean }[] = [
     { label: "Clients", icon: <Building2 size={17} />, to: { page: "clients" }, active: route.page === "clients" },
     { label: "Users & invites", icon: <UserPlus size={17} />, to: { page: "team" }, active: route.page === "team" },
     { label: "Integrity", icon: <ShieldCheck size={17} />, to: { page: "integrity" }, active: route.page === "integrity" },
     { label: "Admin", icon: <Settings size={17} />, to: { page: "admin", tab: "profile" }, active: route.page === "admin" },
   ];
+  // Client users (P3-06) see only their own companies — firm screens are for firm staff.
+  const { data: firmRole } = useLoad(myFirmRole);
+  const nav = firmRole ? allNav : allNav.filter((n) => n.to.page === "clients").map((n) => ({ ...n, label: firmRole === null ? "My companies" : n.label }));
   const clientNav: { label: string; icon: ReactNode; tab: ClientTab }[] = [
     { label: "Overview", icon: <LayoutDashboard size={17} />, tab: "overview" },
     { label: "Customers & suppliers", icon: <Contact size={17} />, tab: "contacts" },
@@ -55,6 +58,7 @@ export function LiveApp() {
     { label: "Reports", icon: <Scale size={17} />, tab: "reports" },
     { label: "Chart of accounts", icon: <BookOpen size={17} />, tab: "accounts" },
     { label: "Periods", icon: <CalendarRange size={17} />, tab: "periods" },
+    { label: "Client users", icon: <Users size={17} />, tab: "users" },
   ];
 
 
