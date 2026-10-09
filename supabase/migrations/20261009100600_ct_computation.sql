@@ -117,7 +117,7 @@ declare
   v_revenue bigint; v_expenses bigint; v_profit bigint; v_add bigint; v_adj bigint; v_ti bigint;
   v_lbf bigint; v_relief bigint := 0; v_loss bigint := 0; v_taxable bigint; v_ct bigint := 0; v_lcf bigint;
   v_sbr_elected boolean; v_sbr_ok boolean; v_sbr boolean; v_prev public.ct_returns; v_prev_period public.tax_periods;
-  v_warn jsonb := '[]'; v_addbacks jsonb; v_adjs jsonb; v_failed text;
+  v_warn jsonb := '[]'; v_addbacks jsonb; v_adjs jsonb; v_failed text; v_lines jsonb;
 begin
   select * into o from public.organizations where id = tp.organization_id;
   select * into r from public.ct_returns where tax_period_id = tp.id;
@@ -134,6 +134,12 @@ begin
   where l.organization_id = o.id and j.status in ('posted', 'reversed') and j.entry_date between tp.start_date and tp.end_date
     and a.type in ('revenue', 'expense') and coalesce(a.subtype, '') <> 'ct_expense';
   v_profit := v_revenue - v_expenses;
+  select coalesce(jsonb_agg(jsonb_build_object('account_id', id, 'account_code', code, 'account_name', name, 'type', type, 'amount', amount) order by code), '[]') into v_lines
+  from (select a.id, a.code, a.name, a.type::text, sum(case when a.type = 'revenue' then l.credit - l.debit else l.debit - l.credit end) amount
+        from public.journal_lines l join public.journals j on j.id = l.journal_id join public.accounts a on a.id = l.account_id
+        where l.organization_id = o.id and j.status in ('posted', 'reversed') and j.entry_date between tp.start_date and tp.end_date
+          and a.type in ('revenue', 'expense') and coalesce(a.subtype, '') <> 'ct_expense'
+        group by a.id, a.code, a.name, a.type having sum(l.debit - l.credit) <> 0) x;
 
   -- F-08 add-backs on CT-tagged expense accounts
   select coalesce(jsonb_agg(x order by x ->> 'account_code'), '[]'), coalesce(sum((x ->> 'add_back')::bigint), 0) into v_addbacks, v_add
@@ -190,7 +196,7 @@ begin
     'period', jsonb_build_object('id', tp.id, 'start_date', tp.start_date, 'end_date', tp.end_date, 'due_date', tp.due_date),
     'organization', jsonb_build_object('legal_name', o.legal_name, 'ct_trn', o.ct_trn, 'regime', o.ct_regime),
     'rules', jsonb_build_object('rate_bp', v_rate, 'zero_band', v_band, 'loss_cap_bp', v_cap, 'sbr_limit', v_sbr_limit, 'sbr_last_period_end', v_sbr_last),
-    'revenue', v_revenue, 'expenses', v_expenses, 'accounting_profit', v_profit,
+    'revenue', v_revenue, 'expenses', v_expenses, 'accounting_profit', v_profit, 'profit_lines', v_lines,
     'addbacks', v_addbacks, 'addbacks_total', v_add, 'adjustments', v_adjs, 'adjustments_total', v_adj,
     'taxable_income_before_losses', v_ti, 'sbr_elected', v_sbr_elected, 'sbr_eligible', v_sbr_ok, 'sbr_applied', v_sbr,
     'losses_bf', v_lbf, 'loss_relief', v_relief, 'loss_of_period', v_loss, 'taxable_income', v_taxable, 'ct_payable', v_ct, 'losses_cf', v_lcf,

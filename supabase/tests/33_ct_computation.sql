@@ -2,7 +2,7 @@
 -- FY 2026, books posted through the normal journal workflow. Amounts in fils (AED 375,000.00 = 37500000).
 begin;
 \ir fixtures/setup.psql
-select plan(31);
+select plan(32);
 
 create temp table ct (k text primary key, id uuid) on commit drop;
 grant all on ct to authenticated;
@@ -47,6 +47,9 @@ select tests.ct_jv('b', '2026-03-31', '1150', '4000', 150000000);
 select tests.ct_jv('b', '2026-04-30', '6100', '1150', 50000000);
 select tests.ct_jv('b', '2026-12-31', '7000', '1150', 1234500);
 select is(tests.ctc('b26', 'accounting_profit'), '100000000', 'CT-02 · profit before tax 1,000,000 (CT expense excluded)');
+select is((select string_agg((x ->> 'account_code') || ':' || (x ->> 'amount'), ' ' order by x ->> 'account_code')
+             from jsonb_array_elements(public.ct_return_preview((select id from ct where k = 'b26')) -> 'profit_lines') x),
+          '4000:150000000 6100:50000000', 'Principle 10 · profit drills down to each account (CT expense not listed)');
 select is(tests.ctc('b26', 'ct_payable'), '5625000', 'CT-02 · taxable income 1,000,000 → CT 56,250');
 select is(public.ct_return_preview((select id from ct where k = 'b26')) #>> '{period,due_date}', '2027-09-30', 'CT-10 · FY ending 31 Dec 2026 → return and payment due 30 Sep 2027');
 select is(tests.ctc('b27', 'ct_payable'), '0', 'CT-02 · another year''s books do not leak in');
