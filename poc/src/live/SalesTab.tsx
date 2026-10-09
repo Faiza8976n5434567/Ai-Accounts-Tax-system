@@ -1,6 +1,6 @@
 /** Sales invoices and credit notes for one client (P2-02 · D-10, D-21, D-22, D-29, D-30). */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, FilePlus2, Plus, Printer, ReceiptText, Send, Trash2, Undo2, XCircle } from "lucide-react";
+import { CheckCircle2, FileCode2, FilePlus2, Plus, Printer, ReceiptText, Send, Trash2, Undo2, XCircle } from "lucide-react";
 import { Badge, Card, Modal } from "../components/ui";
 import { useAuth } from "../components/AuthGate";
 import { fmt, fmtPlain, parseAedToFils } from "../lib/money";
@@ -10,6 +10,7 @@ import { listContacts, type Contact } from "../lib/contacts";
 import type { Account, Client, Emirate, TaxPeriod } from "../lib/clients";
 import { listEmirates } from "../lib/clients";
 import { listItems, type Item } from "../lib/items";
+import { downloadEinvoice, einvoiceReadiness, toPintDoc } from "../lib/einvoice-ready";
 import {
   creditRemaining, deleteInvoice, documentTotals, documentVat, lineAmounts, listInvoices, parseQuantity, postInvoice, SALES_TAX_CODES, saveInvoice,
   sendBackInvoice, submitInvoice, taxDateWarnings, type InvoiceDraft, type InvoiceWithLines,
@@ -85,7 +86,7 @@ export function SalesTab({ client, accounts, taxPeriods, perms }: { client: Clie
         </table></div>
       </Card>
 
-      {open && <InvoiceView inv={open} all={invoices} accounts={accounts} me={auth.userId} canPrepare={canPrepare} canApprove={canApprove} onClose={() => setOpen(null)}
+      {open && <InvoiceView inv={open} all={invoices} accounts={accounts} client={client} customer={contacts?.find((c) => c.id === open.contact_id)} me={auth.userId} canPrepare={canPrepare} canApprove={canApprove} onClose={() => setOpen(null)}
         onPrint={() => { setPrinting(open); setOpen(null); }}
         onEdit={() => { setEditing({ invoice: open, creditFor: null }); setOpen(null); }}
         onCredit={() => { setEditing({ invoice: null, creditFor: open }); setOpen(null); }}
@@ -104,8 +105,8 @@ export function SalesTab({ client, accounts, taxPeriods, perms }: { client: Clie
 }
 
 // ── View ────────────────────────────────────────────────────────────────────────────────
-function InvoiceView({ inv, all, accounts, me, canPrepare, canApprove, onClose, onPrint, onEdit, onCredit, onSubmit, onDelete, onApprove, onSendBack }: {
-  inv: InvoiceWithLines; all: InvoiceWithLines[]; accounts: Account[]; me: string; canPrepare: boolean; canApprove: boolean;
+function InvoiceView({ inv, all, accounts, client, customer, me, canPrepare, canApprove, onClose, onPrint, onEdit, onCredit, onSubmit, onDelete, onApprove, onSendBack }: {
+  inv: InvoiceWithLines; all: InvoiceWithLines[]; accounts: Account[]; client: Client; customer: Contact | undefined; me: string; canPrepare: boolean; canApprove: boolean;
   onClose: () => void; onPrint: () => void; onEdit: () => void; onCredit: () => void; onSubmit: () => void; onDelete: () => void; onApprove: () => void; onSendBack: (reason: string) => void;
 }) {
   const [reason, setReason] = useState<string | null>(null);
@@ -148,9 +149,34 @@ function InvoiceView({ inv, all, accounts, me, canPrepare, canApprove, onClose, 
         </tbody>
       </table></div>
       {remaining && <p className="mt-3 text-xs text-slate-500">Still available to credit: net {fmt(remaining.net)}, VAT {fmt(remaining.vat)} (D-30).</p>}
+      <EinvoicePanel inv={inv} client={client} customer={customer} original={original} />
       {reason !== null && <label className="block mt-4"><span className="block text-xs font-medium text-slate-600 mb-1.5">Why is it being sent back? Then click “Send back” again.</span>
         <textarea className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} /></label>}
     </Modal>
+  );
+}
+
+// ── E-invoice (P4-05, P4-06) ─────────────────────────────────────────────────────────────
+function EinvoicePanel({ inv, client, customer, original }: { inv: InvoiceWithLines; client: Client; customer: Contact | undefined; original: InvoiceWithLines | undefined }) {
+  const toast = useToast();
+  const r = einvoiceReadiness(inv, client, customer);
+  const download = async () => {
+    try {
+      const rate = Number((await supabase!.rpc("config_value", { p_key: "vat.rate_bp", p_on: inv.issue_date })).data ?? 0);
+      downloadEinvoice(toPintDoc(inv, client, customer!, rate, original));
+    } catch { toast("The e-invoice file could not be created", "err"); }
+  };
+  return (
+    <div className={`mt-4 rounded-xl px-4 py-3 text-sm ring-1 ${r.status === "ready" ? "bg-emerald-50 ring-emerald-200" : r.status === "not_in_scope" ? "bg-slate-50 ring-slate-200" : "bg-amber-50 ring-amber-200"}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <FileCode2 size={16} className="shrink-0" />
+        <b>E-invoice (PINT AE)</b>
+        <span>{r.status === "ready" ? "— ready" : r.status === "not_in_scope" ? "— not in scope" : `— ${r.problems.length} thing${r.problems.length === 1 ? "" : "s"} to fix`}</span>
+        {r.status === "ready" && <button className="btn-ghost ms-auto !py-1" onClick={() => void download()}><FileCode2 size={14} />Download e-invoice (XML)</button>}
+      </div>
+      {r.status !== "ready" && <ul className="mt-2 list-disc ps-6 text-xs">{r.problems.map((p) => <li key={p}>{p}</li>)}</ul>}
+      {r.status === "ready" && <p className="mt-1 text-xs text-slate-600">Built to PINT AE Billing 1.0.4. Sending through your ASP comes when it is chosen (Q-02).</p>}
+    </div>
   );
 }
 
