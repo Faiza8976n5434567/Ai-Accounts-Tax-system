@@ -77,6 +77,9 @@
 | D-56 | **Trial-balance exit test on a fictitious data set** (Faizan): grocery shop, opening TB 31 Dec 2025, Jan–Feb 2026 activity (23 invoices settled, cash, bank statement, reconciliation answer key). A pass **counts as the Phase 2 exit**; real books are re-keyed again with each pilot client in Phase 3. Card (POS) settlements = sales **including VAT** (D-54). Expected TB worked out independently: `docs/EXIT-TEST-TB-GROCERY.md`. | 2026-10-09 |
 | D-57 | **FTA Audit File (FAF v1.0.0)** follows the FTA *Requirements Document for Tax Accounting Software*, Appendix 5, literally (markers, no extra heading rows, DD-MM-YYYY, 2 decimals, "," in text → ";"). Faizan: purchase codes RCS & IMG → **RC**, BLK → **SR** (VAT as on the invoice); out-of-scope lines included as **OS**; credit/debit notes as **negative lines**. Opening documents (D-52) are left out of the listings (kept in the GL). Tax agency/agent fields blank for now. To confirm against a real FAF from an FTA audit when one is available. | 2026-10-09 |
 | D-58 | **Advances for a specific supply (VAT-17)** (Faizan): the preparer ticks "Advance for a specific supply" on a customer receipt and chooses the emirate (default head office); output VAT = amount × 5/105 is declared on receipt (Federal Decree-Law No. 8 of 2017, Art 25–26). Booked Dr Bank / Cr 2150 (full amount) + Dr **1170 VAT on customer advances** / Cr 2100. When the advance is applied to the invoice, the invoice keeps its full VAT and the advance's VAT share is taken back in that period; a refund takes it back in the refund's period. Unticked receipts stay plain credits with no VAT (D-11). An advance is not allocated to existing invoices. | 2026-10-09 |
+| D-59 | **E-invoicing scope** (Faizan): **B2B and B2G only**; B2C sales (consumers, e.g. walk-in customers) are not e-invoiced for now — the app marks them "not in scope". | 2026-10-09 |
+| D-60 | **Items list** (Faizan): each client keeps a list of products/services (name, description, goods/services, HS or SAC code, unit, default price, tax code, income account); invoice lines pick an item so the PINT AE codes fill in. | 2026-10-09 |
+| D-61 | **PINT AE 1.0.4 official artefacts** (rules, code lists, examples) downloaded with Faizan's permission into `poc/einvoicing/pint-ae-1.0.4`; validation runs the official rules with **Saxon-JS** (xslt3 2.7.0, Saxonica licence allows use inside an application). ASP (Q-02) not chosen yet: build P4-01 → P4-06 first. | 2026-10-09 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -276,12 +279,20 @@ _Status: **exit test passed.** VAT-return part ✅ 2026-10-08 (retail shop, Nov 
 **Exit:** one full VAT quarter per pilot client agrees to Faizan's manual workings. **Pilot live with 3–5 clients.**
 _Progress: pilot client 1 (retail shop, Nov 2025 – Jan 2026) ✅ — agrees, with the 0.30 difference from the filed return explained (D-54)._
 
-### Phase 4 — E-invoicing · ⬜ · target 30 Apr 2027 (SME deadline 1 Jul 2027 — VERIFY)
-- [ ] ASP partner chosen (Q-02); sandbox credentials
-- [ ] PINT AE invoice & credit note generation + validation
-- [ ] Send via ASP (Vercel function), status tracking, rejection queue, retry, idempotency
-- [ ] Store XML + ASP receipts; inbound e-invoices → draft bills
-- [ ] Test cases **EINV-*** passing in ASP sandbox
+### Phase 4 — E-invoicing · 🟡 In progress (authorised by Faizan 2026-10-09, ahead of the Phase 3 sign-off) · target 30 Apr 2027 (SMEs: ASP by 31 Mar 2027, go-live 1 Jul 2027 — config `einvoicing.*`)
+Standard: **PINT AE Billing 1.0.4** (UAE Peppol Authority, docs.peppol.eu/poac/ae). The app produces the PINT AE document; the ASP transmits it over Peppol and reports it to the FTA. Scope: **B2B and B2G only** (D-59).
+
+| ID | Step | Tests | Status |
+|---|---|---|---|
+| P4-01 | Official PINT AE 1.0.4 artefacts in the repo + validator (both rule sets, Saxon-JS) — every official example passes | EINV-00 | ✅ built 2026-10-09 — `poc/einvoicing/pint-ae-1.0.4`, `api/_pint.ts` (32 tests: 28 official examples + broken-invoice check) |
+| P4-02 | Client e-invoicing profile: structured address (line 1, city, emirate), TIN (from TRN), trade licence + issuing authority + registration type, payment instructions (IBAN) | EINV-* | ⬜ |
+| P4-03 | Customer e-invoicing data: structured address, registration type / ID / authority, Peppol endpoint (TIN 0235 by default), in-scope check (B2B/B2G vs B2C, D-59) | EINV-* | ⬜ |
+| P4-04 | **Items list** per client (D-60): name, description, goods/services, HS / SAC code, unit (UN/ECE Rec 20), default price, tax code, income account; invoice lines pick an item | EINV-* | ⬜ |
+| P4-05 | Document fields: UUID, transaction type (BTAE-02), payment means, due date, credit note reason code; **"E-invoice ready?"** check listing what is missing | EINV-* | ⬜ |
+| P4-06 | PINT AE XML for invoices and credit notes from posted documents; validated against the official rules in tests; download / view | EINV-01 → 03 | ⬜ |
+| P4-07 | Send via ASP (Vercel function): status tracking, rejection queue, retry, idempotency — **needs Q-02** | EINV-04 → 05 | ⏸ |
+| P4-08 | Store XML + ASP receipts; inbound e-invoices → draft bills — **needs Q-02** | EINV-06 | ⏸ |
+| P4-09 | EINV tests passing in the ASP sandbox — **needs Q-02** | EINV-* | ⏸ |
 
 **Exit:** all invoice scenarios pass in the ASP sandbox; pilot clients transmitting live before the deadline.
 
@@ -540,3 +551,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-09 | Q-08 answered (Decree-Law Art 25–26). Golden VAT examples 2–4 from Faizan's workings (retail shop, Nov 2024 – Jan 2025, Feb – Apr 2025, Aug – Oct 2025) — `27_golden_vat_shop.sql`, 10 tests; the shop under-declared 0.66 / 0.24 / 0.26 in those quarters (D-54 method), for Faizan to advise. Backups: still later. Domain: in progress (OA-11). |
 | 2026-10-09 | **VAT-17 advances built (D-58)**: `…20261009100100_vat_advances.sql` — account 1170, receipt tick + emirate, VAT on receipt, taken back on application/refund, VAT return/drill-down/reconciliation read advance lines (incl. D-40 reversals), integrity check `advance_vat` (14 checks). Receipt screen: tick, emirate, VAT preview, advance shown on the receipt. 561 database + 278 unit tests. Applied by Faizan 2026-10-09. |
 | 2026-10-09 | Faizan tested VAT on advances (VAT-17, D-58) — all fine. |
+| 2026-10-09 | **Phase 4 started** (Faizan authorised it ahead of the Phase 3 sign-off). D-59 (B2B/B2G only), D-60 (Items list), D-61 (official PINT AE 1.0.4 artefacts + Saxon-JS validator). **P4-01 ✅**: all 28 official examples pass both rule sets; a broken invoice is caught (IBR-144-AE). |
