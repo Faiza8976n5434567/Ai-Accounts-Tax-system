@@ -4,7 +4,7 @@
 --   • Client: structured address (line 1/2, city; emirate already), legal registration type (TL/EID/PAS/CD — IBR-173-AE;
 --     licence_no and licence_authority are the identifier and its authority), IBAN and default payment means (UNCL4461).
 --   • Customer: customer type — business / government / consumer (consumers are B2C: not e-invoiced, D-59); structured
---     address; registration type / ID / authority / passport country; Peppol endpoint (default: TIN from the TRN, scheme
+--     address (region for foreign customers); registration type / ID / authority / passport country; Peppol endpoint (default: TIN from the TRN, scheme
 --     0235) or "not yet on Peppol" (predefined endpoint 9900000098, MoF guidelines).
 --   • Items list (D-60): goods / services / both with HS code and/or service accounting code (IBR-184/185/186-AE),
 --     unit (UN/ECE Rec 20), default price, tax code (+ exemption reason for EX, IBR-167-AE), income account.
@@ -28,6 +28,7 @@ alter table public.contacts
   add column customer_type text not null default 'business' check (customer_type in ('business', 'government', 'consumer')),
   add column address_line1 text,
   add column city text,
+  add column region text,                                      -- state / province of a foreign customer (IBR-144-AE)
   add column reg_type text check (reg_type in ('TL', 'CL', 'EID', 'PAS', 'CD')),
   add column reg_id text,
   add column reg_authority text,
@@ -35,9 +36,9 @@ alter table public.contacts
   add column peppol_scheme text not null default '0235' check (peppol_scheme ~ '^[0-9]{4}$'),
   add column peppol_id text check (peppol_id is null or btrim(peppol_id) <> ''),
   add column einv_not_onboarded boolean not null default false;
-grant insert (customer_type, address_line1, city, reg_type, reg_id, reg_authority, passport_country, peppol_scheme, peppol_id, einv_not_onboarded)
+grant insert (customer_type, address_line1, city, region, reg_type, reg_id, reg_authority, passport_country, peppol_scheme, peppol_id, einv_not_onboarded)
   on public.contacts to authenticated;
-grant update (customer_type, address_line1, city, reg_type, reg_id, reg_authority, passport_country, peppol_scheme, peppol_id, einv_not_onboarded)
+grant update (customer_type, address_line1, city, region, reg_type, reg_id, reg_authority, passport_country, peppol_scheme, peppol_id, einv_not_onboarded)
   on public.contacts to authenticated;
 
 -- ── Items list (P4-04, D-60) ────────────────────────────────────────────────────────────
