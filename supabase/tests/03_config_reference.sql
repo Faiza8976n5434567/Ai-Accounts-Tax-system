@@ -13,7 +13,7 @@ select is((select (output_by_emirate, input_box)::text from public.tax_codes whe
   'SR: sales by supply emirate (D-10), purchases in box 9');
 select is((select (output_box, input_box)::text from public.tax_codes where code = 'RCS'), '(3,10)',
   'Reverse charge lands in boxes 3 and 10');
-select is((select count(*)::int from public.coa_template_accounts), 45, 'Default chart has 45 accounts (P2-04 added 1160, 4310, 6190, 6410; P3-03 added 2120; D-52 added 3999)');
+select is((select count(*)::int from public.coa_template_accounts), 46, 'Default chart has 46 accounts (P2-04 added 1160, 4310, 6190, 6410; P3-03 added 2120; D-52 added 3999; D-58 added 1170)');
 select is((select (type, subtype, is_control)::text from public.coa_template_accounts where code = '2150'),
   '(liability,customer_credits,t)', 'Customer Credits (2150) is a liability control account (D-11)');
 select is((select legal_name from public.firms where is_platform_owner), 'TFS Plus Tax & Accountancy LLC',

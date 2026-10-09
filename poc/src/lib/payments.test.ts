@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysOverdue, settlement, suggestAllocations } from "./payments";
+import { advanceVat, daysOverdue, settlement, suggestAllocations } from "./payments";
 
 const docs = [
   { id: "b2", doc_date: "2026-10-05", doc_no: "INV-2026-10-0002", open_fcy: 210000 },
@@ -51,4 +51,9 @@ describe("ageing", () => {
     expect(daysOverdue("2026-10-31", "2026-11-30")).toBe(30);
     expect(daysOverdue("2026-10-31", "2026-10-07")).toBe(-24);
   });
+});
+
+describe("advance for a specific supply (D-58, F-02)", () => {
+  it("10,500 received → VAT 500", () => expect(advanceVat(1050000, 500)).toBe(50000));
+  it("2,100 → VAT 100; 1,000 → VAT 47.62 (half-up)", () => expect([advanceVat(210000, 500), advanceVat(100000, 500)]).toEqual([10000, 4762]));
 });

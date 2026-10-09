@@ -43,7 +43,7 @@ Every hard-coded item found in `poc/src`, and its new home. Nothing is dropped s
 | 16 | `vat.ts` `quarters()` | Calendar quarters only | `organizations.vat_period_*` + `tax_periods` | Real FTA stagger (e.g. Feb/May/Aug/Nov) |
 | 17 | `ct.ts` add-back rules (6140/6160/6170/6500) | Hard-coded account codes | `ct_tags` + `accounts.ct_tag` + config % | |
 | 18 | `subledger.ts` `TERMS_DAYS = 30`, `BUCKETS` | Payment terms, ageing buckets | `contacts.payment_terms_days`, `firm_settings.ageing_buckets` | |
-| 19 | `subledger.ts` FIFO allocation | Derived settlement | `payments` + `payment_allocations` | Explicit, auditable allocations |
+| 19 | `subledger.ts` FIFO allocation | Derived settlement | `payments` + `payment_allocations` | Explicit, auditable allocations; `payments.vat_advance / advance_emirate / advance_vat` and `payment_allocations.advance_vat` for advances with VAT on receipt (D-58, account 1170) |
 | 20 | `derive.ts` `TODAY`, `MONTHS` | Fixed "today" = 1 Oct 2026 | Removed — real current date & selected period | |
 | 21 | `derive.ts` `deadlines()` | Hard-coded deadlines list | `compliance_rules` (config) + `compliance_items` | Generated per client from rules |
 | 22 | `ai.ts` `review()` checks | Art 59 checks, duplicate, risk score | Code (pure functions) + weights in `firm_settings` | Labelled "compliance checks", not AI |

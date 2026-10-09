@@ -2046,6 +2046,7 @@ export type Database = {
         Row: {
           amount: number
           amount_fcy: number
+          advance_vat: number
           applied_on: string
           created_at: string
           created_by: string | null
@@ -2063,6 +2064,7 @@ export type Database = {
         Insert: {
           amount: number
           amount_fcy: number
+          advance_vat: number
           applied_on: string
           created_at?: string
           created_by?: string | null
@@ -2080,6 +2082,7 @@ export type Database = {
         Update: {
           amount?: number
           amount_fcy?: number
+          advance_vat?: number
           applied_on?: string
           created_at?: string
           created_by?: string | null
@@ -2150,6 +2153,8 @@ export type Database = {
         Row: {
           amount: number
           amount_fcy: number
+          advance_emirate: string | null
+          advance_vat: number
           approved_by: string | null
           auto_allocate: boolean
           bank_account_id: string
@@ -2177,12 +2182,15 @@ export type Database = {
           status: Database["public"]["Enums"]["document_status"]
           updated_at: string
           updated_by: string | null
+          vat_advance: boolean
           writeoff: number
           writeoff_fcy: number
         }
         Insert: {
           amount?: number
           amount_fcy: number
+          advance_emirate: string | null
+          advance_vat: number
           approved_by?: string | null
           auto_allocate?: boolean
           bank_account_id: string
@@ -2210,12 +2218,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["document_status"]
           updated_at?: string
           updated_by?: string | null
+          vat_advance?: boolean
           writeoff?: number
           writeoff_fcy?: number
         }
         Update: {
           amount?: number
           amount_fcy?: number
+          advance_emirate?: string | null
+          advance_vat?: number
           approved_by?: string | null
           auto_allocate?: boolean
           bank_account_id?: string
@@ -2243,6 +2254,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["document_status"]
           updated_at?: string
           updated_by?: string | null
+          vat_advance?: boolean
           writeoff?: number
           writeoff_fcy?: number
         }

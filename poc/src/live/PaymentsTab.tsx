@@ -8,9 +8,9 @@ import { fmt, fmtPlain, parseAedToFils } from "../lib/money";
 import { shortDate } from "../lib/email";
 import { friendlyDbError } from "../lib/journals";
 import { listContacts, type Contact } from "../lib/contacts";
-import type { Account, Client } from "../lib/clients";
+import { listEmirates, type Account, type Client, type Emirate } from "../lib/clients";
 import {
-  daysOverdue, deletePayment, KIND, listCredits, requestPaymentReversal, listOpenDocuments, listPayments, postPayment, savePayment, sendBackPayment, settlement,
+  advanceVat, daysOverdue, deletePayment, KIND, listCredits, requestPaymentReversal, listOpenDocuments, listPayments, postPayment, savePayment, sendBackPayment, settlement,
   smallDifferenceLimit, submitPayment, suggestAllocations, type CreditBalance, type OpenDocument, type PaymentDraft, type PaymentKind, type PaymentWithDetails,
 } from "../lib/payments";
 import { supabase } from "../lib/supabase";
@@ -31,6 +31,7 @@ export function PaymentsTab({ client, accounts, perms }: { client: Client; accou
   const { data: open, reload: reloadOpen } = useLoad(fetchOpen);
   const { data: credits, reload: reloadCredits } = useLoad(fetchCredits);
   const { data: contacts } = useLoad(fetchContacts);
+  const { data: emirates } = useLoad(listEmirates);
   const fetchLimit = useCallback(() => smallDifferenceLimit(client.firm_id), [client.firm_id]);
   const { data: limit } = useLoad(fetchLimit);
   const [view, setView] = useState<View>("payments");
@@ -128,8 +129,8 @@ export function PaymentsTab({ client, accounts, perms }: { client: Client; accou
         canReverse={perms.includes("reverse_journal")}
         onReverse={(reason) => act(() => requestPaymentReversal(shownPayment.journal_id!, reason, today), "Reversal requested — a second Firm Admin approves it under Approvals")} />}
 
-      {editing && contacts && open && credits && <PaymentEditor orgId={client.id} kind={editing.kind} payment={editing.payment} accounts={accounts} contacts={contacts}
-        open={open} credits={credits} limit={limit ?? 100} onClose={() => setEditing(null)} onSaved={(id) => { setEditing(null); refreshAll(); setOpenId(id); }} />}
+      {editing && contacts && open && credits && emirates && <PaymentEditor orgId={client.id} kind={editing.kind} payment={editing.payment} accounts={accounts} contacts={contacts}
+        emirates={emirates} headOffice={client.emirate_code} open={open} credits={credits} limit={limit ?? 100} onClose={() => setEditing(null)} onSaved={(id) => { setEditing(null); refreshAll(); setOpenId(id); }} />}
     </>
   );
 }
@@ -192,6 +193,9 @@ function PaymentView({ p, names, open, me, canPrepare, canApprove, canReverse, o
         {p.currency !== "AED" && <div><dt className="text-xs text-slate-500">Rate</dt><dd>{Number(p.fx_rate)}</dd></div>}
       </dl>
       {mine && p.status === "pending" && <p className="mb-3 text-xs text-slate-500">You prepared this, so someone else must approve it (maker-checker).</p>}
+      {p.vat_advance && <p className="mb-3 rounded-xl bg-sky-50 ring-1 ring-sky-200 text-sky-900 px-4 py-2 text-sm">
+        <b>Advance for a specific supply</b> (D-58) · emirate {p.advance_emirate} · {p.status === "posted" ? <>VAT declared on receipt: <b>AED {fmt(p.advance_vat)}</b></> : "VAT is declared when approved"}.
+        It is taken back automatically when the advance is used on the customer's invoice, or refunded.</p>}
       {k.refund ? <p className="text-sm text-slate-600">Paid out of the {k.customer ? "customer's credits" : "supplier's advances"}, oldest first.</p>
         : p.auto_allocate && p.status !== "posted" ? <p className="text-sm text-slate-600">Automatic: settles {names.get(p.contact_id) ?? "the contact"}'s oldest open {k.customer ? "invoices" : "bills"} first when approved; anything left becomes a {k.customer ? "Customer Credit" : "Supplier advance"}.</p>
         : <div className="overflow-x-auto"><table className="w-full min-w-[480px]">
@@ -215,8 +219,9 @@ function PaymentView({ p, names, open, me, canPrepare, canApprove, canReverse, o
 }
 
 // ── Editor ──────────────────────────────────────────────────────────────────────────────
-function PaymentEditor({ orgId, kind: initialKind, payment, accounts, contacts, open, credits, limit, onClose, onSaved }: {
-  orgId: string; kind: PaymentKind; payment: PaymentWithDetails | null; accounts: Account[]; contacts: Contact[]; open: OpenDocument[]; credits: CreditBalance[]; limit: number;
+function PaymentEditor({ orgId, kind: initialKind, payment, accounts, contacts, emirates, headOffice, open, credits, limit, onClose, onSaved }: {
+  orgId: string; kind: PaymentKind; payment: PaymentWithDetails | null; accounts: Account[]; contacts: Contact[]; emirates: Emirate[]; headOffice: string;
+  open: OpenDocument[]; credits: CreditBalance[]; limit: number;
   onClose: () => void; onSaved: (id: string) => void;
 }) {
   const today = useToday();
@@ -234,6 +239,9 @@ function PaymentEditor({ orgId, kind: initialKind, payment, accounts, contacts, 
   const [auto, setAuto] = useState(payment ? payment.auto_allocate : true);
   const [manual, setManual] = useState<Record<string, string>>(() => Object.fromEntries((payment?.allocations ?? []).map((a) => [(a.sales_invoice_id ?? a.purchase_bill_id)!, fmtPlain(a.amount_fcy)])));
   const [usdRate, setUsdRate] = useState("3.6725");
+  const [advance, setAdvance] = useState(payment?.vat_advance ?? false);                       // D-58
+  const [advEmirate, setAdvEmirate] = useState(payment?.advance_emirate ?? headOffice);
+  const [vatBp, setVatBp] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -243,6 +251,12 @@ function PaymentEditor({ orgId, kind: initialKind, payment, accounts, contacts, 
     return () => { live = false; };
   }, [currency, date]);
   const rate = currency === "USD" ? usdRate : "1";
+  useEffect(() => {
+    let live = true;
+    void supabase!.rpc("config_value", { p_key: "vat.rate_bp", p_on: date }).then((r) => { if (live) setVatBp(Number(r.data ?? 0)); });
+    return () => { live = false; };
+  }, [date]);
+  const isAdvance = advance && kind === "customer_receipt";
 
   const people = contacts.filter((c) => (k.customer ? c.kind !== "supplier" : c.kind !== "customer") && (c.is_active || c.id === contactId));
   const docs = open.filter((d) => d.contact_id === contactId && d.currency === currency && d.doc_kind === (k.customer ? "sales_invoice" : "purchase_bill") && (d.open_fcy ?? 0) > 0);
@@ -264,10 +278,11 @@ function PaymentEditor({ orgId, kind: initialKind, payment, accounts, contacts, 
     if (k.refund && amountFils > available) { setError(`The refund is more than the ${k.customer ? "customer credit" : "supplier advance"} available (${currency} ${fmt(available)}).`); return; }
     const over = !auto && docs.find((d) => (parseAedToFils(manual[d.id!] || "0") ?? 0) > (d.open_fcy ?? 0));
     if (over) { setError(`The amount for ${over.doc_no} is more than its open balance (${fmt(over.open_fcy!)}).`); return; }
-    if (result?.error) { setError(result.error); return; }
+    if (!isAdvance && result?.error) { setError(result.error); return; }
     const doc: PaymentDraft = {
       kind, contact_id: contactId, bank_account_id: bankId, payment_date: date, currency, amount: amountFils, bank_charges: chargesFils,
-      reference, notes, allocations: k.refund || auto ? null : plan.map((a) => ({ document_id: a.id, amount: a.amount })),
+      reference, notes, allocations: k.refund || auto || isAdvance ? null : plan.map((a) => ({ document_id: a.id, amount: a.amount })),
+      vat_advance: isAdvance, advance_emirate: isAdvance ? advEmirate : null,
     };
     setBusy(true);
     try {
@@ -310,7 +325,20 @@ function PaymentEditor({ orgId, kind: initialKind, payment, accounts, contacts, 
       </div>
       {k.moneyIn && amountFils !== null && chargesFils ? <p className="mb-3 text-xs text-slate-500">The bank account receives {currency} {fmt(Math.max(0, amountFils - chargesFils))}; the {fmt(chargesFils)} charge goes to 6400 Bank charges.</p> : null}
 
-      {contactId && (k.refund ? (
+      {kind === "customer_receipt" && <div className="mb-4 rounded-xl ring-1 ring-slate-200 px-4 py-3 text-sm">
+        <label className="flex items-start gap-2"><input type="checkbox" className="mt-0.5" checked={advance} onChange={(e) => setAdvance(e.target.checked)} />
+          <span><b>Advance for a specific supply</b> — VAT is due now, on receipt (Federal Decree-Law No. 8 of 2017, Art 25–26; D-58). Leave unticked for an ordinary overpayment or deposit, which stays a Customer Credit with no VAT.</span></label>
+        {isAdvance && <div className="mt-3 grid gap-3 sm:grid-cols-3 items-end">
+          <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Emirate of the supply (VAT box)</span>
+            <select aria-label="Emirate of the supply" className={cls} value={advEmirate} onChange={(e) => setAdvEmirate(e.target.value)}>
+              {emirates.map((e) => <option key={e.code} value={e.code}>{e.name}{e.code === headOffice ? " (head office)" : ""}</option>)}</select></label>
+          <p className="sm:col-span-2 text-slate-700">{currency === "AED" && amountFils
+            ? <>VAT due now: <b>AED {fmt(advanceVat(amountFils, vatBp))}</b> (amount × {vatBp / 100}/{100 + vatBp / 100}). It is taken back automatically when the advance is used on the invoice, so the VAT is counted once.</>
+            : <>VAT is worked out on the AED amount when the receipt is approved; it is taken back automatically when the advance is used on the invoice.</>}</p>
+        </div>}
+      </div>}
+
+      {contactId && !isAdvance && (k.refund ? (
         <p className="text-sm text-slate-700">{k.customer ? "Customer credit" : "Supplier advance"} available: <b>{currency} {fmt(available)}</b>. The refund uses the oldest credits first.</p>
       ) : (<>
         <div className="flex items-center gap-4 mb-2 text-sm">

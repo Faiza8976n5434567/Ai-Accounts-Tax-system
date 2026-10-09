@@ -3,6 +3,7 @@
 import { supabase } from "./supabase";
 import type { Database } from "./database.types";
 import { lineAmounts } from "./invoices";
+import { vatInGross } from "./vat";
 
 export type Payment = Database["public"]["Tables"]["payments"]["Row"];
 export type Allocation = Database["public"]["Tables"]["payment_allocations"]["Row"];
@@ -79,7 +80,12 @@ export async function listCredits(orgId: string): Promise<CreditBalance[]> {
 export interface PaymentDraft {
   kind: PaymentKind; contact_id: string; bank_account_id: string; payment_date: string; currency: "AED" | "USD";
   amount: number; bank_charges: number; reference: string; notes: string; allocations: { document_id: string; amount: number }[] | null;
+  vat_advance?: boolean; advance_emirate?: string | null;   // D-58 (customer receipts only)
 }
+
+/** D-58 · VAT due on an advance for a specific supply: amount (AED, incl. VAT) × rate ÷ (10,000 + rate), half-up (F-02;
+ *  mirrors app.post_payment). Unit-tested. */
+export const advanceVat = (amountAed: number, rateBp: number): number => vatInGross(amountAed, rateBp);
 export async function savePayment(orgId: string, id: string | null, doc: PaymentDraft): Promise<string> {
   const r = await db().rpc("save_payment", { p_id: id as unknown as string /* null = new */, p_organization_id: orgId, p_doc: doc as never });
   if (r.error) throw r.error;

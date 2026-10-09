@@ -32,8 +32,8 @@ select public.post_payment((select id from ik where k = 'rcpt'));
 select tests.login('acct@test.local');
 insert into ik values ('run1', public.run_integrity_checks((select id from fx where k = 'orgA')));
 select is(tests.results((select id from ik where k = 'run1')),
-  'advances_control=ok ap_control=ok ar_control=ok bank_reconciled=ok bank_unmatched=ok credits_control=ok journals_balanced=ok numbering=ok opening_clearing=ok payment_journals=ok purchase_journals=ok sales_journals=ok tb_balanced=ok',
-  'Thirteen checks, all passing on a clean client');
+  'advance_vat=ok advances_control=ok ap_control=ok ar_control=ok bank_reconciled=ok bank_unmatched=ok credits_control=ok journals_balanced=ok numbering=ok opening_clearing=ok payment_journals=ok purchase_journals=ok sales_journals=ok tb_balanced=ok',
+  'Fourteen checks, all passing on a clean client');
 select is((select (status, errors, warnings, trigger, triggered_by = tests.uid('acct@test.local'))::text from public.integrity_runs where id = (select id from ik where k = 'run1')),
   '(ok,0,0,manual,t)', 'The run is recorded as a manual run by the accountant');
 
