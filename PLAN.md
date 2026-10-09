@@ -88,7 +88,7 @@
 | # | Question | Needed by | Status |
 |---|---|---|---|
 | Q-01 | Which 3–5 pilot clients? (simple books, friendly) | Phase 2 | ⬜ |
-| Q-02 | Which ASP partner for e-invoicing? | Phase 4 (shortlist by Dec 2026) | ⬜ |
+| Q-02 | Which ASP partner for e-invoicing? → Comparison and shortlist in `docs/ASP-COMPARISON.md` (65 accredited per MoF, 9 Oct 2026): test **Complyance, Flick, ClearTax** first (optionally Pagero); Faizan to request sandbox + written pricing. | Phase 4 (shortlist by Dec 2026) | 🟡 |
 | Q-03 | OK to pay for a short independent security review before real client data? (recommended) | Phase 3 | ⬜ |
 | Q-04 | VAT 201 emirate boxes (1a–1g): allocate by **our client's establishment** or by **customer location**? → **Decided: emirate selected manually per invoice, pre-filled with head office (D-10).** | Phase 3 | ✅ |
 | Q-05 | Customer overpayments: hold as "customer credit" on account, or refund only? → **Decided: Customer Credit by default + refund option (D-11, §2.1).** | Phase 2 | ✅ |
@@ -557,3 +557,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-09 | **D-62** VAT rounded once per tax code on sales documents (`…20261009100300_vat_invoice_rounding.sql`, applied by Faizan, `30_vat_invoice_rounding.sql` 6 tests; VAT-09 / VAT-19 / formula-audit expectations updated deliberately); invoice screen preview mirrors it (`allocateVat`, `documentVat`, 5 unit tests). |
 | 2026-10-09 | P4-02 → P4-06 screens: Items tab, client and customer e-invoicing fields, invoice editor e-invoicing section and item picker, **E-invoice ready?** panel and **Download e-invoice (XML)**. 332 unit tests; all gates green. Next (needs Q-02): sending through the ASP. |
 | 2026-10-09 | Faizan tested the e-invoicing screens (Items, client and customer e-invoicing fields, invoice editor, E-invoice ready? panel, XML download) — all fine. P4-02 → P4-06 ✅. Remaining in Phase 4: ASP (Q-02) → P4-07 → P4-09. |
+| 2026-10-09 | ASP comparison prepared (`docs/ASP-COMPARISON.md`): MoF list (65 accredited + 5 in final assessment), our 10 requirements, shortlist, questions to send, MD 64/2025 100 free e-invoices per year. |
