@@ -87,6 +87,12 @@
 | D-66 | **CT adjustments** (Faizan): automatic add-backs from CT-tagged expense accounts at the configured % (F-08), plus manual adjustment lines (add / deduct) each with a description **and** a legal reference; changeable only while the return is a draft. |
 | D-67 | **Losses and Small Business Relief** (Faizan): a loss of a period in which SBR is applied is **not** carried forward; losses from earlier standard periods are kept unused and offset in the next standard period. SBR elected but not available (revenue above the limit now or in any earlier period, or period ends after the last SBR date) → standard computation with a warning. |
 | D-68 | **Depreciation** (Faizan): straight line, **from the month of purchase** (a full month's charge in the month the asset is bought). |
+| D-69 | **CT approval after the year end** (Faizan accepted the recommendation, 2026-10-09): the database refuses to approve a Corporate Tax return before its financial year has ended. |
+| D-70 | **Assets into the register** (Faizan): from a posted bill line on a fixed-asset account (cost = net + irrecoverable VAT, date = bill date) or by hand; assets owned before the app carry their accumulated depreciation (and units used) as at a date. Registering posts nothing — the bill or the opening balances hold the cost. Each asset: category (default life), residual value, location, tag / serial number. Once depreciation has been charged only the descriptive fields can change. |
+| D-71 | **Monthly depreciation run** (Faizan): one journal per month (Dr depreciation expense / Cr accumulated depreciation, a pair of lines per asset), waiting for approval by someone else; months run in order, each once; the next waits until the previous is posted; an asset registered late catches up in the next run. The latest run can be cancelled while its journal is not posted. |
+| D-72 | **Depreciation rounding** (Faizan): half-up to the fils each month; the last month of each year (reducing balance, sum-of-years' digits) and the last month of the life absorb the difference; never below the residual value. |
+| D-73 | **Depreciation methods** (Faizan: all): straight line (F-21); reducing balance — annual % on the book value at the start of each asset-year, spread over its 12 months; sum-of-years' digits by asset-year (life in whole years); units of production — units entered per month. Asset-years start in the month of purchase (D-68); for an asset with history before the app, reducing-balance years start in its first month in the app. |
+| D-74 | **Disposals** (Faizan): no depreciation in the month of disposal. A sale is a normal sales invoice (VAT as usual) with its line on **1520 Asset disposals clearing**; the disposal journal removes cost and accumulated depreciation and books the gain (**4320**) or loss (**6210**). Scrapping needs no invoice (book value = loss). Disposal waits until depreciation is run to the month before; it can be cancelled while its journal is not posted. |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -307,10 +313,10 @@ Standard: **PINT AE Billing 1.0.4** (UAE Peppol Authority, docs.peppol.eu/poac/a
 
 | ID | Step | Tests | Status |
 |---|---|---|---|
-| P5-01 | **CT computation + return workflow** (F-08 → F-11, D-66, D-67): profit before tax from the books (CT expense excluded), tagged add-backs, manual adjustments with legal reference, SBR / standard gates, loss relief (75% cap), CT payable, due date; draft → approved by someone else (frozen snapshot + SHA-256 + tax-rule version) → filed (FTA reference); losses b/f from the last approved return or the client's opening losses | CT-01 → CT-10 | 🟡 database built 2026-10-09 — `…20261009100600_ct_computation.sql` (32 pgTAP tests, applied by Faizan) + **Corporate Tax** tab (`lib/live-ct.ts`, 5 tests) — waiting for Faizan's test |
-| P5-02 | Corporate Tax screen per client (computation with drill-down, adjustments, approve, file) | CT-* | 🟡 built with P5-01 — waiting for Faizan's test |
+| P5-01 | **CT computation + return workflow** (F-08 → F-11, D-66, D-67): profit before tax from the books (CT expense excluded), tagged add-backs, manual adjustments with legal reference, SBR / standard gates, loss relief (75% cap), CT payable, due date; draft → approved by someone else (frozen snapshot + SHA-256 + tax-rule version) → filed (FTA reference); losses b/f from the last approved return or the client's opening losses | CT-01 → CT-10 | ✅ tested by Faizan 2026-10-09 — database built 2026-10-09 — `…20261009100600_ct_computation.sql` (32 pgTAP tests, applied by Faizan) + **Corporate Tax** tab (`lib/live-ct.ts`, 5 tests) |
+| P5-02 | Corporate Tax screen per client (computation with drill-down, adjustments, approve, file) | CT-* | ✅ tested by Faizan 2026-10-09 |
 | P5-03 | CT return pack (Excel / PDF) with drill-down and legal references | CT-* | ⬜ |
-| P5-04 | Fixed asset register + depreciation (F-21, D-68 from the month of purchase) | FA-* | ⬜ |
+| P5-04 | Fixed asset register + depreciation (F-21, D-68, D-70 → D-74): register (from bills or by hand), four methods, monthly run for approval, disposals, ledger check | FA-01 → FA-10 | 🟡 database built 2026-10-09 — `…20261009100700_fixed_assets.sql` (27 pgTAP tests; also D-69); screen next |
 | P5-05 | Year-end close: accruals / prepayments, closing entries, retained earnings roll-forward | YE-* | ⬜ |
 | P5-06 | IFRS for SMEs primary statements (P&L, balance sheet, cash flow, SOCE) | RPT-* | ⬜ |
 | P5-07 | Golden CT set from Faizan (Q-06) | CT-11 | ⬜ |
@@ -429,6 +435,21 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | CT-09 | SBR: revenue 3,000,001 | Not eligible → standard computation | U | ✅ DB (33_ct_computation) |
 | CT-10 | FY ending 31 Dec 2026 | Return & payment due 30 Sep 2027 | U | ✅ DB (33_ct_computation) |
 | CT-11 | Golden set from Faizan (Q-06) | Matches manual computation to the fils | U | ⬜ |
+
+### 6.6b Fixed assets (FA) — D-68, D-70 → D-74
+
+| ID | Scenario | Expected | Level | Status |
+|---|---|---|---|---|
+| FA-01 | Van 36,000, straight line 36 months, bought 15 Jan | Full month in January: 1,000 | U | ✅ DB (34_fixed_assets) |
+| FA-02 | 10,000 over 3 months | 3,333.33 / 3,333.33 / 3,333.34 (last absorbs) | U | ✅ DB |
+| FA-03 | 100,000 reducing balance 20% | Year 1 = 20,000 (1,666.67 × 11 + 1,666.63); year 2 on 80,000 = 16,000 | U | ✅ DB |
+| FA-04 | 60,000 sum-of-years' digits, 3 years | 30,000 / 20,000 / 10,000 | U | ✅ DB |
+| FA-05 | 50,000 units of production, 100,000 km; 2,000 km in a month | 1,000; usage of a month already run cannot change | U | ✅ DB |
+| FA-06 | Monthly run | One journal for approval; preparer cannot approve; cannot be edited by hand; months in order, once each | U | ✅ DB |
+| FA-07 | Asset registered after a run | Next run catches up the missed months | U | ✅ DB |
+| FA-08 | Scrap a fully depreciated laptop; sell a van (35,000, book value 33,000) via sales invoice to 1520 | No gain/loss; gain 2,000 to 4320 | U | ✅ DB |
+| FA-09 | Asset from a posted bill line on 1500 | Cost and date from the bill; one asset per line | U | ✅ DB |
+| FA-10 | Asset with 6,000 accumulated before the app | Continues from its book value, ends at nil | U | ✅ DB |
 
 ### 6.7 Reports (RPT)
 | ID | Scenario | Expected | Type | Status |
@@ -574,3 +595,5 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-09 | Faizan tested incoming e-invoices (import, supplier created, draft bill, credit note → debit note, duplicate and wrong-TRN refusals) — all fine. P4-08 manual ✅. Phase 4 now waits only on the first client's ASP (API connector, sandbox tests P4-09). |
 | 2026-10-09 | Phase 5 started (Faizan's go). D-65 → D-68 recorded. P5-01 CT computation + return workflow built in the database (`…20261009100600_ct_computation.sql`, 31 pgTAP tests, CT-01 → CT-10); permissions `prepare_ct` / `approve_ct` / `file_ct` added to Spec 02. |
 | 2026-10-09 | CT migration applied by Faizan; **Corporate Tax** tab + opening tax losses field on client details. Own domain **app.attsin.com** live (D-19, P3-09 🟡). |
+| 2026-10-09 | Faizan tested the Corporate Tax return (P5-01, P5-02 ✅). |
+| 2026-10-09 | Faizan's fixed-asset answers recorded as D-69 → D-74. P5-04 database built (`…20261009100700_fixed_assets.sql`, 27 pgTAP tests FA-01 → FA-10); accounts 1520 / 4320 / 6210 added (chart now 49 accounts); 6200 tagged as depreciation; CT approval only after the year end (D-69, test 33 moved to FY2025). |

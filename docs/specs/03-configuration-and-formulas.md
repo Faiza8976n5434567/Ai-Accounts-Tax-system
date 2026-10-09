@@ -51,7 +51,7 @@ Every calculation the app performs. **Editable** = parameter on the Tax Rules / 
 | **F-18** | TRN format = 15 digits starting with 1 | — (fixed, code) | — | FTA | ARAP-07 |
 | **F-19** | Rounding = half-up to 2 dp at **line** level | — (fixed, code) | — | D-08 | VAT-09 |
 | **F-20** | Compliance deadlines = rule offset from period/year end or licence expiry | `compliance_rules` | VAT +28 days; CT +9 months; licence −30 days reminder | various | CFG-07 |
-| **F-21** | Depreciation (straight-line) = (cost − residual) ÷ useful life, monthly | per asset | — | IAS 16 | *Phase 5* |
+| **F-21** | Depreciation, monthly from the month of purchase (D-68): straight line (cost − residual) ÷ life; reducing balance = annual % × book value at the start of the asset-year ÷ 12; sum-of-years' digits by asset-year; units of production = (cost − residual) × units ÷ total units. Half-up per month; last month of the year / life absorbs; never below residual (D-72, D-73) | per asset (method, life, rate, units) | — | IAS 16 / IFRS for SMEs s.17.22 | FA-01 → FA-10 |
 | **F-22** | E-invoicing dates (ASP appointment, go-live) | `einvoicing.asp_by`, `einvoicing.go_live` | 2027-03-31, 2027-07-01 (VERIFY) | MD 244/2025 | *Phase 4* |
 | **F-23** | Dashboard ratios (annualised revenue, DSO, collection %) | — (fixed, display only) | — | — | E2E |
 | **F-24** | USD → AED: line AED amount = round-half-up(USD amount × rate); VAT then calculated on the AED line (F-01); a USD payment that exactly matches a USD invoice settles its full AED total | `fx.usd_aed` | 3.6725 | CBUAE peg; D-21 | FX-01 → 06 |
