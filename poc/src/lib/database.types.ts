@@ -2044,9 +2044,9 @@ export type Database = {
       }
       payment_allocations: {
         Row: {
+          advance_vat: number
           amount: number
           amount_fcy: number
-          advance_vat: number
           applied_on: string
           created_at: string
           created_by: string | null
@@ -2062,9 +2062,9 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          advance_vat?: number
           amount: number
           amount_fcy: number
-          advance_vat: number
           applied_on: string
           created_at?: string
           created_by?: string | null
@@ -2080,9 +2080,9 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          advance_vat?: number
           amount?: number
           amount_fcy?: number
-          advance_vat?: number
           applied_on?: string
           created_at?: string
           created_by?: string | null
@@ -2151,10 +2151,10 @@ export type Database = {
       }
       payments: {
         Row: {
-          amount: number
-          amount_fcy: number
           advance_emirate: string | null
           advance_vat: number
+          amount: number
+          amount_fcy: number
           approved_by: string | null
           auto_allocate: boolean
           bank_account_id: string
@@ -2187,10 +2187,10 @@ export type Database = {
           writeoff_fcy: number
         }
         Insert: {
+          advance_emirate?: string | null
+          advance_vat?: number
           amount?: number
           amount_fcy: number
-          advance_emirate: string | null
-          advance_vat: number
           approved_by?: string | null
           auto_allocate?: boolean
           bank_account_id: string
@@ -2223,10 +2223,10 @@ export type Database = {
           writeoff_fcy?: number
         }
         Update: {
-          amount?: number
-          amount_fcy?: number
           advance_emirate?: string | null
           advance_vat?: number
+          amount?: number
+          amount_fcy?: number
           approved_by?: string | null
           auto_allocate?: boolean
           bank_account_id?: string
@@ -2259,6 +2259,13 @@ export type Database = {
           writeoff_fcy?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "payments_advance_emirate_fkey"
+            columns: ["advance_emirate"]
+            isOneToOne: false
+            referencedRelation: "emirates"
+            referencedColumns: ["code"]
+          },
           {
             foreignKeyName: "payments_approved_by_fkey"
             columns: ["approved_by"]
