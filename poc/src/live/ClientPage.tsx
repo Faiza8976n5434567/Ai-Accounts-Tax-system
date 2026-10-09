@@ -9,6 +9,7 @@ import { fmt } from "../lib/money";
 import { routeHash, type ClientTab } from "./routes";
 import { OpeningTab } from "./OpeningTab";
 import { ItemsTab } from "./ItemsTab";
+import { EinvoicingTab } from "./EinvoicingTab";
 import { JournalsTab } from "./JournalsTab";
 import { AccountsTab } from "./AccountsTab";
 import { PeriodsTab } from "./PeriodsTab";
@@ -23,7 +24,7 @@ import { ClientUsersTab } from "./ClientUsersTab";
 import { ClientDetailsForm } from "./ClientDetailsForm";
 import { useLoad, useToday } from "./hooks";
 
-const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", items: "Items", sales: "Sales invoices", bills: "Purchase bills", payments: "Receipts & payments", bank: "Bank", vat: "VAT return", journals: "Journals", approvals: "Approvals", reports: "Reports", accounts: "Chart of accounts", periods: "Periods", users: "Client users", opening: "Opening balances" };
+const TITLES: Record<ClientTab, string> = { overview: "Overview", contacts: "Customers & suppliers", items: "Items", sales: "Sales invoices", einvoicing: "E-invoicing", bills: "Purchase bills", payments: "Receipts & payments", bank: "Bank", vat: "VAT return", journals: "Journals", approvals: "Approvals", reports: "Reports", accounts: "Chart of accounts", periods: "Periods", users: "Client users", opening: "Opening balances" };
 
 export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab }) {
   const fetchAll = useCallback(() => Promise.all([getClient(clientId), listAccounts(clientId), listAccountingPeriods(clientId), listTaxPeriods(clientId), myPermissions(clientId)]), [clientId]);
@@ -80,6 +81,7 @@ export function ClientPage({ clientId, tab }: { clientId: string; tab: ClientTab
       )}
       {editingDetails && <ClientDetailsForm client={client} onClose={() => setEditingDetails(false)} onSaved={() => { setEditingDetails(false); reload(); }} />}
       {tab === "contacts" && <ContactsTab orgId={clientId} accounts={accounts} canEdit={perms.includes("prepare")} />}
+      {tab === "einvoicing" && <EinvoicingTab client={client} perms={perms} onClientSaved={reload} />}
       {tab === "items" && <ItemsTab orgId={clientId} accounts={accounts} canEdit={perms.includes("prepare")} />}
       {tab === "sales" && <SalesTab client={client} accounts={accounts} taxPeriods={taxPeriods} perms={perms} />}
       {tab === "bills" && <BillsTab client={client} accounts={accounts} perms={perms} />}

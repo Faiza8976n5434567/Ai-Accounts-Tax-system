@@ -170,6 +170,48 @@ export type Database = {
           },
         ]
       }
+      asp_providers: {
+        Row: {
+          accreditation_no: string | null
+          connector: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          verified_on: string
+          website: string | null
+        }
+        Insert: {
+          accreditation_no?: string | null
+          connector?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          status: string
+          updated_at?: string
+          updated_by?: string | null
+          verified_on?: string
+          website?: string | null
+        }
+        Update: {
+          accreditation_no?: string | null
+          connector?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          verified_on?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       attachments: {
         Row: {
           created_at: string
@@ -1186,6 +1228,69 @@ export type Database = {
         }
         Relationships: []
       }
+      einvoice_submissions: {
+        Row: {
+          asp_provider_id: string
+          asp_reference: string | null
+          attempt: number
+          channel: string
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          rejection_reason: string | null
+          result_at: string | null
+          result_by: string | null
+          sales_invoice_id: string
+          sent_at: string
+          sent_by: string
+          status: Database["public"]["Enums"]["einvoice_status"]
+          updated_at: string
+          updated_by: string | null
+          xml_sha256: string
+        }
+        Insert: {
+          asp_provider_id: string
+          asp_reference?: string | null
+          attempt: number
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          rejection_reason?: string | null
+          result_at?: string | null
+          result_by?: string | null
+          sales_invoice_id: string
+          sent_at?: string
+          sent_by: string
+          status?: Database["public"]["Enums"]["einvoice_status"]
+          updated_at?: string
+          updated_by?: string | null
+          xml_sha256: string
+        }
+        Update: {
+          asp_provider_id?: string
+          asp_reference?: string | null
+          attempt?: number
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          rejection_reason?: string | null
+          result_at?: string | null
+          result_by?: string | null
+          sales_invoice_id?: string
+          sent_at?: string
+          sent_by?: string
+          status?: Database["public"]["Enums"]["einvoice_status"]
+          updated_at?: string
+          updated_by?: string | null
+          xml_sha256?: string
+        }
+        Relationships: []
+      }
       email_log: {
         Row: {
           dedupe_key: string | null
@@ -2049,6 +2154,10 @@ export type Database = {
           address: string | null
           address_line1: string | null
           address_line2: string | null
+          asp_account_ref: string | null
+          asp_live_from: string | null
+          asp_provider_id: string | null
+          asp_status: string
           bank_name: string | null
           base_currency: string
           brand_color: string | null
@@ -2084,6 +2193,10 @@ export type Database = {
           address?: string | null
           address_line1?: string | null
           address_line2?: string | null
+          asp_account_ref?: string | null
+          asp_live_from?: string | null
+          asp_provider_id?: string | null
+          asp_status?: string
           bank_name?: string | null
           base_currency?: string
           brand_color?: string | null
@@ -2119,6 +2232,10 @@ export type Database = {
           address?: string | null
           address_line1?: string | null
           address_line2?: string | null
+          asp_account_ref?: string | null
+          asp_live_from?: string | null
+          asp_provider_id?: string | null
+          asp_status?: string
           bank_name?: string | null
           base_currency?: string
           brand_color?: string | null
@@ -3854,6 +3971,14 @@ export type Database = {
           type: Database["public"]["Enums"]["account_type"]
         }[]
       }
+      record_einvoice_result: {
+        Args: { p_asp_reference?: string; p_reason?: string; p_status: string; p_submission_id: string }
+        Returns: undefined
+      }
+      record_einvoice_sent: {
+        Args: { p_asp_reference?: string; p_invoice_id: string; p_xml_sha256: string }
+        Returns: string
+      }
       reject_journal: {
         Args: { p_journal_id: string; p_reason: string }
         Returns: undefined
@@ -4018,6 +4143,7 @@ export type Database = {
         | "receipt"
         | "payment"
       document_status: "draft" | "pending" | "posted"
+      einvoice_status: "sent" | "accepted" | "rejected"
       firm_role: "firm_admin" | "firm_accountant"
       firm_status: "active" | "suspended"
       integrity_status: "ok" | "warning" | "error"
@@ -4202,6 +4328,7 @@ export const Constants = {
         "payment",
       ],
       document_status: ["draft", "pending", "posted"],
+      einvoice_status: ["sent", "accepted", "rejected"],
       firm_role: ["firm_admin", "firm_accountant"],
       firm_status: ["active", "suspended"],
       integrity_status: ["ok", "warning", "error"],

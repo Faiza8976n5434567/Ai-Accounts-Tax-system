@@ -49,7 +49,7 @@ describe("E-invoice ready? + conversion → passes the official UAE rules (P4-05
       "Client: add address line 1 and city (Edit details → E-invoicing).",
       "Customer Peppol Buyer LLC: add address line 1 and city (E-invoicing details).",
       "Client: add the IBAN for bank payments (Edit details → E-invoicing).",
-      "Line 1: pick an item (goods / services with its HS or service code).",
+      "Line 1: set goods / services and its code — on the line or by picking an item.",
     ]);
   });
 

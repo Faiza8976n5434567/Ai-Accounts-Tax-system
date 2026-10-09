@@ -9,7 +9,7 @@ import { friendlyDbError } from "../lib/journals";
 import { listContacts, type Contact } from "../lib/contacts";
 import type { Account, Client, Emirate, TaxPeriod } from "../lib/clients";
 import { listEmirates } from "../lib/clients";
-import { listItems, type Item } from "../lib/items";
+import { EXEMPTION_REASONS, ITEM_TYPES, listItems, UNITS, type Item } from "../lib/items";
 import { downloadEinvoice, einvoiceReadiness, toPintDoc } from "../lib/einvoice-ready";
 import {
   creditRemaining, deleteInvoice, documentTotals, documentVat, lineAmounts, listInvoices, parseQuantity, postInvoice, SALES_TAX_CODES, saveInvoice,
@@ -181,7 +181,8 @@ function EinvoicePanel({ inv, client, customer, original }: { inv: InvoiceWithLi
 }
 
 // ── Editor ──────────────────────────────────────────────────────────────────────────────
-type EditLine = { description: string; quantity: string; price: string; accountId: string; taxCode: string; itemId?: string };
+type EditLine = { description: string; quantity: string; price: string; accountId: string; taxCode: string; itemId?: string;
+  itemType?: string; hsCode?: string; sacCode?: string; unitCode?: string; exemptionReason?: string };   // D-64: e-invoice fields on the line
 /** BTAE-02 transaction type flags (official PINT AE list, positions 1–8). */
 const TX_FLAGS = ["Free trade zone", "Deemed supply", "Profit margin scheme", "Summary invoice", "Continuous supply", "Agent billing", "E-commerce", "Export"];
 const CREDIT_REASONS: [string, string][] = [["DL8.61.1.A", "Supply cancelled"], ["DL8.61.1.B", "Tax treatment changed (nature of supply)"], ["DL8.61.1.C", "Consideration altered (e.g. bad debt relief)"], ["DL8.61.1.D", "Goods / services returned"], ["DL8.61.1.E", "Tax charged in error"], ["VD", "Volume discount"]];
@@ -209,8 +210,10 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, items
   const [payMeans, setPayMeans] = useState(invoice?.payment_means_code ?? client.payment_means_code ?? "30");
   const [creditReason, setCreditReason] = useState(invoice?.credit_reason_code ?? "");
   const [incoterms, setIncoterms] = useState(invoice?.incoterms ?? "");
-  const [lines, setLines] = useState<EditLine[]>(() => (invoice ?? (creditFor ? null : null))?.lines.map((l) => ({ description: l.description, quantity: String(Number(l.quantity)), price: fmtPlain(l.unit_price), accountId: l.account_id, taxCode: l.tax_code, itemId: l.item_id ?? undefined }))
-    ?? (creditFor ? creditFor.lines.map((l) => ({ description: `Credit: ${l.description}`, quantity: String(Number(l.quantity)), price: fmtPlain(l.unit_price), accountId: l.account_id, taxCode: l.tax_code, itemId: l.item_id ?? undefined })) : [{ description: "", quantity: "1", price: "", accountId: "", taxCode: "SR" }]));
+  const [lines, setLines] = useState<EditLine[]>(() => (invoice ?? (creditFor ? null : null))?.lines.map((l) => ({ description: l.description, quantity: String(Number(l.quantity)), price: fmtPlain(l.unit_price), accountId: l.account_id, taxCode: l.tax_code, itemId: l.item_id ?? undefined,
+    itemType: l.item_type ?? "", hsCode: l.hs_code ?? "", sacCode: l.sac_code ?? "", unitCode: l.unit_code ?? "", exemptionReason: l.exemption_reason ?? "" }))
+    ?? (creditFor ? creditFor.lines.map((l) => ({ description: `Credit: ${l.description}`, quantity: String(Number(l.quantity)), price: fmtPlain(l.unit_price), accountId: l.account_id, taxCode: l.tax_code, itemId: l.item_id ?? undefined,
+    itemType: l.item_type ?? "", hsCode: l.hs_code ?? "", sacCode: l.sac_code ?? "", unitCode: l.unit_code ?? "", exemptionReason: l.exemption_reason ?? "" })) : [{ description: "", quantity: "1", price: "", accountId: "", taxCode: "SR" }]));
   const [rules, setRules] = useState<{ vatBp: number; usdAed: string; issueDays: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -228,7 +231,8 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, items
     const it = items.find((x) => x.id === id);
     if (!it) { setLine(i, { itemId: undefined }); return; }
     setLine(i, { itemId: it.id, description: it.description || it.name, ...(it.default_price ? { price: fmtPlain(it.default_price) } : {}),
-      ...(it.income_account_id ? { accountId: it.income_account_id } : {}), taxCode: it.tax_code });
+      ...(it.income_account_id ? { accountId: it.income_account_id } : {}), taxCode: it.tax_code,
+      itemType: it.item_type, hsCode: it.hs_code ?? "", sacCode: it.sac_code ?? "", unitCode: it.unit_code, exemptionReason: it.exemption_reason ?? "" });
   };
   const activeItems = items.filter((x) => x.is_active || lines.some((l) => l.itemId === x.id));
 
@@ -252,7 +256,9 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, items
       supply_emirate: emirate, currency, original_invoice_id: isCredit ? (invoice?.original_invoice_id ?? creditFor?.id ?? null) : null,
       customer_reference: ref, notes, prices_include_vat: inclVat,
       transaction_type: txType, payment_means_code: payMeans || null, credit_reason_code: isCredit ? creditReason || null : null, incoterms: txType[7] === "1" ? incoterms.trim().toUpperCase() || null : null,
-      lines: lines.map((l) => ({ description: l.description.trim(), quantity: l.quantity.trim().replace(/,/g, ""), unit_price: parseAedToFils(l.price)!, account_id: l.accountId, tax_code: l.taxCode, item_id: l.itemId ?? null })),
+      lines: lines.map((l) => ({ description: l.description.trim(), quantity: l.quantity.trim().replace(/,/g, ""), unit_price: parseAedToFils(l.price)!, account_id: l.accountId, tax_code: l.taxCode, item_id: l.itemId ?? null,
+        item_type: l.itemType || null, hs_code: l.itemType && l.itemType !== "S" ? l.hsCode?.trim() || null : null, sac_code: l.itemType && l.itemType !== "G" ? l.sacCode?.trim() || null : null,
+        unit_code: l.unitCode || null, exemption_reason: l.taxCode === "EX" ? l.exemptionReason || null : null })),
     };
     setBusy(true);
     try {
@@ -319,7 +325,18 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, items
           <tr key={i}>
             <td className="td">{activeItems.length > 0 && <select aria-label={`Line ${i + 1} item`} className={`${cls} !py-1 mb-1 text-xs`} value={l.itemId ?? ""} onChange={(e) => pickItem(i, e.target.value)}>
                 <option value="">Item… (needed for e-invoices)</option>{activeItems.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>}
-              <input aria-label={`Line ${i + 1} description`} className={`${cls} !py-1.5`} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} /></td>
+              <input aria-label={`Line ${i + 1} description`} className={`${cls} !py-1.5`} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
+              <div className="mt-1 grid grid-cols-3 gap-1" title="E-invoice details of this line (D-64)">
+                <select aria-label={`Line ${i + 1} goods or services`} className={`${cls} !py-1 !px-2 text-xs`} value={l.itemType ?? ""} onChange={(e) => setLine(i, { itemType: e.target.value })}>
+                  <option value="">G / S…</option>{ITEM_TYPES.map(([v, t]) => <option key={v} value={v}>{t}</option>)}</select>
+                <input aria-label={`Line ${i + 1} HS or service code`} className={`${cls} !py-1 !px-2 text-xs`} placeholder={l.itemType === "G" ? "HS code" : l.itemType === "S" ? "Service code" : l.itemType === "B" ? "HS code" : "Code"}
+                  value={l.itemType === "S" ? l.sacCode ?? "" : l.hsCode ?? ""} onChange={(e) => setLine(i, l.itemType === "S" ? { sacCode: e.target.value } : { hsCode: e.target.value })} />
+                <select aria-label={`Line ${i + 1} unit`} className={`${cls} !py-1 !px-2 text-xs`} value={l.unitCode ?? ""} onChange={(e) => setLine(i, { unitCode: e.target.value })}>
+                  <option value="">Unit…</option>{UNITS.map(([v, t]) => <option key={v} value={v}>{t}</option>)}</select>
+                {l.itemType === "B" && <input aria-label={`Line ${i + 1} service code`} className={`${cls} !py-1 !px-2 text-xs col-span-3`} placeholder="Service code" value={l.sacCode ?? ""} onChange={(e) => setLine(i, { sacCode: e.target.value })} />}
+                {l.taxCode === "EX" && <select aria-label={`Line ${i + 1} exemption reason`} className={`${cls} !py-1 !px-2 text-xs col-span-3`} value={l.exemptionReason ?? ""} onChange={(e) => setLine(i, { exemptionReason: e.target.value })}>
+                  <option value="">Exemption reason…</option>{EXEMPTION_REASONS.map(([v, t]) => <option key={v} value={v}>{t}</option>)}</select>}
+              </div></td>
             <td className="td"><input aria-label={`Line ${i + 1} quantity`} inputMode="decimal" className={`${cls} !py-1.5 text-end`} value={l.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} /></td>
             <td className="td"><input aria-label={`Line ${i + 1} unit price`} inputMode="decimal" className={`${cls} !py-1.5 text-end`} value={l.price} onChange={(e) => setLine(i, { price: e.target.value })} /></td>
             <td className="td"><select aria-label={`Line ${i + 1} account`} className={`${cls} !py-1.5`} value={l.accountId} onChange={(e) => setLine(i, { accountId: e.target.value })}>

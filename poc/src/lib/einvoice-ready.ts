@@ -37,10 +37,11 @@ export function einvoiceReadiness(inv: InvoiceWithLines, client: Client, custome
   }
   inv.lines.forEach((l) => {
     const n = `Line ${l.line_no}`;
-    if (!l.item_type) p.push(`${n}: pick an item (goods / services with its HS or service code).`);
-    if (l.item_type && l.item_type !== "S" && !l.hs_code) p.push(`${n}: the item needs an HS code.`);
-    if (l.item_type && l.item_type !== "G" && !l.sac_code) p.push(`${n}: the item needs a service accounting code.`);
-    if (l.tax_code === "EX" && !l.exemption_reason) p.push(`${n}: exempt lines need an exemption reason (set it on the item).`);
+    if (!l.item_type) p.push(`${n}: set goods / services and its code — on the line or by picking an item.`);
+    if (l.item_type && l.item_type !== "S" && !l.hs_code) p.push(`${n}: add the HS code.`);
+    if (l.item_type && l.item_type !== "G" && !l.sac_code) p.push(`${n}: add the service accounting code.`);
+    if (!l.unit_code) p.push(`${n}: choose the unit.`);
+    if (l.tax_code === "EX" && !l.exemption_reason) p.push(`${n}: exempt lines need an exemption reason.`);
   });
   return { status: p.length ? "missing" : "ready", problems: p };
 }
