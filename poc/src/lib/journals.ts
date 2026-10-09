@@ -81,7 +81,7 @@ export function journalActions(j: Pick<Journal, "status" | "source" | "prepared_
 
 export const SOURCE_LABEL: Record<JournalSource, string> = {
   manual: "Manual", opening: "Opening balances", reversal: "Reversal", sale: "Sales", purchase: "Purchases",
-  receipt: "Receipt", payment: "Payment", bank: "Bank", vat: "VAT", ct: "Corporate Tax",
+  receipt: "Receipt", payment: "Payment", bank: "Bank", vat: "VAT", ct: "Corporate Tax", depreciation: "Depreciation", disposal: "Asset disposal",
 };
 export const STATUS_LABEL: Record<JournalStatus, string> = { draft: "Draft", pending: "Waiting for approval", posted: "Posted", reversed: "Reversed" };
 

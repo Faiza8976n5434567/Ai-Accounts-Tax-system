@@ -316,7 +316,7 @@ Standard: **PINT AE Billing 1.0.4** (UAE Peppol Authority, docs.peppol.eu/poac/a
 | P5-01 | **CT computation + return workflow** (F-08 → F-11, D-66, D-67): profit before tax from the books (CT expense excluded), tagged add-backs, manual adjustments with legal reference, SBR / standard gates, loss relief (75% cap), CT payable, due date; draft → approved by someone else (frozen snapshot + SHA-256 + tax-rule version) → filed (FTA reference); losses b/f from the last approved return or the client's opening losses | CT-01 → CT-10 | ✅ tested by Faizan 2026-10-09 — database built 2026-10-09 — `…20261009100600_ct_computation.sql` (32 pgTAP tests, applied by Faizan) + **Corporate Tax** tab (`lib/live-ct.ts`, 5 tests) |
 | P5-02 | Corporate Tax screen per client (computation with drill-down, adjustments, approve, file) | CT-* | ✅ tested by Faizan 2026-10-09 |
 | P5-03 | CT return pack (Excel / PDF) with drill-down and legal references | CT-* | ⬜ |
-| P5-04 | Fixed asset register + depreciation (F-21, D-68, D-70 → D-74): register (from bills or by hand), four methods, monthly run for approval, disposals, ledger check | FA-01 → FA-10 | 🟡 database built 2026-10-09 — `…20261009100700_fixed_assets.sql` (27 pgTAP tests; also D-69); screen next |
+| P5-04 | Fixed asset register + depreciation (F-21, D-68, D-70 → D-74): register (from bills or by hand), four methods, monthly run for approval, disposals, ledger check | FA-01 → FA-10 | 🟡 built 2026-10-09 — `…20261009100700_fixed_assets.sql` (27 pgTAP tests; also D-69; applied by Faizan) + `…100800` FK index + **Fixed assets** tab (`lib/assets.ts`, 5 tests); 1520 selectable on sales invoice lines — waiting for Faizan's test |
 | P5-05 | Year-end close: accruals / prepayments, closing entries, retained earnings roll-forward | YE-* | ⬜ |
 | P5-06 | IFRS for SMEs primary statements (P&L, balance sheet, cash flow, SOCE) | RPT-* | ⬜ |
 | P5-07 | Golden CT set from Faizan (Q-06) | CT-11 | ⬜ |
@@ -597,3 +597,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-09 | CT migration applied by Faizan; **Corporate Tax** tab + opening tax losses field on client details. Own domain **app.attsin.com** live (D-19, P3-09 🟡). |
 | 2026-10-09 | Faizan tested the Corporate Tax return (P5-01, P5-02 ✅). |
 | 2026-10-09 | Faizan's fixed-asset answers recorded as D-69 → D-74. P5-04 database built (`…20261009100700_fixed_assets.sql`, 27 pgTAP tests FA-01 → FA-10); accounts 1520 / 4320 / 6210 added (chart now 49 accounts); 6200 tagged as depreciation; CT approval only after the year end (D-69, test 33 moved to FY2025). |
+| 2026-10-09 | Fixed-asset migration applied by Faizan; **Fixed assets** tab (register, schedule, add from bills, monthly run, units entry, disposals, ledger check). |

@@ -196,7 +196,7 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, items
   const base = invoice ?? creditFor;
   const isCredit = (invoice?.doc_type ?? (creditFor ? "credit_note" : "invoice")) === "credit_note";
   const customers = contacts.filter((c) => c.kind !== "supplier" && (c.is_active || c.id === base?.contact_id));
-  const income = accounts.filter((a) => a.type === "revenue" && a.is_active && !a.is_control);
+  const income = accounts.filter((a) => (a.type === "revenue" || a.subtype === "disposal_clearing") && a.is_active && !a.is_control);   // D-74: 1520 for the sale of a fixed asset
   const [contactId, setContactId] = useState(base?.contact_id ?? "");
   const [issueDate, setIssueDate] = useState(invoice?.issue_date ?? today);
   const [dueDate, setDueDate] = useState(invoice?.due_date ?? "");

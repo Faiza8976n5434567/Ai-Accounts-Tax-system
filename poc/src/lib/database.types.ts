@@ -212,6 +212,89 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_categories: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          default_life_months: number | null
+          default_method: Database["public"]["Enums"]["depreciation_method"]
+          default_rate_bp: number | null
+          name: string
+          sort: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          default_life_months?: number | null
+          default_method?: Database["public"]["Enums"]["depreciation_method"]
+          default_rate_bp?: number | null
+          name: string
+          sort?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          default_life_months?: number | null
+          default_method?: Database["public"]["Enums"]["depreciation_method"]
+          default_rate_bp?: number | null
+          name?: string
+          sort?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      asset_usage: {
+        Row: {
+          asset_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          month: string
+          organization_id: string
+          units: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          month: string
+          organization_id: string
+          units: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          month?: string
+          organization_id?: string
+          units?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_usage_asset_id_organization_id_fkey"
+            columns: ["asset_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
       attachments: {
         Row: {
           created_at: string
@@ -1371,6 +1454,108 @@ export type Database = {
         }
         Relationships: []
       }
+      depreciation_entries: {
+        Row: {
+          amount: number
+          asset_id: string
+          catch_up: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          run_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount: number
+          asset_id: string
+          catch_up?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          run_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount?: number
+          asset_id?: string
+          catch_up?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          run_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depreciation_entries_asset_id_organization_id_fkey"
+            columns: ["asset_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "depreciation_entries_run_id_organization_id_fkey"
+            columns: ["run_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "depreciation_runs"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      depreciation_runs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          journal_id: string
+          month: string
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id: string
+          month: string
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          journal_id?: string
+          month?: string
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depreciation_runs_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: true
+            referencedRelation: "journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depreciation_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       einvoice_inbound: {
         Row: {
           created_at: string
@@ -1803,6 +1988,171 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "emirates"
             referencedColumns: ["code"]
+          },
+        ]
+      }
+      fixed_assets: {
+        Row: {
+          accum_account_id: string
+          asset_account_id: string
+          asset_no: string
+          category_code: string | null
+          cost: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          disposal_invoice_line_id: string | null
+          disposal_journal_id: string | null
+          disposal_kind: string | null
+          disposal_proceeds: number | null
+          disposed_on: string | null
+          expense_account_id: string
+          id: string
+          life_months: number | null
+          location: string | null
+          method: Database["public"]["Enums"]["depreciation_method"]
+          name: string
+          opening_accum: number
+          opening_as_at: string | null
+          opening_units: number
+          organization_id: string
+          purchase_date: string
+          rate_bp: number | null
+          residual: number
+          source_bill_line_id: string | null
+          status: Database["public"]["Enums"]["asset_status"]
+          tag_no: string | null
+          units_name: string | null
+          units_total: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accum_account_id: string
+          asset_account_id: string
+          asset_no: string
+          category_code?: string | null
+          cost: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          disposal_invoice_line_id?: string | null
+          disposal_journal_id?: string | null
+          disposal_kind?: string | null
+          disposal_proceeds?: number | null
+          disposed_on?: string | null
+          expense_account_id: string
+          id?: string
+          life_months?: number | null
+          location?: string | null
+          method?: Database["public"]["Enums"]["depreciation_method"]
+          name: string
+          opening_accum?: number
+          opening_as_at?: string | null
+          opening_units?: number
+          organization_id: string
+          purchase_date: string
+          rate_bp?: number | null
+          residual?: number
+          source_bill_line_id?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          tag_no?: string | null
+          units_name?: string | null
+          units_total?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accum_account_id?: string
+          asset_account_id?: string
+          asset_no?: string
+          category_code?: string | null
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          disposal_invoice_line_id?: string | null
+          disposal_journal_id?: string | null
+          disposal_kind?: string | null
+          disposal_proceeds?: number | null
+          disposed_on?: string | null
+          expense_account_id?: string
+          id?: string
+          life_months?: number | null
+          location?: string | null
+          method?: Database["public"]["Enums"]["depreciation_method"]
+          name?: string
+          opening_accum?: number
+          opening_as_at?: string | null
+          opening_units?: number
+          organization_id?: string
+          purchase_date?: string
+          rate_bp?: number | null
+          residual?: number
+          source_bill_line_id?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          tag_no?: string | null
+          units_name?: string | null
+          units_total?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixed_assets_accum_account_id_organization_id_fkey"
+            columns: ["accum_account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_asset_account_id_organization_id_fkey"
+            columns: ["asset_account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_category_code_fkey"
+            columns: ["category_code"]
+            isOneToOne: false
+            referencedRelation: "asset_categories"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "fixed_assets_disposal_invoice_line_id_fkey"
+            columns: ["disposal_invoice_line_id"]
+            isOneToOne: true
+            referencedRelation: "sales_invoice_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_disposal_journal_id_fkey"
+            columns: ["disposal_journal_id"]
+            isOneToOne: false
+            referencedRelation: "journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_expense_account_id_organization_id_fkey"
+            columns: ["expense_account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_source_bill_line_id_fkey"
+            columns: ["source_bill_line_id"]
+            isOneToOne: true
+            referencedRelation: "purchase_bill_lines"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3983,6 +4333,11 @@ export type Database = {
       }
       approve_ct_return: { Args: { p_return_id: string }; Returns: string }
       approve_vat_return: { Args: { p_return_id: string }; Returns: string }
+      asset_register: {
+        Args: { p_as_at: string; p_organization_id: string }
+        Returns: Json
+      }
+      asset_schedule_view: { Args: { p_asset_id: string }; Returns: Json }
       auto_match_bank: { Args: { p_bank_account_id: string }; Returns: number }
       balance_sheet: {
         Args: { p_as_of: string; p_organization_id: string }
@@ -4000,6 +4355,11 @@ export type Database = {
         Args: { p_bank_account_id: string; p_end: string }
         Returns: Json
       }
+      cancel_depreciation_run: {
+        Args: { p_run_id: string }
+        Returns: undefined
+      }
+      cancel_disposal: { Args: { p_asset_id: string }; Returns: undefined }
       client_users: {
         Args: { p_organization_id: string }
         Returns: {
@@ -4114,6 +4474,15 @@ export type Database = {
       delete_purchase_bill: { Args: { p_id: string }; Returns: undefined }
       delete_sales_invoice: { Args: { p_id: string }; Returns: undefined }
       delete_vat_adjustment: { Args: { p_id: string }; Returns: undefined }
+      dispose_asset: {
+        Args: {
+          p_asset_id: string
+          p_date: string
+          p_invoice_line_id?: string
+          p_kind: string
+        }
+        Returns: string
+      }
       due_reminders: {
         Args: { p_today: string }
         Returns: {
@@ -4323,6 +4692,10 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: undefined
       }
+      run_depreciation: {
+        Args: { p_month: string; p_organization_id: string }
+        Returns: string
+      }
       run_integrity_checks: {
         Args: { p_organization_id: string }
         Returns: string
@@ -4341,6 +4714,10 @@ export type Database = {
           p_end: string
           p_statement_balance: number
         }
+        Returns: string
+      }
+      save_fixed_asset: {
+        Args: { p_asset: Json; p_id: string; p_organization_id: string }
         Returns: string
       }
       save_journal_draft: {
@@ -4369,6 +4746,10 @@ export type Database = {
       save_sales_invoice: {
         Args: { p_doc: Json; p_id: string; p_organization_id: string }
         Returns: string
+      }
+      set_asset_usage: {
+        Args: { p_asset_id: string; p_month: string; p_units: number }
+        Returns: undefined
       }
       set_payment_bank_line: {
         Args: { p_payment_id: string; p_txn_id: string }
@@ -4429,6 +4810,7 @@ export type Database = {
     }
     Enums: {
       account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
+      asset_status: "active" | "disposed"
       bank_txn_status: "unmatched" | "matched"
       check_severity: "error" | "warn" | "info"
       compliance_anchor:
@@ -4442,6 +4824,11 @@ export type Database = {
       contact_kind: "customer" | "supplier" | "both"
       ct_regime: "standard" | "sbr" | "qfzp"
       ct_return_status: "draft" | "approved" | "filed"
+      depreciation_method:
+        | "straight_line"
+        | "reducing_balance"
+        | "sum_of_years"
+        | "units"
       doc_type:
         | "journal"
         | "sales_invoice"
@@ -4465,6 +4852,8 @@ export type Database = {
         | "reversal"
         | "vat"
         | "ct"
+        | "depreciation"
+        | "disposal"
       journal_status: "draft" | "pending" | "posted" | "reversed"
       org_role:
         | "firm_accountant"
@@ -4613,6 +5002,7 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["asset", "liability", "equity", "revenue", "expense"],
+      asset_status: ["active", "disposed"],
       bank_txn_status: ["unmatched", "matched"],
       check_severity: ["error", "warn", "info"],
       compliance_anchor: [
@@ -4627,6 +5017,12 @@ export const Constants = {
       contact_kind: ["customer", "supplier", "both"],
       ct_regime: ["standard", "sbr", "qfzp"],
       ct_return_status: ["draft", "approved", "filed"],
+      depreciation_method: [
+        "straight_line",
+        "reducing_balance",
+        "sum_of_years",
+        "units",
+      ],
       doc_type: [
         "journal",
         "sales_invoice",
@@ -4651,6 +5047,8 @@ export const Constants = {
         "reversal",
         "vat",
         "ct",
+        "depreciation",
+        "disposal",
       ],
       journal_status: ["draft", "pending", "posted", "reversed"],
       org_role: [
