@@ -1289,7 +1289,43 @@ export type Database = {
           updated_by?: string | null
           xml_sha256?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "einvoice_submissions_asp_provider_id_fkey"
+            columns: ["asp_provider_id"]
+            isOneToOne: false
+            referencedRelation: "asp_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "einvoice_submissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "einvoice_submissions_result_by_fkey"
+            columns: ["result_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "einvoice_submissions_sales_invoice_id_organization_id_fkey"
+            columns: ["sales_invoice_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoices"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "einvoice_submissions_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_log: {
         Row: {
@@ -2268,6 +2304,13 @@ export type Database = {
           vat_registered?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "organizations_asp_provider_id_fkey"
+            columns: ["asp_provider_id"]
+            isOneToOne: false
+            referencedRelation: "asp_providers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "organizations_base_currency_fkey"
             columns: ["base_currency"]
@@ -3972,11 +4015,20 @@ export type Database = {
         }[]
       }
       record_einvoice_result: {
-        Args: { p_asp_reference?: string; p_reason?: string; p_status: string; p_submission_id: string }
+        Args: {
+          p_asp_reference?: string
+          p_reason?: string
+          p_status: string
+          p_submission_id: string
+        }
         Returns: undefined
       }
       record_einvoice_sent: {
-        Args: { p_asp_reference?: string; p_invoice_id: string; p_xml_sha256: string }
+        Args: {
+          p_asp_reference?: string
+          p_invoice_id: string
+          p_xml_sha256: string
+        }
         Returns: string
       }
       reject_journal: {
