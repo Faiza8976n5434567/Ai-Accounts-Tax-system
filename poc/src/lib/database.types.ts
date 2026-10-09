@@ -1228,6 +1228,82 @@ export type Database = {
         }
         Relationships: []
       }
+      einvoice_inbound: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          doc_kind: string
+          document_number: string
+          einv_uuid: string
+          id: string
+          imported_at: string
+          imported_by: string
+          organization_id: string
+          purchase_bill_id: string
+          supplier_trn: string | null
+          updated_at: string
+          updated_by: string | null
+          xml: string
+          xml_sha256: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          doc_kind: string
+          document_number: string
+          einv_uuid: string
+          id?: string
+          imported_at?: string
+          imported_by: string
+          organization_id: string
+          purchase_bill_id: string
+          supplier_trn?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          xml: string
+          xml_sha256: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          doc_kind?: string
+          document_number?: string
+          einv_uuid?: string
+          id?: string
+          imported_at?: string
+          imported_by?: string
+          organization_id?: string
+          purchase_bill_id?: string
+          supplier_trn?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          xml?: string
+          xml_sha256?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "einvoice_inbound_imported_by_fkey"
+            columns: ["imported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "einvoice_inbound_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "einvoice_inbound_purchase_bill_id_organization_id_fkey"
+            columns: ["purchase_bill_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
       einvoice_submissions: {
         Row: {
           asp_provider_id: string
@@ -3966,6 +4042,15 @@ export type Database = {
         Args: { p_organization_id: string; p_rows: Json }
         Returns: Json
       }
+      import_einvoice: {
+        Args: {
+          p_bill: Json
+          p_meta: Json
+          p_organization_id: string
+          p_xml: string
+        }
+        Returns: string
+      }
       lock_period: {
         Args: { p_period_id: string; p_reason?: string }
         Returns: undefined
@@ -3987,10 +4072,6 @@ export type Database = {
         Returns: undefined
       }
       my_permissions: { Args: { p_organization_id: string }; Returns: string[] }
-      import_einvoice: {
-        Args: { p_bill: Json; p_meta: Json; p_organization_id: string; p_xml: string }
-        Returns: string
-      }
       opening_status: { Args: { p_organization_id: string }; Returns: Json }
       post_bank_line: {
         Args: { p_account_id: string; p_memo?: string; p_txn_id: string }
