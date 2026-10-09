@@ -990,11 +990,15 @@ export type Database = {
       contacts: {
         Row: {
           address: string | null
+          address_line1: string | null
+          city: string | null
           country_code: string
           created_at: string
           created_by: string | null
+          customer_type: string
           default_account_id: string | null
           default_tax_code: string | null
+          einv_not_onboarded: boolean
           email: string | null
           emirate_code: string | null
           id: string
@@ -1003,19 +1007,30 @@ export type Database = {
           kind: Database["public"]["Enums"]["contact_kind"]
           name: string
           organization_id: string
+          passport_country: string | null
           payment_terms_days: number | null
+          peppol_id: string | null
+          peppol_scheme: string
           phone: string | null
+          reg_authority: string | null
+          reg_id: string | null
+          reg_type: string | null
+          region: string | null
           trn: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           address?: string | null
+          address_line1?: string | null
+          city?: string | null
           country_code?: string
           created_at?: string
           created_by?: string | null
+          customer_type?: string
           default_account_id?: string | null
           default_tax_code?: string | null
+          einv_not_onboarded?: boolean
           email?: string | null
           emirate_code?: string | null
           id?: string
@@ -1024,19 +1039,30 @@ export type Database = {
           kind: Database["public"]["Enums"]["contact_kind"]
           name: string
           organization_id: string
+          passport_country?: string | null
           payment_terms_days?: number | null
+          peppol_id?: string | null
+          peppol_scheme?: string
           phone?: string | null
+          reg_authority?: string | null
+          reg_id?: string | null
+          reg_type?: string | null
+          region?: string | null
           trn?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           address?: string | null
+          address_line1?: string | null
+          city?: string | null
           country_code?: string
           created_at?: string
           created_by?: string | null
+          customer_type?: string
           default_account_id?: string | null
           default_tax_code?: string | null
+          einv_not_onboarded?: boolean
           email?: string | null
           emirate_code?: string | null
           id?: string
@@ -1045,8 +1071,15 @@ export type Database = {
           kind?: Database["public"]["Enums"]["contact_kind"]
           name?: string
           organization_id?: string
+          passport_country?: string | null
           payment_terms_days?: number | null
+          peppol_id?: string | null
+          peppol_scheme?: string
           phone?: string | null
+          reg_authority?: string | null
+          reg_id?: string | null
+          reg_type?: string | null
+          region?: string | null
           trn?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -1619,6 +1652,91 @@ export type Database = {
           },
         ]
       }
+      items: {
+        Row: {
+          code: string | null
+          created_at: string
+          created_by: string | null
+          default_price: number | null
+          description: string | null
+          exemption_reason: string | null
+          hs_code: string | null
+          id: string
+          income_account_id: string | null
+          is_active: boolean
+          item_type: string
+          name: string
+          organization_id: string
+          sac_code: string | null
+          tax_code: string
+          unit_code: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_price?: number | null
+          description?: string | null
+          exemption_reason?: string | null
+          hs_code?: string | null
+          id?: string
+          income_account_id?: string | null
+          is_active?: boolean
+          item_type?: string
+          name: string
+          organization_id: string
+          sac_code?: string | null
+          tax_code?: string
+          unit_code?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_price?: number | null
+          description?: string | null
+          exemption_reason?: string | null
+          hs_code?: string | null
+          id?: string
+          income_account_id?: string | null
+          is_active?: boolean
+          item_type?: string
+          name?: string
+          organization_id?: string
+          sac_code?: string | null
+          tax_code?: string
+          unit_code?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_income_account_id_organization_id_fkey"
+            columns: ["income_account_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_tax_code_fkey"
+            columns: ["tax_code"]
+            isOneToOne: false
+            referencedRelation: "tax_codes"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       journal_lines: {
         Row: {
           account_id: string
@@ -1929,8 +2047,12 @@ export type Database = {
       organizations: {
         Row: {
           address: string | null
+          address_line1: string | null
+          address_line2: string | null
+          bank_name: string | null
           base_currency: string
           brand_color: string | null
+          city: string | null
           created_at: string
           created_by: string | null
           ct_regime: Database["public"]["Enums"]["ct_regime"]
@@ -1938,6 +2060,7 @@ export type Database = {
           emirate_code: string
           firm_id: string
           fy_start_month: number
+          iban: string | null
           id: string
           industry: string | null
           legal_name: string
@@ -1945,7 +2068,9 @@ export type Database = {
           licence_expiry: string | null
           licence_no: string | null
           manager_id: string | null
+          payment_means_code: string
           prior_year_revenue: number
+          reg_type: string
           status: Database["public"]["Enums"]["org_status"]
           trade_name: string | null
           trn: string | null
@@ -1957,8 +2082,12 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          bank_name?: string | null
           base_currency?: string
           brand_color?: string | null
+          city?: string | null
           created_at?: string
           created_by?: string | null
           ct_regime?: Database["public"]["Enums"]["ct_regime"]
@@ -1966,6 +2095,7 @@ export type Database = {
           emirate_code: string
           firm_id: string
           fy_start_month?: number
+          iban?: string | null
           id?: string
           industry?: string | null
           legal_name: string
@@ -1973,7 +2103,9 @@ export type Database = {
           licence_expiry?: string | null
           licence_no?: string | null
           manager_id?: string | null
+          payment_means_code?: string
           prior_year_revenue?: number
+          reg_type?: string
           status?: Database["public"]["Enums"]["org_status"]
           trade_name?: string | null
           trn?: string | null
@@ -1985,8 +2117,12 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          bank_name?: string | null
           base_currency?: string
           brand_color?: string | null
+          city?: string | null
           created_at?: string
           created_by?: string | null
           ct_regime?: Database["public"]["Enums"]["ct_regime"]
@@ -1994,6 +2130,7 @@ export type Database = {
           emirate_code?: string
           firm_id?: string
           fy_start_month?: number
+          iban?: string | null
           id?: string
           industry?: string | null
           legal_name?: string
@@ -2001,7 +2138,9 @@ export type Database = {
           licence_expiry?: string | null
           licence_no?: string | null
           manager_id?: string | null
+          payment_means_code?: string
           prior_year_revenue?: number
+          reg_type?: string
           status?: Database["public"]["Enums"]["org_status"]
           trade_name?: string | null
           trn?: string | null
@@ -2648,14 +2787,20 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string
+          exemption_reason: string | null
+          hs_code: string | null
           id: string
+          item_id: string | null
+          item_type: string | null
           line_no: number
           net: number
           net_fcy: number
           organization_id: string
           quantity: number
+          sac_code: string | null
           sales_invoice_id: string
           tax_code: string
+          unit_code: string | null
           unit_price: number
           updated_at: string
           updated_by: string | null
@@ -2667,14 +2812,20 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description: string
+          exemption_reason?: string | null
+          hs_code?: string | null
           id?: string
+          item_id?: string | null
+          item_type?: string | null
           line_no: number
           net?: number
           net_fcy?: number
           organization_id: string
           quantity: number
+          sac_code?: string | null
           sales_invoice_id: string
           tax_code: string
+          unit_code?: string | null
           unit_price: number
           updated_at?: string
           updated_by?: string | null
@@ -2686,14 +2837,20 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string
+          exemption_reason?: string | null
+          hs_code?: string | null
           id?: string
+          item_id?: string | null
+          item_type?: string | null
           line_no?: number
           net?: number
           net_fcy?: number
           organization_id?: string
           quantity?: number
+          sac_code?: string | null
           sales_invoice_id?: string
           tax_code?: string
+          unit_code?: string | null
           unit_price?: number
           updated_at?: string
           updated_by?: string | null
@@ -2706,6 +2863,13 @@ export type Database = {
             columns: ["account_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "sales_invoice_lines_item_fk"
+            columns: ["item_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "items"
             referencedColumns: ["id", "organization_id"]
           },
           {
@@ -2730,14 +2894,17 @@ export type Database = {
           contact_id: string
           created_at: string
           created_by: string | null
+          credit_reason_code: string | null
           currency: string
           customer_reference: string | null
           doc_type: Database["public"]["Enums"]["sales_doc_type"]
           due_date: string
+          einv_uuid: string
           fx_rate: number
           gross_total: number
           gross_total_fcy: number
           id: string
+          incoterms: string | null
           invoice_no: string | null
           is_opening: boolean
           issue_date: string
@@ -2746,12 +2913,14 @@ export type Database = {
           notes: string | null
           organization_id: string
           original_invoice_id: string | null
+          payment_means_code: string | null
           posted_at: string | null
           prepared_by: string | null
           prices_include_vat: boolean
           status: Database["public"]["Enums"]["document_status"]
           supply_date: string | null
           supply_emirate: string
+          transaction_type: string
           updated_at: string
           updated_by: string | null
           vat_total: number
@@ -2761,14 +2930,17 @@ export type Database = {
           contact_id: string
           created_at?: string
           created_by?: string | null
+          credit_reason_code?: string | null
           currency?: string
           customer_reference?: string | null
           doc_type?: Database["public"]["Enums"]["sales_doc_type"]
           due_date: string
+          einv_uuid?: string
           fx_rate?: number
           gross_total?: number
           gross_total_fcy?: number
           id?: string
+          incoterms?: string | null
           invoice_no?: string | null
           is_opening?: boolean
           issue_date: string
@@ -2777,12 +2949,14 @@ export type Database = {
           notes?: string | null
           organization_id: string
           original_invoice_id?: string | null
+          payment_means_code?: string | null
           posted_at?: string | null
           prepared_by?: string | null
           prices_include_vat?: boolean
           status?: Database["public"]["Enums"]["document_status"]
           supply_date?: string | null
           supply_emirate: string
+          transaction_type?: string
           updated_at?: string
           updated_by?: string | null
           vat_total?: number
@@ -2792,14 +2966,17 @@ export type Database = {
           contact_id?: string
           created_at?: string
           created_by?: string | null
+          credit_reason_code?: string | null
           currency?: string
           customer_reference?: string | null
           doc_type?: Database["public"]["Enums"]["sales_doc_type"]
           due_date?: string
+          einv_uuid?: string
           fx_rate?: number
           gross_total?: number
           gross_total_fcy?: number
           id?: string
+          incoterms?: string | null
           invoice_no?: string | null
           is_opening?: boolean
           issue_date?: string
@@ -2808,12 +2985,14 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           original_invoice_id?: string | null
+          payment_means_code?: string | null
           posted_at?: string | null
           prepared_by?: string | null
           prices_include_vat?: boolean
           status?: Database["public"]["Enums"]["document_status"]
           supply_date?: string | null
           supply_emirate?: string
+          transaction_type?: string
           updated_at?: string
           updated_by?: string | null
           vat_total?: number
