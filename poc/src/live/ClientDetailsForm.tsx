@@ -14,6 +14,8 @@ export function ClientDetailsForm({ client, onClose, onSaved }: { client: Client
     legal_name: client.legal_name, trade_name: client.trade_name ?? "", address: client.address ?? "", trn: client.trn ?? "", ct_trn: client.ct_trn ?? "",
     licence_no: client.licence_no ?? "", licence_authority: client.licence_authority ?? "", licence_expiry: client.licence_expiry ?? "",
     industry: client.industry ?? "", ct_regime: client.ct_regime, prior_year_revenue: fmtPlain(client.prior_year_revenue),
+    address_line1: client.address_line1 ?? "", address_line2: client.address_line2 ?? "", city: client.city ?? "", reg_type: client.reg_type,
+    iban: client.iban ?? "", bank_name: client.bank_name ?? "", payment_means_code: client.payment_means_code,
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +28,8 @@ export function ClientDetailsForm({ client, onClose, onSaved }: { client: Client
     if (client.vat_registered && !f.trn.trim()) { setError("A VAT-registered client needs its TRN."); return; }
     const revenue = parseAedToFils(f.prior_year_revenue || "0");
     if (revenue === null || revenue < 0) { setError("Prior-year revenue must be an AED amount."); return; }
+    const iban = f.iban.replace(/\s+/g, "").toUpperCase();
+    if (iban && !/^AE\d{21}$/.test(iban)) { setError("A UAE IBAN is AE followed by 21 digits."); return; }
     const blank = (s: string) => (s.trim() ? s.trim() : null);
     setBusy(true);
     try {
@@ -33,6 +37,8 @@ export function ClientDetailsForm({ client, onClose, onSaved }: { client: Client
         legal_name: f.legal_name.trim(), trade_name: blank(f.trade_name), address: blank(f.address), trn: blank(f.trn), ct_trn: blank(f.ct_trn),
         licence_no: blank(f.licence_no), licence_authority: blank(f.licence_authority), licence_expiry: blank(f.licence_expiry),
         industry: blank(f.industry), ct_regime: f.ct_regime, prior_year_revenue: revenue,
+        address_line1: blank(f.address_line1), address_line2: blank(f.address_line2), city: blank(f.city), reg_type: f.reg_type,
+        iban: iban || null, bank_name: blank(f.bank_name), payment_means_code: f.payment_means_code,
       });
       toast("Client details saved"); onSaved();
     } catch (e) { setError(friendlyDbError(e)); } finally { setBusy(false); }
@@ -64,6 +70,21 @@ export function ClientDetailsForm({ client, onClose, onSaved }: { client: Client
           </select></label>
         {text("prior_year_revenue", "Prior-year revenue (AED, for the SBR test)")}
       </div>
+      <h3 className="mt-5 mb-2 text-sm font-semibold text-slate-800">E-invoicing (PINT AE)</h3>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {text("address_line1", "Address line 1 (building, street)")}
+        {text("address_line2", "Address line 2 (optional)")}
+        {text("city", "City")}
+        <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Registration type (the licence number above)</span>
+          <select className={cls} value={f.reg_type} onChange={(e) => set("reg_type", e.target.value)}>
+            <option value="TL">Trade licence</option><option value="EID">Emirates ID</option><option value="PAS">Passport</option><option value="CD">Cabinet decision</option></select></label>
+        <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Default payment means</span>
+          <select className={cls} value={f.payment_means_code} onChange={(e) => set("payment_means_code", e.target.value)}>
+            {[["30", "Credit transfer (bank)"], ["42", "Payment to bank account"], ["10", "Cash"], ["20", "Cheque"], ["48", "Bank card"], ["1", "Not defined"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+        {text("iban", "IBAN for payments (AE + 21 digits)")}
+        {text("bank_name", "Bank name")}
+      </div>
+      <p className="mt-2 text-xs text-slate-500">The emirate is the client's head office. The Peppol address is the TIN — the first 10 digits of the TRN.</p>
       <p className="mt-3 text-xs text-slate-500">VAT registration, return period and stagger are set when the client is added, because the VAT periods are generated from them.</p>
     </Modal>
   );

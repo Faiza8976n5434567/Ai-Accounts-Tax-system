@@ -2,7 +2,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Contact as ContactIcon, FileDown, FileUp, Pencil, Plus } from "lucide-react";
 import { Badge, Card, Modal } from "../components/ui";
-import { contactProblems, emptyContact, fromContact, listContacts, saveContact, trnStatus, type Contact, type ContactInput, type ContactKind } from "../lib/contacts";
+import { contactProblems, CUSTOMER_TYPES, emptyContact, REG_TYPES, fromContact, listContacts, saveContact, trnStatus, type Contact, type ContactInput, type ContactKind } from "../lib/contacts";
 import { friendlyDbError } from "../lib/journals";
 import type { Account, Emirate } from "../lib/clients";
 import { listEmirates } from "../lib/clients";
@@ -135,6 +135,30 @@ function ContactForm({ orgId, contact, kind, accounts, emirates, onClose, onSave
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.isRelatedParty} onChange={(e) => set("isRelatedParty", e.target.checked)} />Related party (Corporate Tax transfer pricing)</label>
         {contact && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.isActive} onChange={(e) => set("isActive", e.target.checked)} />Active</label>}
       </div>
+      {f.kind !== "supplier" && <details className="mt-4 rounded-xl ring-1 ring-slate-200 px-4 py-3" open={!!contact && (f.addressLine1 !== "" || f.regId !== "" || f.customerType !== "business")}>
+        <summary className="cursor-pointer text-sm font-medium text-slate-800">E-invoicing details (PINT AE)</summary>
+        <div className="grid gap-3 sm:grid-cols-2 mt-3">
+          <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Customer type</span>
+            <select aria-label="Customer type" className={cls} value={f.customerType} onChange={(e) => set("customerType", e.target.value as ContactInput["customerType"])}>
+              {CUSTOMER_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+          <span className="text-xs text-slate-500 self-end">Consumers (e.g. walk-in customers) are not e-invoiced for now (D-59).</span>
+          {f.customerType !== "consumer" && <>
+            {text("addressLine1", "Address line 1 (building, street)")}
+            {text("city", "City")}
+            {f.countryCode.toUpperCase() !== "AE" && text("region", "State / province / region (foreign customers)")}
+            <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Registration type</span>
+              <select aria-label="Registration type" className={cls} value={f.regType} onChange={(e) => set("regType", e.target.value)}>
+                <option value="">— none —</option>{REG_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+            {text("regId", "Registration number (e.g. trade licence no.)")}
+            {text("regAuthority", "Issuing authority (e.g. Dubai DET)")}
+            {f.regType === "PAS" && text("passportCountry", "Passport country (2 letters)")}
+            {text("peppolId", "Peppol ID (blank = TIN from the TRN)")}
+            {text("peppolScheme", "Peppol scheme (0235 = UAE TIN)")}
+            <label className="sm:col-span-2 flex items-start gap-2 text-sm"><input type="checkbox" className="mt-0.5" checked={f.notOnboarded} onChange={(e) => set("notOnboarded", e.target.checked)} />
+              <span>Not yet on Peppol — e-invoices go to the FTA's predefined address 9900000098 and you still give them a normal tax invoice.</span></label>
+          </>}
+        </div>
+      </details>}
     </Modal>
   );
 }
