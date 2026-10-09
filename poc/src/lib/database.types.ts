@@ -3537,6 +3537,10 @@ export type Database = {
           title: string
         }[]
       }
+      faf_data: {
+        Args: { p_end: string; p_organization_id: string; p_start: string }
+        Returns: Json
+      }
       firm_dashboard: {
         Args: never
         Returns: {

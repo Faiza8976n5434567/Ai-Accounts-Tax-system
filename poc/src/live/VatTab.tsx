@@ -1,7 +1,8 @@
 /** VAT 201 return for one client (P3-01, P3-02 · D-12, D-42 → D-44): every box from the books, drill-down to the
  *  journal lines, manual adjustments with reasons, review → approval (frozen, quarter locked) → filed. */
 import { useCallback, useState } from "react";
-import { CheckCircle2, FileCheck2, FileSpreadsheet, Plus, Printer, Send, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, FileArchive, FileCheck2, FileSpreadsheet, Plus, Printer, Send, Trash2, XCircle } from "lucide-react";
+import { buildFaf, downloadFaf, fafData } from "../lib/faf";
 import { Badge, Card, Modal } from "../components/ui";
 import { useAuth } from "../components/AuthGate";
 import { fmt, parseAedToFils } from "../lib/money";
@@ -49,6 +50,14 @@ function VatReturnView({ client, periods, period, perms, onPick }: { client: Cli
   const act = async (fn: () => Promise<unknown>, msg: string) => { try { await fn(); toast(msg); setReason(null); reload(); } catch (e) { toast(friendlyDbError(e), "err"); } };
   const ensureReturn = async () => r?.id ?? await startVatReturn(period.id);
   const net = p ? netPosition(p.boxes) : null;
+  const today = useToday();
+  const faf = async () => {
+    try {
+      const d = await fafData(client.id, period.start_date, period.end_date);
+      downloadFaf(buildFaf(d, { start: period.start_date, end: period.end_date, created: today }), client.trn ?? "", period.start_date, period.end_date);
+      toast("FTA Audit File downloaded");
+    } catch (e) { toast(friendlyDbError(e), "err"); }
+  };
 
   const excel = () => downloadXlsx(`${client.legal_name} - VAT 201 ${period.start_date} to ${period.end_date}.xlsx`, "VAT 201", [
     xlsxRow([client.legal_name]), xlsxRow([`TRN ${client.trn ?? ""}`]), xlsxRow([`VAT 201 · ${shortDate(period.start_date)} – ${shortDate(period.end_date)} · due ${shortDate(period.due_date)} (AED)`]),
@@ -67,6 +76,7 @@ function VatReturnView({ client, periods, period, perms, onPick }: { client: Cli
               {periods.map((t) => <option key={t.id} value={t.id}>{shortDate(t.start_date)} – {shortDate(t.end_date)}</option>)}</select></label>
           <button className="btn-ghost" onClick={() => void excel().catch(() => toast("The Excel file could not be created", "err"))}><FileSpreadsheet size={15} />Excel</button>
           <button className="btn-ghost" onClick={() => window.print()}><Printer size={15} />Print / PDF</button>
+          {perms.includes("export") && <button className="btn-ghost" title="FTA VAT Audit File (FAF v1.0.0) for this period: purchases, supplies and general ledger" onClick={() => void faf()}><FileArchive size={15} />FTA Audit File</button>}
         </div>}
         sub="Calculated from posted invoices, bills and credit/debit notes of the period by their tax codes. Click a box to see the documents behind it.">
         <div className="print-area">
