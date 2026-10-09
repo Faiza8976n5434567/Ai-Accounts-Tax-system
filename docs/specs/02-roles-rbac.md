@@ -71,6 +71,8 @@ PLAN.md. A "Firm Manager / Reviewer" role can be added later in one migration if
 | Approve & freeze CT return — `approve_ct` | ✔ | ✔ | — | — | — | — |
 | Mark CT return as filed (FTA ref) — `file_ct` | ✔ | ✔ | — | — | — | — |
 | Lock accounting period | ✔ | ✔ | — | — | — | — |
+| Prepare the year-end closing journal (`prepare`) | ✔ | ✔ | ✔* | — | — | — |
+| Approve the year-end close (posts, locks the year — `lock_period`) | ✔ | ✔ | — | — | — | — |
 | **Reopen** a locked period (reason required) | ✔ | ✔ | — | — | — | — |
 
 ### 2.3 Administration

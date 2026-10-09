@@ -66,7 +66,7 @@ select is((select sum(debit)::text from public.journal_lines where journal_id = 
           (100000 + 333333 + 166667 + 250000 + 100000)::text, 'FA-06 · it charges each asset''s January depreciation (Dr expense / Cr accumulated)');
 select throws_ok($$ select public.post_journal((select id from fa where k = 'j202501')) $$, '42501', null, 'FA-06 · the preparer cannot approve the run (maker-checker)');
 select throws_like($$ update public.journal_lines set debit = debit + 1 where journal_id = (select id from fa where k = 'j202501') and line_no = 1 $$,
-          '%built by the Fixed assets screen%', 'FA-06 · the depreciation journal cannot be edited by hand');
+          '%built by the app%', 'FA-06 · the depreciation journal cannot be edited by hand');
 select throws_like($$ select public.run_depreciation((select id from fa where k = 'org'), '2025-02-01') $$, '%Approve (or cancel) the Jan 2025%', 'FA-06 · February waits until January is approved');
 select tests.login('super@test.local');
 select public.post_journal((select id from fa where k = 'j202501'));

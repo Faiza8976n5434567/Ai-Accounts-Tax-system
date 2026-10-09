@@ -93,6 +93,9 @@
 | D-72 | **Depreciation rounding** (Faizan): half-up to the fils each month; the last month of each year (reducing balance, sum-of-years' digits) and the last month of the life absorb the difference; never below the residual value. |
 | D-73 | **Depreciation methods** (Faizan: all): straight line (F-21); reducing balance — annual % on the book value at the start of each asset-year, spread over its 12 months; sum-of-years' digits by asset-year (life in whole years); units of production — units entered per month. Asset-years start in the month of purchase (D-68); for an asset with history before the app, reducing-balance years start in its first month in the app. |
 | D-74 | **Disposals** (Faizan): no depreciation in the month of disposal. A sale is a normal sales invoice (VAT as usual) with its line on **1520 Asset disposals clearing**; the disposal journal removes cost and accumulated depreciation and books the gain (**4320**) or loss (**6210**). Scrapping needs no invoice (book value = loss). Disposal waits until depreciation is run to the month before; it can be cancelled while its journal is not posted. |
+| D-75 | **Year-end close** (Faizan: checklist + lock + closing journal): a checklist per financial year — blocking: no journals, invoices, bills or payments waiting; depreciation run and approved to the year end; warnings: bank reconciled to the year end, VAT returns approved, CT return approved, CT expense booked. Then a closing journal dated the year end (income and expenses to nil, result to 3200 Retained earnings), approved by a Firm Admin other than the preparer, which also locks every month of the year. Closing again after a reopen posts only the difference. The closing journal may post into a month already locked by a VAT approval. P&L and the CT computation ignore closing journals; the balance sheet ignores the current year's closing journal (profit for the year stays visible); trial balance and ledgers include it. |
+| D-76 | **CT journal** (Faizan): the accountant posts Dr 7000 / Cr 2200 by journal; the year-end checklist warns if the approved CT return shows tax payable but 7000 is nil. |
+| D-77 | **Accruals and prepayments** (Faizan): entered as plain journals (with their reversals entered by hand). |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -316,8 +319,8 @@ Standard: **PINT AE Billing 1.0.4** (UAE Peppol Authority, docs.peppol.eu/poac/a
 | P5-01 | **CT computation + return workflow** (F-08 → F-11, D-66, D-67): profit before tax from the books (CT expense excluded), tagged add-backs, manual adjustments with legal reference, SBR / standard gates, loss relief (75% cap), CT payable, due date; draft → approved by someone else (frozen snapshot + SHA-256 + tax-rule version) → filed (FTA reference); losses b/f from the last approved return or the client's opening losses | CT-01 → CT-10 | ✅ tested by Faizan 2026-10-09 — database built 2026-10-09 — `…20261009100600_ct_computation.sql` (32 pgTAP tests, applied by Faizan) + **Corporate Tax** tab (`lib/live-ct.ts`, 5 tests) |
 | P5-02 | Corporate Tax screen per client (computation with drill-down, adjustments, approve, file) | CT-* | ✅ tested by Faizan 2026-10-09 |
 | P5-03 | CT return pack (Excel / PDF) with drill-down and legal references | CT-* | ⬜ |
-| P5-04 | Fixed asset register + depreciation (F-21, D-68, D-70 → D-74): register (from bills or by hand), four methods, monthly run for approval, disposals, ledger check | FA-01 → FA-10 | 🟡 built 2026-10-09 — `…20261009100700_fixed_assets.sql` (27 pgTAP tests; also D-69; applied by Faizan) + `…100800` FK index + **Fixed assets** tab (`lib/assets.ts`, 5 tests); 1520 selectable on sales invoice lines — waiting for Faizan's test |
-| P5-05 | Year-end close: accruals / prepayments, closing entries, retained earnings roll-forward | YE-* | ⬜ |
+| P5-04 | Fixed asset register + depreciation (F-21, D-68, D-70 → D-74): register (from bills or by hand), four methods, monthly run for approval, disposals, ledger check | FA-01 → FA-10 | ✅ built 2026-10-09 — `…20261009100700_fixed_assets.sql` (27 pgTAP tests; also D-69; applied by Faizan) + `…100800` FK index + **Fixed assets** tab (`lib/assets.ts`, 5 tests); 1520 selectable on sales invoice lines — ✅ tested by Faizan 2026-10-09 |
+| P5-05 | Year-end close (D-75 → D-77): checklist, closing journal to retained earnings, approval locks the year; reports unchanged by the close | YE-01 → YE-08 | 🟡 database built 2026-10-09 — `…20261009100900_year_end_close.sql` (21 pgTAP tests); screen next |
 | P5-06 | IFRS for SMEs primary statements (P&L, balance sheet, cash flow, SOCE) | RPT-* | ⬜ |
 | P5-07 | Golden CT set from Faizan (Q-06) | CT-11 | ⬜ |
 
@@ -450,6 +453,19 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | FA-08 | Scrap a fully depreciated laptop; sell a van (35,000, book value 33,000) via sales invoice to 1520 | No gain/loss; gain 2,000 to 4320 | U | ✅ DB |
 | FA-09 | Asset from a posted bill line on 1500 | Cost and date from the bill; one asset per line | U | ✅ DB |
 | FA-10 | Asset with 6,000 accumulated before the app | Continues from its book value, ends at nil | U | ✅ DB |
+
+### 6.6c Year-end close (YE) — D-75 → D-77
+
+| ID | Scenario | Expected | Level | Status |
+|---|---|---|---|---|
+| YE-01 | Journal waiting in the year; no CT return | Close blocked with the reason; missing CT return is only a warning | U | ✅ DB (35_year_end_close) |
+| YE-02 | Close a year still running, or a date that is not a year end | Refused | U | ✅ DB |
+| YE-03 | Revenue 1,000,000, expenses 500,000 | Closing journal Dr revenue / Cr expenses / Cr 3200 500,000; not editable; one at a time | U | ✅ DB |
+| YE-04 | Approval | Not by the preparer; refused if figures changed; posts and locks all 12 months | U | ✅ DB |
+| YE-05 | Reports after the close | P&L 2025 unchanged; balance sheet at year end shows profit for the year | U | ✅ DB |
+| YE-06 | Balance sheet next year | Result inside 3200 Retained earnings; still balances | U | ✅ DB |
+| YE-07 | CT computation after the close | Unchanged (closing journal ignored) | U | ✅ DB |
+| YE-08 | Reopen, adjust 5,000, close again | Second closing journal moves only 5,000 | U | ✅ DB |
 
 ### 6.7 Reports (RPT)
 | ID | Scenario | Expected | Type | Status |
@@ -598,3 +614,5 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-09 | Faizan tested the Corporate Tax return (P5-01, P5-02 ✅). |
 | 2026-10-09 | Faizan's fixed-asset answers recorded as D-69 → D-74. P5-04 database built (`…20261009100700_fixed_assets.sql`, 27 pgTAP tests FA-01 → FA-10); accounts 1520 / 4320 / 6210 added (chart now 49 accounts); 6200 tagged as depreciation; CT approval only after the year end (D-69, test 33 moved to FY2025). |
 | 2026-10-09 | Fixed-asset migration applied by Faizan; **Fixed assets** tab (register, schedule, add from bills, monthly run, units entry, disposals, ledger check). |
+| 2026-10-09 | Faizan tested the fixed assets (P5-04 ✅). |
+| 2026-10-09 | Year-end answers recorded as D-75 → D-77. P5-05 database built (`…20261009100900_year_end_close.sql`, 21 pgTAP tests YE-01 → YE-08): checklist, closing journal, approval locks the year; P&L, balance sheet and CT computation patched to ignore closing journals as described. |
