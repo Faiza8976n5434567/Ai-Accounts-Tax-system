@@ -3987,6 +3987,10 @@ export type Database = {
         Returns: undefined
       }
       my_permissions: { Args: { p_organization_id: string }; Returns: string[] }
+      import_einvoice: {
+        Args: { p_bill: Json; p_meta: Json; p_organization_id: string; p_xml: string }
+        Returns: string
+      }
       opening_status: { Args: { p_organization_id: string }; Returns: Json }
       post_bank_line: {
         Args: { p_account_id: string; p_memo?: string; p_txn_id: string }

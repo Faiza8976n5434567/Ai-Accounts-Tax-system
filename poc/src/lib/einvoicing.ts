@@ -54,3 +54,11 @@ export async function recordResult(submissionId: string, status: "accepted" | "r
   const r = await db().rpc("record_einvoice_result", { p_submission_id: submissionId, p_status: status, p_reason: reason, p_asp_reference: aspReference });
   if (r.error) throw r.error;
 }
+
+/** P4-08 · Creates the draft bill (or debit note) from a received e-invoice and keeps the original file (once per UUID). */
+export async function importEinvoice(orgId: string, xml: string, meta: { einv_uuid: string; doc_kind: string; document_number: string; supplier_trn: string | null; buyer_trn: string | null },
+  bill: Record<string, unknown>): Promise<string> {
+  const r = await db().rpc("import_einvoice", { p_organization_id: orgId, p_xml: xml, p_meta: meta as never, p_bill: bill as never });
+  if (r.error) throw r.error;
+  return r.data as string;
+}

@@ -1,8 +1,9 @@
 /** Purchase bills and debit notes for one client (P2-03 · D-31, D-32, D-33 · F-17 checks and risk). */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, FilePlus2, Paperclip, Plus, Send, ShoppingCart, Trash2, Undo2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileCode2, FilePlus2, Paperclip, Plus, Send, ShoppingCart, Trash2, Undo2, XCircle } from "lucide-react";
 import { Badge, Card, Modal } from "../components/ui";
 import { useAuth } from "../components/AuthGate";
+import { ImportEinvoice } from "./ImportEinvoice";
 import { fmt, fmtPlain, parseAedToFils } from "../lib/money";
 import { shortDate } from "../lib/email";
 import { friendlyDbError } from "../lib/journals";
@@ -33,7 +34,8 @@ export function BillsTab({ client, accounts, perms }: { client: Client; accounts
   const fetchBills = useCallback(() => listBills(client.id), [client.id]);
   const fetchContacts = useCallback(() => listContacts(client.id), [client.id]);
   const { data, error, reload } = useLoad(fetchBills);
-  const { data: contacts } = useLoad(fetchContacts);
+  const { data: contacts, reload: reloadContacts } = useLoad(fetchContacts);
+  const [importing, setImporting] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ bill: BillWithDetails | null; debitFor: BillWithDetails | null } | null>(null);
@@ -51,7 +53,7 @@ export function BillsTab({ client, accounts, perms }: { client: Client; accounts
     <>
       <Card title="Purchase bills & debit notes" icon={<ShoppingCart size={16} />} pad={false}
         sub="Enter the supplier's invoice; the compliance checks run on saving. Someone else approves and posts. Input VAT is only recovered when the checks pass (or the approver overrides with a reason)."
-        actions={canPrepare && <button className="btn-primary bg-emerald-600" onClick={() => setEditing({ bill: null, debitFor: null })}><Plus size={15} />New bill</button>}>
+        actions={canPrepare && <div className="flex flex-wrap gap-2"><button className="btn-ghost" onClick={() => setImporting(true)}><FileCode2 size={15} />Import e-invoice</button><button className="btn-primary bg-emerald-600" onClick={() => setEditing({ bill: null, debitFor: null })}><Plus size={15} />New bill</button></div>}>
         <div className="px-5 pb-3 flex flex-wrap gap-1.5">
           {(["all", "draft", "pending", "posted", "debit_note", "high"] as Filter[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)} className={`rounded-full px-3 py-1 text-xs ring-1 cursor-pointer ${filter === f ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-600 ring-slate-200"}`}>
@@ -90,6 +92,8 @@ export function BillsTab({ client, accounts, perms }: { client: Client; accounts
         onApprove={(override) => act(async () => toast(`Posted as ${await postBill(open.id, override)}`), "Journal posted")}
         onSendBack={(reason) => act(() => sendBackBill(open.id, reason), "Sent back to the preparer")} />}
 
+      {importing && contacts && <ImportEinvoice client={client} accounts={accounts} contacts={contacts} bills={bills} onClose={() => setImporting(false)}
+        onImported={(id) => { setImporting(false); reload(); reloadContacts(); setOpenId(id); }} />}
       {editing && contacts && <BillEditor orgId={client.id} accounts={accounts} contacts={contacts} bill={editing.bill} debitFor={editing.debitFor} all={bills}
         onClose={() => setEditing(null)} onSaved={(id) => { setEditing(null); reload(); setOpenId(id); }} />}
     </>
