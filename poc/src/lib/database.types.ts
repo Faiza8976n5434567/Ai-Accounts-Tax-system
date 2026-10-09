@@ -4170,6 +4170,60 @@ export type Database = {
           },
         ]
       }
+      year_closes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fy_end: string
+          fy_start: string
+          id: string
+          journal_id: string
+          net_result: number
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fy_end: string
+          fy_start: string
+          id?: string
+          journal_id: string
+          net_result: number
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fy_end?: string
+          fy_start?: string
+          id?: string
+          journal_id?: string
+          net_result?: number
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "year_closes_journal_id_fkey"
+            columns: ["journal_id"]
+            isOneToOne: true
+            referencedRelation: "journals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "year_closes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       bank_book_lines: {
@@ -4360,6 +4414,7 @@ export type Database = {
         Returns: undefined
       }
       cancel_disposal: { Args: { p_asset_id: string }; Returns: undefined }
+      cancel_year_close: { Args: { p_close_id: string }; Returns: undefined }
       client_users: {
         Args: { p_organization_id: string }
         Returns: {
@@ -4375,6 +4430,11 @@ export type Database = {
           valid_to: string
         }[]
       }
+      close_year: {
+        Args: { p_fy_end: string; p_organization_id: string }
+        Returns: string
+      }
+      complete_year_close: { Args: { p_close_id: string }; Returns: string }
       compliance_calendar: {
         Args: { p_from: string; p_to: string }
         Returns: {
@@ -4807,6 +4867,10 @@ export type Database = {
       }
       vat_reconciliation: { Args: { p_tax_period_id: string }; Returns: Json }
       vat_return_preview: { Args: { p_tax_period_id: string }; Returns: Json }
+      year_end_status: {
+        Args: { p_fy_end: string; p_organization_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
@@ -4854,6 +4918,7 @@ export type Database = {
         | "ct"
         | "depreciation"
         | "disposal"
+        | "closing"
       journal_status: "draft" | "pending" | "posted" | "reversed"
       org_role:
         | "firm_accountant"
@@ -5049,6 +5114,7 @@ export const Constants = {
         "ct",
         "depreciation",
         "disposal",
+        "closing",
       ],
       journal_status: ["draft", "pending", "posted", "reversed"],
       org_role: [

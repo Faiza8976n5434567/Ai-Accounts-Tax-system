@@ -320,7 +320,7 @@ Standard: **PINT AE Billing 1.0.4** (UAE Peppol Authority, docs.peppol.eu/poac/a
 | P5-02 | Corporate Tax screen per client (computation with drill-down, adjustments, approve, file) | CT-* | ✅ tested by Faizan 2026-10-09 |
 | P5-03 | CT return pack (Excel / PDF) with drill-down and legal references | CT-* | ⬜ |
 | P5-04 | Fixed asset register + depreciation (F-21, D-68, D-70 → D-74): register (from bills or by hand), four methods, monthly run for approval, disposals, ledger check | FA-01 → FA-10 | ✅ built 2026-10-09 — `…20261009100700_fixed_assets.sql` (27 pgTAP tests; also D-69; applied by Faizan) + `…100800` FK index + **Fixed assets** tab (`lib/assets.ts`, 5 tests); 1520 selectable on sales invoice lines — ✅ tested by Faizan 2026-10-09 |
-| P5-05 | Year-end close (D-75 → D-77): checklist, closing journal to retained earnings, approval locks the year; reports unchanged by the close | YE-01 → YE-08 | 🟡 database built 2026-10-09 — `…20261009100900_year_end_close.sql` (21 pgTAP tests); screen next |
+| P5-05 | Year-end close (D-75 → D-77): checklist, closing journal to retained earnings, approval locks the year; reports unchanged by the close | YE-01 → YE-08 | 🟡 database built 2026-10-09 — `…20261009100900_year_end_close.sql` (21 pgTAP tests, applied by Faizan) + **Year-end close** tab (`lib/year-end.ts`, 3 tests) — waiting for Faizan's test |
 | P5-06 | IFRS for SMEs primary statements (P&L, balance sheet, cash flow, SOCE) | RPT-* | ⬜ |
 | P5-07 | Golden CT set from Faizan (Q-06) | CT-11 | ⬜ |
 
@@ -616,3 +616,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-09 | Fixed-asset migration applied by Faizan; **Fixed assets** tab (register, schedule, add from bills, monthly run, units entry, disposals, ledger check). |
 | 2026-10-09 | Faizan tested the fixed assets (P5-04 ✅). |
 | 2026-10-09 | Year-end answers recorded as D-75 → D-77. P5-05 database built (`…20261009100900_year_end_close.sql`, 21 pgTAP tests YE-01 → YE-08): checklist, closing journal, approval locks the year; P&L, balance sheet and CT computation patched to ignore closing journals as described. |
+| 2026-10-09 | Year-end migration applied by Faizan; **Year-end close** tab (checklist, closing-journal preview, prepare / approve-and-lock / cancel). |
