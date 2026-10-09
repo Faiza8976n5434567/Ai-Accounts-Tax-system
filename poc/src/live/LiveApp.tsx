@@ -4,7 +4,7 @@
  * demo screens remain available only in the demo build (`vite --mode demo`).
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Banknote, BookOpen, BookOpenCheck, Building2, CalendarClock, CalendarRange, CheckSquare, ChevronDown, Contact, FileCheck2, FileCode2, Gauge, Landmark, LayoutDashboard, LogOut, Menu, Package, ReceiptText, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, Users, Waypoints, X } from "lucide-react";
+import { Banknote, Calculator, BookOpen, BookOpenCheck, Building2, CalendarClock, CalendarRange, CheckSquare, ChevronDown, Contact, FileCheck2, FileCode2, Gauge, Landmark, LayoutDashboard, LogOut, Menu, Package, ReceiptText, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, Users, Waypoints, X } from "lucide-react";
 import { useAuth } from "../components/AuthGate";
 import { cx } from "../components/ui";
 import { listClients, myFirmRole, type Client } from "../lib/clients";
@@ -59,6 +59,7 @@ export function LiveApp() {
     { label: "Receipts & payments", icon: <Landmark size={17} />, tab: "payments" },
     { label: "Bank", icon: <Banknote size={17} />, tab: "bank" },
     { label: "VAT return", icon: <FileCheck2 size={17} />, tab: "vat" },
+    { label: "Corporate Tax", icon: <Calculator size={17} />, tab: "ct" },
     { label: "Journals", icon: <BookOpenCheck size={17} />, tab: "journals" },
     { label: "Approvals", icon: <CheckSquare size={17} />, tab: "approvals" },
     { label: "Reports", icon: <Scale size={17} />, tab: "reports" },

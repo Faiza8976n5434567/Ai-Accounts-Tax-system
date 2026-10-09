@@ -138,7 +138,7 @@ sender = `no-reply@mail.tfsplus.ae`, sender name `TFS+ Smart Ledger`.
 
 **Done when:** a "forgot password" email arrives from your domain.
 
-### OA-11 · App web address
+### OA-11 · App web address — 🟡 domain live: https://app.attsin.com (2026-10-09); step 3 still to do
 1. Choose an address, e.g. `ledger.tfsplus.ae`.
 2. Vercel → project → **Settings → Domains → Add** → it shows a CNAME record → add it at your DNS provider.
 3. Add the address to Supabase URL Configuration (OA-04 step 4) and to `APP_BASE_URL` (OA-06).

@@ -112,11 +112,10 @@ declare
   tp public.tax_periods := app.ct_period(p_tax_period_id);
   o public.organizations;
   r public.ct_returns;
-  cfg jsonb;
   v_rate int; v_band bigint; v_cap int; v_sbr_limit bigint; v_sbr_last date;
   v_revenue bigint; v_expenses bigint; v_profit bigint; v_add bigint; v_adj bigint; v_ti bigint;
   v_lbf bigint; v_relief bigint := 0; v_loss bigint := 0; v_taxable bigint; v_ct bigint := 0; v_lcf bigint;
-  v_sbr_elected boolean; v_sbr_ok boolean; v_sbr boolean; v_prev public.ct_returns; v_prev_period public.tax_periods;
+  v_sbr_elected boolean; v_sbr_ok boolean; v_sbr boolean; v_prev public.ct_returns;
   v_warn jsonb := '[]'; v_addbacks jsonb; v_adjs jsonb; v_failed text; v_lines jsonb;
 begin
   select * into o from public.organizations where id = tp.organization_id;

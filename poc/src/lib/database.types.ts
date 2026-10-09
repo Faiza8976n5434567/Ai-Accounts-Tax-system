@@ -1157,6 +1157,149 @@ export type Database = {
           },
         ]
       }
+      ct_adjustments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          ct_return_id: string
+          description: string
+          direction: string
+          id: string
+          legal_reference: string | null
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          ct_return_id: string
+          description: string
+          direction: string
+          id?: string
+          legal_reference?: string | null
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          ct_return_id?: string
+          description?: string
+          direction?: string
+          id?: string
+          legal_reference?: string | null
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_adjustments_ct_return_id_organization_id_fkey"
+            columns: ["ct_return_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "ct_returns"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      ct_returns: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          config_version_id: string | null
+          created_at: string
+          created_by: string | null
+          filed_on: string | null
+          fta_reference: string | null
+          id: string
+          organization_id: string
+          prepared_by: string | null
+          snapshot: Json | null
+          snapshot_sha256: string | null
+          status: Database["public"]["Enums"]["ct_return_status"]
+          tax_period_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          config_version_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          filed_on?: string | null
+          fta_reference?: string | null
+          id?: string
+          organization_id: string
+          prepared_by?: string | null
+          snapshot?: Json | null
+          snapshot_sha256?: string | null
+          status?: Database["public"]["Enums"]["ct_return_status"]
+          tax_period_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          config_version_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          filed_on?: string | null
+          fta_reference?: string | null
+          id?: string
+          organization_id?: string
+          prepared_by?: string | null
+          snapshot?: Json | null
+          snapshot_sha256?: string | null
+          status?: Database["public"]["Enums"]["ct_return_status"]
+          tax_period_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ct_returns_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ct_returns_config_version_id_fkey"
+            columns: ["config_version_id"]
+            isOneToOne: false
+            referencedRelation: "config_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ct_returns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ct_returns_prepared_by_fkey"
+            columns: ["prepared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ct_returns_tax_period_id_fkey"
+            columns: ["tax_period_id"]
+            isOneToOne: true
+            referencedRelation: "tax_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ct_tags: {
         Row: {
           addback_key: string | null
@@ -2276,6 +2419,7 @@ export type Database = {
           city: string | null
           created_at: string
           created_by: string | null
+          ct_losses_opening: number
           ct_regime: Database["public"]["Enums"]["ct_regime"]
           ct_trn: string | null
           emirate_code: string
@@ -2315,6 +2459,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           created_by?: string | null
+          ct_losses_opening?: number
           ct_regime?: Database["public"]["Enums"]["ct_regime"]
           ct_trn?: string | null
           emirate_code: string
@@ -2354,6 +2499,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           created_by?: string | null
+          ct_losses_opening?: number
           ct_regime?: Database["public"]["Enums"]["ct_regime"]
           ct_trn?: string | null
           emirate_code?: string
@@ -3789,6 +3935,16 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: never; Returns: string }
+      add_ct_adjustment: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_direction: string
+          p_legal_reference?: string
+          p_return_id: string
+        }
+        Returns: string
+      }
       add_vat_adjustment: {
         Args: {
           p_adjustment: number
@@ -3825,6 +3981,7 @@ export type Database = {
         Args: { p_reason: string; p_version_id: string }
         Returns: undefined
       }
+      approve_ct_return: { Args: { p_return_id: string }; Returns: string }
       approve_vat_return: { Args: { p_return_id: string }; Returns: string }
       auto_match_bank: { Args: { p_bank_account_id: string }; Returns: number }
       balance_sheet: {
@@ -3949,7 +4106,9 @@ export type Database = {
           role: string
         }[]
       }
+      ct_return_preview: { Args: { p_tax_period_id: string }; Returns: Json }
       delete_bank_reconciliation: { Args: { p_id: string }; Returns: undefined }
+      delete_ct_adjustment: { Args: { p_id: string }; Returns: undefined }
       delete_opening_document: { Args: { p_id: string }; Returns: undefined }
       delete_payment: { Args: { p_id: string }; Returns: undefined }
       delete_purchase_bill: { Args: { p_id: string }; Returns: undefined }
@@ -3974,6 +4133,14 @@ export type Database = {
       faf_data: {
         Args: { p_end: string; p_organization_id: string; p_start: string }
         Returns: Json
+      }
+      file_ct_return: {
+        Args: {
+          p_filed_on: string
+          p_fta_reference: string
+          p_return_id: string
+        }
+        Returns: undefined
       }
       firm_dashboard: {
         Args: never
@@ -4219,6 +4386,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      start_ct_return: { Args: { p_tax_period_id: string }; Returns: string }
       start_vat_return: { Args: { p_tax_period_id: string }; Returns: string }
       submit_payment: { Args: { p_id: string }; Returns: undefined }
       submit_purchase_bill: { Args: { p_id: string }; Returns: undefined }
@@ -4273,6 +4441,7 @@ export type Database = {
       config_value_type: "bp" | "fils" | "days" | "months" | "date" | "rate"
       contact_kind: "customer" | "supplier" | "both"
       ct_regime: "standard" | "sbr" | "qfzp"
+      ct_return_status: "draft" | "approved" | "filed"
       doc_type:
         | "journal"
         | "sales_invoice"
@@ -4457,6 +4626,7 @@ export const Constants = {
       config_value_type: ["bp", "fils", "days", "months", "date", "rate"],
       contact_kind: ["customer", "supplier", "both"],
       ct_regime: ["standard", "sbr", "qfzp"],
+      ct_return_status: ["draft", "approved", "filed"],
       doc_type: [
         "journal",
         "sales_invoice",

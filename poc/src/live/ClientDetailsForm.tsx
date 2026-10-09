@@ -13,7 +13,7 @@ export function ClientDetailsForm({ client, onClose, onSaved }: { client: Client
   const [f, setF] = useState({
     legal_name: client.legal_name, trade_name: client.trade_name ?? "", address: client.address ?? "", trn: client.trn ?? "", ct_trn: client.ct_trn ?? "",
     licence_no: client.licence_no ?? "", licence_authority: client.licence_authority ?? "", licence_expiry: client.licence_expiry ?? "",
-    industry: client.industry ?? "", ct_regime: client.ct_regime, prior_year_revenue: fmtPlain(client.prior_year_revenue),
+    industry: client.industry ?? "", ct_regime: client.ct_regime, prior_year_revenue: fmtPlain(client.prior_year_revenue), ct_losses_opening: fmtPlain(client.ct_losses_opening),
     address_line1: client.address_line1 ?? "", address_line2: client.address_line2 ?? "", city: client.city ?? "", reg_type: client.reg_type,
     iban: client.iban ?? "", bank_name: client.bank_name ?? "", payment_means_code: client.payment_means_code,
   });
@@ -28,6 +28,8 @@ export function ClientDetailsForm({ client, onClose, onSaved }: { client: Client
     if (client.vat_registered && !f.trn.trim()) { setError("A VAT-registered client needs its TRN."); return; }
     const revenue = parseAedToFils(f.prior_year_revenue || "0");
     if (revenue === null || revenue < 0) { setError("Prior-year revenue must be an AED amount."); return; }
+    const losses = parseAedToFils(f.ct_losses_opening || "0");
+    if (losses === null || losses < 0) { setError("Tax losses brought forward must be an AED amount."); return; }
     const iban = f.iban.replace(/\s+/g, "").toUpperCase();
     if (iban && !/^AE\d{21}$/.test(iban)) { setError("A UAE IBAN is AE followed by 21 digits."); return; }
     const blank = (s: string) => (s.trim() ? s.trim() : null);
@@ -36,7 +38,7 @@ export function ClientDetailsForm({ client, onClose, onSaved }: { client: Client
       await updateClient(client.id, {
         legal_name: f.legal_name.trim(), trade_name: blank(f.trade_name), address: blank(f.address), trn: blank(f.trn), ct_trn: blank(f.ct_trn),
         licence_no: blank(f.licence_no), licence_authority: blank(f.licence_authority), licence_expiry: blank(f.licence_expiry),
-        industry: blank(f.industry), ct_regime: f.ct_regime, prior_year_revenue: revenue,
+        industry: blank(f.industry), ct_regime: f.ct_regime, prior_year_revenue: revenue, ct_losses_opening: losses,
         address_line1: blank(f.address_line1), address_line2: blank(f.address_line2), city: blank(f.city), reg_type: f.reg_type,
         iban: iban || null, bank_name: blank(f.bank_name), payment_means_code: f.payment_means_code,
       });
@@ -69,6 +71,7 @@ export function ClientDetailsForm({ client, onClose, onSaved }: { client: Client
             <option value="standard">Standard</option><option value="sbr">Small Business Relief elected</option><option value="qfzp">Qualifying Free Zone Person</option>
           </select></label>
         {text("prior_year_revenue", "Prior-year revenue (AED, for the SBR test)")}
+        {text("ct_losses_opening", "Tax losses brought forward from before this app (AED)")}
       </div>
       <h3 className="mt-5 mb-2 text-sm font-semibold text-slate-800">E-invoicing (PINT AE)</h3>
       <div className="grid gap-3 sm:grid-cols-2">
