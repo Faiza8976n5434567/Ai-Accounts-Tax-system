@@ -1,19 +1,18 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Menu, X, HandCoins, Wallet, Building2, LayoutDashboard, ScanLine, Receipt, BookOpen, FileBarChart, Landmark, Calculator, Banknote, CalendarClock, Sparkles, ShieldCheck, Settings, ChevronDown, Languages, CheckCircle2, AlertTriangle, Info, Search, Bell, CornerDownLeft, ArrowRight } from "lucide-react";
+import { Menu, X, HandCoins, Wallet, Building2, LayoutDashboard, ScanLine, Receipt, BookOpen, FileBarChart, Landmark, Calculator, Banknote, CalendarClock, ShieldCheck, Settings, ChevronDown, Languages, CheckCircle2, AlertTriangle, Info, Search, Bell, CornerDownLeft, ArrowRight } from "lucide-react";
 import { useStore, USERS } from "../lib/store";
 import type { Role } from "../lib/types";
 import { cx } from "./ui";
 
-export type Page = "firm" | "dashboard" | "capture" | "sales" | "ledger" | "ar" | "ap" | "reports" | "vat" | "ct" | "bank" | "calendar" | "ask" | "audit" | "settings";
+export type Page = "firm" | "dashboard" | "capture" | "sales" | "ledger" | "ar" | "ap" | "reports" | "vat" | "ct" | "bank" | "calendar" | "audit" | "settings";
 
 const NAV: { section: string; items: { id: Page; label: string; icon: ReactNode; client?: boolean; firmOnly?: boolean }[] }[] = [
   { section: "Workspace", items: [
     { id: "firm", label: "Firm overview", icon: <Building2 size={17} />, firmOnly: true },
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={17} />, client: true },
-    { id: "ask", label: "Ask your books", icon: <Sparkles size={17} />, client: true },
   ] },
   { section: "Accounting", items: [
-    { id: "capture", label: "Capture invoices", icon: <ScanLine size={17} />, client: true },
+    { id: "capture", label: "Purchase bills", icon: <ScanLine size={17} />, client: true },
     { id: "sales", label: "Sales & e-invoicing", icon: <Receipt size={17} />, client: true },
     { id: "bank", label: "Bank reconciliation", icon: <Banknote size={17} />, client: true },
     { id: "ledger", label: "Accounts", icon: <BookOpen size={17} />, client: true },
@@ -66,7 +65,7 @@ export function Layout({ page, go, children }: { page: Page; go: (p: Page) => vo
           <div className="shimmer size-10 rounded-2xl bg-gradient-to-br from-emerald-400 via-emerald-600 to-teal-800 grid place-items-center text-white font-bold shadow-lg shadow-emerald-900/50 ring-1 ring-white/20">T+</div>
           <div className="flex-1">
             <div className="text-white font-semibold leading-tight tracking-tight">TFS+ Smart Ledger</div>
-            <div className="text-[11px] text-slate-500">{t("AI-native UAE accounting")}</div>
+            <div className="text-[11px] text-slate-500">{t("UAE accounting, VAT & tax")}</div>
           </div>
           <button className="lg:hidden size-8 grid place-items-center rounded-lg text-slate-400 hover:bg-white/10 cursor-pointer" aria-label={t("Close menu")} onClick={() => setNavOpen(false)}><X size={18} /></button>
         </div>
@@ -88,7 +87,6 @@ export function Layout({ page, go, children }: { page: Page; go: (p: Page) => vo
                       <span className={cx("transition-colors", active ? "text-emerald-400" : "text-slate-500 group-hover:text-slate-300")}>{i.icon}</span>
                       <span className="flex-1 text-start">{t(i.label)}</span>
                       {i.id === "capture" && pendingCount > 0 && <span className="text-[10px] font-semibold bg-amber-400/15 text-amber-300 ring-1 ring-amber-300/20 rounded-full px-1.5 py-0.5">{pendingCount}</span>}
-                      {i.id === "ask" && <span className="text-[9px] font-semibold uppercase tracking-wide bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-full px-1.5 py-0.5">AI</span>}
                     </button>
                   );
                 })}
@@ -162,7 +160,7 @@ function Palette({ close, go, pickOrg }: { close: () => void; go: (p: Page) => v
     const pages = ALL_ITEMS.filter((i) => !(i.firmOnly && !isFirm)).map((i) => ({ key: "p" + i.id, label: t(i.label), hint: t("Page"), icon: i.icon, run: () => { if (i.client && state.session.orgId === "FIRM") pickOrg(state.orgs[0].id); if (i.firmOnly) pickOrg("FIRM"); go(i.id); } }));
     const clients = isFirm ? state.orgs.map((o) => ({ key: "o" + o.id, label: state.session.lang === "ar" ? o.nameAr : o.name, hint: t("Client"), icon: <span className="size-4 rounded" style={{ background: o.color }} />, run: () => { pickOrg(o.id); go("dashboard"); } })) : [];
     return [...clients, ...pages].filter((x) => x.label.toLowerCase().includes(q.toLowerCase()));
-  }, [q, state, isFirm]);
+  }, [q, state, isFirm, pickOrg, t, go]);
   const run = (i: number) => { items[i]?.run(); close(); };
   return (
     <div className="fixed inset-0 z-[70] bg-slate-950/40 backdrop-blur-md grid place-items-start justify-center pt-[14vh] px-4 fade-in" onClick={close}>

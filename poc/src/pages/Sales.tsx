@@ -4,7 +4,9 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { useStore } from "../lib/store";
 import { useI18n } from "../lib/useI18n";
 import { invoiceTotals, toPintXml, validatePint } from "../lib/einvoice";
-import { isTrn } from "../lib/ai";
+import { isTrn } from "../lib/rules";
+import { today, addDays } from "../lib/dates";
+import { TERMS_DAYS } from "../lib/subledger";
 import { EMIRATES } from "../lib/coa";
 import { fmt, toFils, compact } from "../lib/money";
 import { daysBetween, TODAY, MONTHS } from "../lib/derive";
@@ -116,10 +118,10 @@ function NewInvoice({ org, onClose }: { org: Org; onClose: () => void }) {
   const store = useStore();
   const { t, em, tax } = useI18n();
   const n = store.state.sales.filter((s) => s.orgId === org.id).length + 1001;
-  const [f, setF] = useState({ invNo: `INV-${org.id.slice(0, 2).toUpperCase()}-${n + 100}`, date: "2026-09-30", customer: "", customerTrn: "", customerCountry: "AE", emirate: org.emirate as Emirate });
+  const [f, setF] = useState({ invNo: `INV-${org.id.slice(0, 2).toUpperCase()}-${n + 100}`, date: today(), customer: "", customerTrn: "", customerCountry: "AE", emirate: org.emirate as Emirate });
   const rev = org.industry === "Professional services" ? "4010" : "4000";
   const [lines, setLines] = useState<(Omit<SaleLine, "price"> & { price: string })[]>([{ desc: "", qty: 1, price: "", taxCode: "SR", account: rev }]);
-  const inv = { ...f, orgId: org.id, dueDate: "2026-10-30", lines: lines.map((l) => ({ ...l, price: toFils(l.price || 0) })) };
+  const inv = { ...f, orgId: org.id, dueDate: addDays(f.date, TERMS_DAYS), lines: lines.map((l) => ({ ...l, price: toFils(l.price || 0) })) };
   const tt = invoiceTotals(inv as SalesInvoice);
   const trnBad = !!f.customerTrn && !isTrn(f.customerTrn);
   const hints: { ok: boolean; msg: string }[] = [

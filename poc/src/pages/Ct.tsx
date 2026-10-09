@@ -31,7 +31,7 @@ export function Ct({ org }: { org: Org }) {
           { label: t("Accounting profit"), value: ct.profit / 100, kind: "start" },
           ...ct.lines.filter((l) => l.kind === "add").map((l) => ({ label: short(l.label), value: l.amount / 100, kind: "up" as const })),
           { label: t("Taxable income"), value: ct.taxable / 100, kind: "total" },
-          ...(org.regime === "sbr" && ct.sbrEligible ? [] : [{ label: t("0% band"), value: Math.min(ct.taxable, 375_000_00) / 100, kind: "down" as const }, { label: t("Taxed at 9%"), value: Math.max(0, ct.taxable - 375_000_00) / 100, kind: "total" as const }, { label: t("CT payable"), value: ct.ct / 100, kind: "total" as const }]),
+          ...(org.regime === "sbr" && ct.sbrEligible ? [] : [{ label: t("0% band"), value: Math.min(ct.taxable, TAX_CONFIG.ct.zeroBand.value) / 100, kind: "down" as const }, { label: t("Taxed at {r}%", { r: TAX_CONFIG.ct.rateBp.value / 100 }), value: Math.max(0, ct.taxable - TAX_CONFIG.ct.zeroBand.value) / 100, kind: "total" as const }, { label: t("CT payable"), value: ct.ct / 100, kind: "total" as const }]),
         ]} />
       </Card>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">

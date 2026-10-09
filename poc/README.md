@@ -1,31 +1,40 @@
 # TFS+ Smart Ledger — POC
 
-Clickable proof-of-concept of the AI-native UAE accounting, VAT, CT and e-invoicing platform
-(see `../tfs-smart-ledger/docs`). No backend or database: all data lives in the browser's
-localStorage and is seeded with 3 demo clients (Jan–Sep 2026).
+Clickable proof-of-concept of the UAE accounting, VAT, CT and e-invoicing platform. **No AI in
+the product (D-01)** — defaults come from deterministic rules and a person always approves.
+No backend yet: data lives in the browser's localStorage, seeded with 3 demo clients
+(Jan–Sep 2026). Phase 1 moves it to Supabase (see `../PLAN.md` and `../docs/specs`).
 
 ```
 npm install
 npm run dev      # http://localhost:5180
+npm run check    # type check, lint, finance lint, unit tests, build, bundle scan
+npm run e2e      # browser tests (Playwright)
 ```
+
+> Windows: the project folder name contains `&`, which breaks `npm run` shims. Until the folder
+> is renamed, run tools directly, e.g. `node node_modules/vite/bin/vite.js` (see `../.claude/launch.json`).
 
 ## Demo script (5 min)
 1. **Firm overview** (Partner – Faizan): all clients, VAT due, risk flags, deadline heat-map, workload.
-2. Click **Al Noor** → dashboard with an AI CFO insight explaining why profit fell (computed from the ledger).
-3. **Capture invoices** → "Uber trip": extracted → Art 59 checks → low risk → auto-approved & posted.
-   Then "Client dinner": VAT blocked + CT 50% → goes to approval → maker-checker blocks Faizan →
-   switch role to **Client Owner** → approve. Try "Uber" again → duplicate detected.
-   "Wrong VAT + no TRN" → high risk. "Google Ads (foreign)" → reverse charge.
-4. **VAT 201** → boxes update; click any box to drill down to journals.
+2. Click **Al Noor** → dashboard with the profit movement between the last two months (plain ledger arithmetic).
+3. **Purchase bills** → *Enter a bill without a file* (or attach a PDF) → type supplier, TRN, amounts →
+   Art 59 & duplicate checks run live → account/tax code pre-filled from the supplier's last bill or a
+   keyword rule → *Submit for approval* → maker-checker blocks Faizan → switch role to **Client Owner** → approve.
+4. **VAT 201** → every box shown (empty = 0.00); click any box to drill down to journals.
 5. **Corporate tax** → bridge with legal references; switch regime to SBR.
-6. **Sales & e-invoicing** → new tax invoice (export → zero-rating hint) → PINT AE XML → transmit (sandbox 5-corner).
-7. **Bank reconciliation** → Auto-match, then post the AI-suggested lines.
-8. **Ask your books**, **Arabic/RTL toggle**, **Audit trail**, **Settings** (auto-approve thresholds, backup/restore).
+6. **Sales & e-invoicing** → new tax invoice (place of supply defaults to head office) → PINT AE XML → transmit (sandbox).
+7. **Bank reconciliation** → Auto-match, then post the suggested lines.
+8. **Audit trail**, **Settings** (tax configuration, backup/restore).
 
 ## What is simulated
-- OCR / extraction: picked from sample invoices by file name (try `rent.pdf`, `laptop.jpg`).
-- "AI" classification & Q&A: deterministic keyword rules — swap for Claude API calls in `src/lib/ai.ts`.
 - ASP transmission: timed status updates; no network.
+- Logins/roles: a role switcher in the sidebar (real logins arrive in Phase 1).
+
+## Quality gates
+`src/**/*.test.ts` (Vitest, ≥ 95% line coverage on tax & ledger code), `e2e/` (Playwright),
+`scripts/check-finance.mjs` (no float money, hard-coded rates or dates), `scripts/check-bundle.mjs`
+(no secrets in `dist/`), oxlint. CI: `../.github/workflows/ci.yml`.
 
 ## Accounts, AR and AP
 - **Accounts** (formerly "General ledger") — journals and account ledgers.
@@ -52,7 +61,8 @@ npm run dev      # http://localhost:5180
 apple-touch icon, PWA manifest, `og-image.png` and `robots.txt`. Add a canonical URL + hreflang once the domain is known.
 
 ## Where the logic lives
-`src/lib/` — `ledger.ts` (posting + TB/P&L/BS), `vat.ts` (VAT 201), `ct.ts` (CT bridge), `ai.ts`
-(classifier, Art 59 checks, risk, Q&A), `einvoice.ts` (PINT AE), `config.ts` (versioned tax params).
+`src/lib/` — `ledger.ts` (posting + TB/P&L/BS), `posting.ts` (document → journal rules), `vat.ts` (VAT 201,
+VAT helpers), `ct.ts` (CT bridge), `rules.ts` (TRN, default accounts, Art 59 checks, risk), `dates.ts`,
+`einvoice.ts` (PINT AE), `config.ts` (versioned tax params).
 Money is integer fils throughout. Items marked VERIFY need product-owner sign-off.
 Accounts 6050/6060/6180 were added to the seed CoA for the POC.

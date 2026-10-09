@@ -12,7 +12,6 @@ import { Vat } from "./pages/Vat";
 import { Ct } from "./pages/Ct";
 import { Bank } from "./pages/Bank";
 import { Calendar } from "./pages/Calendar";
-import { Ask } from "./pages/Ask";
 import { Audit } from "./pages/Audit";
 import { SettingsPage } from "./pages/Settings";
 
@@ -28,7 +27,7 @@ export function App() {
     const label = ALL_ITEMS.find((i) => i.id === page)?.label ?? "";
     const who = org ? (state.session.lang === "ar" ? org.nameAr : org.name) : "TFS Plus";
     document.title = `${t(label)} · ${who} · TFS+ Smart Ledger`;
-  }, [page, org, state.session.lang]);
+  }, [page, org, state.session.lang, t]);
   useEffect(() => { if (!org && !["firm", "calendar", "audit", "settings"].includes(page)) go("firm"); }, [org, page]);
   const { setSession } = useStore();
   const open = (orgId: string, p: Page = "dashboard") => { setSession({ orgId }); go(p); };
@@ -46,7 +45,6 @@ export function App() {
       {org && page === "vat" && <Vat org={org} />}
       {org && page === "ct" && <Ct org={org} />}
       {org && page === "bank" && <Bank org={org} />}
-      {org && page === "ask" && <Ask org={org} />}
       {page === "calendar" && <Calendar open={open} />}
       {page === "audit" && <Audit />}
       {page === "settings" && <SettingsPage />}

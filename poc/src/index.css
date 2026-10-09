@@ -105,3 +105,10 @@ a.sr-only:focus { position: fixed; top: 12px; inset-inline-start: 12px; width: a
 html[dir="rtl"] .truncate, html[dir="rtl"] input:not([type="date"]):not([type="range"]), html[dir="rtl"] textarea { unicode-bidi: plaintext; }
 html[dir="rtl"] input[type="date"] { direction: ltr; text-align: end; }
 td.num, td .num, td .font-mono { white-space: nowrap; }
+/* Printable documents (tax invoice): only the .print-area is printed */
+@media print {
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area { position: absolute !important; inset: 0 !important; overflow: visible !important; background: #fff !important; }
+  .no-print { display: none !important; }
+}

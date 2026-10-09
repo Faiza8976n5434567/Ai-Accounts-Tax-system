@@ -1,6 +1,7 @@
 /** Deterministic demo data: 3 UAE SME clients, Jan–Sep 2026. */
 import { applyBp, toFils } from "./money";
-import { review } from "./ai";
+import { review } from "./rules";
+import { TAX_CONFIG } from "./config";
 import type { AppState, Journal, JLine, Org, SalesInvoice, BankLine, PurchaseDoc, Emirate, TaxCode } from "./types";
 
 let s = 42;
@@ -9,9 +10,9 @@ const between = (a: number, b: number) => Math.round(a + rnd() * (b - a));
 const pad = (n: number) => String(n).padStart(2, "0");
 
 export const ORGS: Org[] = [
-  { id: "alnoor", name: "Al Noor General Trading LLC", nameAr: "النور للتجارة العامة ذ.م.م", trn: "100384729100003", emirate: "AUH", industry: "Trading", regime: "standard", vatPeriod: "QUARTERLY", fyEnd: "2026-12-31", priorRevenue: toFils(3_900_000), licenceExpiry: "2026-10-22", color: "#059669", assignedTo: "Aisha", autoApprove: { enabled: true, maxAmount: toFils(5000), minConfidence: 0.9 } },
-  { id: "brightpath", name: "Bright Path Consultancy LLC", nameAr: "المسار المشرق للاستشارات ذ.م.م", trn: "100519283700003", emirate: "DXB", industry: "Professional services", regime: "sbr", vatPeriod: "QUARTERLY", fyEnd: "2026-12-31", priorRevenue: toFils(2_350_000), licenceExpiry: "2027-03-14", color: "#6366f1", assignedTo: "Aisha", autoApprove: { enabled: true, maxAmount: toFils(3000), minConfidence: 0.9 } },
-  { id: "gulffresh", name: "Gulf Fresh Restaurants LLC", nameAr: "مطاعم الخليج الطازجة ذ.م.م", trn: "100672910400003", emirate: "SHJ", industry: "Food & beverage", regime: "standard", vatPeriod: "QUARTERLY", fyEnd: "2026-12-31", priorRevenue: toFils(6_100_000), licenceExpiry: "2026-11-30", color: "#f59e0b", assignedTo: "Rahul", autoApprove: { enabled: false, maxAmount: toFils(2000), minConfidence: 0.95 } },
+  { id: "alnoor", name: "Al Noor General Trading LLC", nameAr: "النور للتجارة العامة ذ.م.م", trn: "100384729100003", emirate: "AUH", industry: "Trading", regime: "standard", vatPeriod: "QUARTERLY", fyEnd: "2026-12-31", priorRevenue: toFils(3_900_000), licenceExpiry: "2026-10-22", color: "#059669", assignedTo: "Aisha" },
+  { id: "brightpath", name: "Bright Path Consultancy LLC", nameAr: "المسار المشرق للاستشارات ذ.م.م", trn: "100519283700003", emirate: "DXB", industry: "Professional services", regime: "sbr", vatPeriod: "QUARTERLY", fyEnd: "2026-12-31", priorRevenue: toFils(2_350_000), licenceExpiry: "2027-03-14", color: "#6366f1", assignedTo: "Aisha" },
+  { id: "gulffresh", name: "Gulf Fresh Restaurants LLC", nameAr: "مطاعم الخليج الطازجة ذ.م.م", trn: "100672910400003", emirate: "SHJ", industry: "Food & beverage", regime: "standard", vatPeriod: "QUARTERLY", fyEnd: "2026-12-31", priorRevenue: toFils(6_100_000), licenceExpiry: "2026-11-30", color: "#f59e0b", assignedTo: "Rahul" },
 ];
 
 const CUSTOMERS: Record<string, { name: string; trn: string; country: string; emirate: Emirate }[]> = {
@@ -44,7 +45,6 @@ export function buildSeed(): AppState {
   const bank: BankLine[] = [];
   const J = (orgId: string, date: string, ref: string, memo: string, source: Journal["source"], lines: JLine[], preparedBy = "Aisha (Accountant)"): Journal => {
     const j: Journal = { id: id("j"), orgId, date, ref, memo, source, status: "POSTED", lines, preparedBy, approvedBy: "Faizan (Partner)", postedAt: date + "T10:00:00Z" };
-    if (source === "PURCHASE" && rnd() > 0.25) { j.ai = { confidence: 0.88 + rnd() * 0.1, reasoning: "Auto-classified from supplier and description patterns." }; j.preparedBy = "AI assistant"; }
     journals.push(j); return j;
   };
   const exp = (orgId: string, date: string, ref: string, memo: string, acc: string, net: number, tc: TaxCode | undefined, viaAp = false) => {
@@ -147,12 +147,57 @@ export function buildSeed(): AppState {
     }
   }
 
+  // Every quarter, each client also has a zero-rated export (Box 4), an exempt residential
+  // sublease (Box 5) and an imported service under reverse charge (Boxes 3 & 10).
+  // Fixed amounts (no rnd) so the rest of the demo data is unchanged.
+  const EXTRA: Record<string, { zr: { customer: string; country: string; desc: string; aed: number }; ex: { desc: string; aed: number }; rc: { supplier: string; desc: string; account: string; aed: number } }> = {
+    alnoor: { zr: { customer: "Muscat Traders SAOC (Oman)", country: "OM", desc: "Export of goods — shipment to Oman", aed: 64_500 }, ex: { desc: "Staff accommodation sublease — residential (exempt)", aed: 12_000 }, rc: { supplier: "Google Ireland Ltd", desc: "Google Ads — imported service", account: "6150", aed: 8_400 } },
+    brightpath: { zr: { customer: "Bahrain FinTech WLL", country: "BH", desc: "Advisory services — exported to Bahrain", aed: 38_000 }, ex: { desc: "Residential flat sublease — staff (exempt)", aed: 9_000 }, rc: { supplier: "Microsoft Ireland Operations Ltd", desc: "Microsoft 365 & Azure — imported service", account: "6180", aed: 5_600 } },
+    gulffresh: { zr: { customer: "Muscat Food Co. (Oman)", country: "OM", desc: "Export of packaged food — shipment to Oman", aed: 27_000 }, ex: { desc: "Staff accommodation sublease — residential (exempt)", aed: 15_000 }, rc: { supplier: "Meta Platforms Ireland Ltd", desc: "Meta Ads — imported service", account: "6150", aed: 6_900 } },
+  };
+  for (const org of ORGS) {
+    const x = EXTRA[org.id];
+    const revAcc = org.id === "brightpath" ? "4010" : "4000";
+    [2, 5, 8].forEach((m, q) => {
+      const mm = `2026-${pad(m)}`;
+      const grow = 1 + q / 10;
+      // Box 4 — zero-rated export
+      const zr = toFils(Math.round(x.zr.aed * grow));
+      const inv: SalesInvoice = {
+        id: id("s"), orgId: org.id, invNo: `EXP-${org.id.slice(0, 2).toUpperCase()}-${q + 1}`, date: `${mm}-14`, dueDate: `${mm}-28`,
+        customer: x.zr.customer, customerTrn: "", customerCountry: x.zr.country, emirate: org.emirate,
+        lines: [{ desc: x.zr.desc, qty: 1, price: zr, taxCode: "ZR", account: revAcc }], status: "POSTED", einv: "NOT_SENT", einvLog: [],
+      };
+      const zj = J(org.id, inv.date, inv.invNo, `Sales invoice — ${x.zr.customer}`, "SALE", [
+        { account: "1100", debit: zr, credit: 0 },
+        { account: revAcc, debit: 0, credit: zr, taxCode: "ZR", vat: 0, emirate: org.emirate },
+      ]);
+      zj.party = x.zr.customer; inv.journalId = zj.id; sales.push(inv);
+      // Box 5 — exempt supply (residential sublease income, received quarterly)
+      const ex = toFils(x.ex.aed);
+      J(org.id, `${mm}-01`, `RES-${mm}`, x.ex.desc, "BANK", [
+        { account: "1010", debit: ex, credit: 0 },
+        { account: "4300", debit: 0, credit: ex, taxCode: "EX", vat: 0 },
+      ]);
+      // Boxes 3 & 10 — imported service, VAT self-accounted under reverse charge
+      const rc = toFils(Math.round(x.rc.aed * grow));
+      const rcVat = applyBp(rc, TAX_CONFIG.vat.rateBp.value);
+      const rj = J(org.id, `${mm}-18`, `RC-${mm}`, `${x.rc.supplier} — ${x.rc.desc}`, "PURCHASE", [
+        { account: x.rc.account, debit: rc, credit: 0, taxCode: "RCS", vat: rcVat },
+        { account: "1310", debit: rcVat, credit: 0 },
+        { account: "2110", debit: 0, credit: rcVat },
+        { account: "1010", debit: 0, credit: rc },
+      ]);
+      rj.party = x.rc.supplier;
+    });
+  }
+
   const state: AppState = { orgs: ORGS, journals, purchases: [], sales, bank, audit: [], session: { role: "FIRM_PARTNER", user: "Faizan (Partner)", orgId: "FIRM", lang: "en" }, seq: n };
   // Seed an inbox with docs awaiting review (drives the Tax Risk dashboard)
   const inbox: Omit<PurchaseDoc, "checks" | "risk" | "riskScore">[] = [
-    { id: id("p"), orgId: "alnoor", fileName: "quickprint_flyers.pdf", supplier: "Quick Print Services", supplierTrn: "", invNo: "QP-118", date: "2026-09-20", description: "Marketing flyers printing", net: toFils(2000), vat: toFils(150), total: toFils(2150), currency: "AED", hasHeading: false, customerName: "", account: "6150", taxCode: "SR", confidence: 0.91, reasoning: "Advertising / marketing vendor → Marketing and advertising.", status: "PENDING", createdAt: "2026-09-30T08:12:00Z", createdBy: "Priya (Finance)" },
-    { id: id("p"), orgId: "alnoor", fileName: "steel_supplier_inv.jpg", supplier: "Emirates Steel Traders", supplierTrn: "10029381", invNo: "EST-2291", date: "2026-09-27", description: "Purchase of trading goods - steel rods", net: toFils(40000), vat: toFils(2000), total: toFils(42000), currency: "AED", hasHeading: true, customerName: "Al Noor General Trading LLC", account: "1200", taxCode: "SR", confidence: 0.9, reasoning: "Purchase of goods for resale → Inventory.", status: "PENDING", createdAt: "2026-09-30T09:40:00Z", createdBy: "Priya (Finance)" },
-    { id: id("p"), orgId: "gulffresh", fileName: "majlis_catering.pdf", supplier: "Majlis Catering", supplierTrn: "", invNo: "MC-77", date: "2026-09-26", description: "Catering for client launch event", net: toFils(9000), vat: toFils(450), total: toFils(9450), currency: "AED", hasHeading: true, customerName: "", account: "6140", taxCode: "BLK", confidence: 0.86, reasoning: "Hospitality for non-employees → Client entertainment.", status: "PENDING", createdAt: "2026-09-29T14:00:00Z", createdBy: "Rahul (Accountant)" },
+    { id: id("p"), orgId: "alnoor", fileName: "quickprint_flyers.pdf", supplier: "Quick Print Services", supplierTrn: "", invNo: "QP-118", date: "2026-09-20", description: "Marketing flyers printing", net: toFils(2000), vat: toFils(150), total: toFils(2150), currency: "AED", hasHeading: false, customerName: "", account: "6150", taxCode: "SR", reasoning: "Advertising / marketing vendor → Marketing and advertising.", status: "PENDING", createdAt: "2026-09-30T08:12:00Z", createdBy: "Priya (Finance)" },
+    { id: id("p"), orgId: "alnoor", fileName: "steel_supplier_inv.jpg", supplier: "Emirates Steel Traders", supplierTrn: "10029381", invNo: "EST-2291", date: "2026-09-27", description: "Purchase of trading goods - steel rods", net: toFils(40000), vat: toFils(2000), total: toFils(42000), currency: "AED", hasHeading: true, customerName: "Al Noor General Trading LLC", account: "1200", taxCode: "SR", reasoning: "Purchase of goods for resale → Inventory.", status: "PENDING", createdAt: "2026-09-30T09:40:00Z", createdBy: "Priya (Finance)" },
+    { id: id("p"), orgId: "gulffresh", fileName: "majlis_catering.pdf", supplier: "Majlis Catering", supplierTrn: "", invNo: "MC-77", date: "2026-09-26", description: "Catering for client launch event", net: toFils(9000), vat: toFils(450), total: toFils(9450), currency: "AED", hasHeading: true, customerName: "", account: "6140", taxCode: "BLK", reasoning: "Hospitality for non-employees → Client entertainment.", status: "PENDING", createdAt: "2026-09-29T14:00:00Z", createdBy: "Rahul (Accountant)" },
   ];
   state.purchases = inbox.map((d) => ({ ...d, ...review(d, []) }));
   state.seq = n;

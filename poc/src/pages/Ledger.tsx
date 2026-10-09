@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Plus, Trash2, RotateCcw, Sparkles, CheckCircle2, BookOpen, Cpu, Clock, Scale } from "lucide-react";
+import { Plus, Trash2, RotateCcw, CheckCircle2, BookOpen, Clock, Scale } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useStore, USERS } from "../lib/store";
 import { useI18n } from "../lib/useI18n";
 import { COA, ACC } from "../lib/coa";
 import { accountLedger, posted, trialBalance } from "../lib/ledger";
 import { fmt, toFils, compact } from "../lib/money";
+import { today } from "../lib/dates";
 import { Badge, Card, DataTable, Field, IconButton, Input, KpiGrid, Modal, Num, PageHeader, Select, Stat, Tabs } from "../components/ui";
 import { C, axis, tipStyle, aedK } from "../components/charts";
 import { StatusBadge } from "./Capture";
@@ -24,7 +25,6 @@ export function Ledger({ org }: { org: Org }) {
   const al = accountLedger(posted(store.state.journals, org.id), acc);
   const tb = trialBalance(posted(store.state.journals, org.id));
   const balance = tb.find((r) => r.code === acc)?.balance ?? 0;
-  const aiCount = js.filter((j) => j.ai).length;
 
   return (
     <>
@@ -32,7 +32,7 @@ export function Ledger({ org }: { org: Org }) {
         actions={<><Tabs value={tab} onChange={setTab} items={[{ id: "journals", label: t("Journals") }, { id: "account", label: t("Account ledger") }]} /><button className="btn-primary" onClick={() => setManual(true)}><Plus size={15} />{t("Manual journal")}</button></>} />
       <KpiGrid>
         <Stat label={t("Journals")} value={<Num v={js.length} f={String} />} icon={<BookOpen size={16} />} tone="sky" hint={t("{n} posted", { n: js.filter((j) => j.status === "POSTED").length })} />
-        <Stat label={t("AI-prepared")} value={`${js.length ? Math.round((aiCount / js.length) * 100) : 0}%`} icon={<Cpu size={16} />} tone="violet" hint={t("{n} journals", { n: aiCount })} />
+        <Stat label={t("Reversed")} value={<Num v={js.filter((j) => j.status === "REVERSED").length} f={String} />} icon={<RotateCcw size={16} />} tone="violet" hint={t("Corrections by reversal only")} />
         <Stat label={t("Pending approval")} value={<Num v={js.filter((j) => j.status === "PENDING").length} f={String} />} icon={<Clock size={16} />} tone="amber" hint={t("Maker-checker")} />
         <Stat label={t("Trial balance")} value={t("Balanced")} icon={<Scale size={16} />} tone="emerald" hint={`Dr = Cr = ${compact(tb.reduce((s, r) => s + r.debit, 0))}`} />
       </KpiGrid>
@@ -43,12 +43,11 @@ export function Ledger({ org }: { org: Org }) {
           filters={[
             { key: "src", label: t("Source"), options: ["PURCHASE", "SALE", "BANK", "MANUAL", "OPENING", "REVERSAL"].map((x) => ({ value: x, label: t(x) })), get: (j) => j.source },
             { key: "st", label: t("Status"), options: ["POSTED", "PENDING", "REVERSED"].map((x) => ({ value: x, label: t(x) })), get: (j) => j.status },
-            { key: "ai", label: t("AI"), options: [{ value: "y", label: t("AI-prepared") }, { value: "n", label: t("Human") }], get: (j) => (j.ai ? "y" : "n") },
           ]}
           cols={[
             { key: "date", header: t("Date"), sort: (j) => j.date + j.id, cell: (j) => <span className="num text-slate-600 whitespace-nowrap">{j.date}</span> },
             { key: "ref", header: t("Ref"), sort: (j) => j.ref, cell: (j) => <span className="font-medium font-mono text-xs whitespace-nowrap" dir="ltr">{j.ref}</span> },
-            { key: "memo", header: t("Memo"), cell: (j) => <span className="flex items-center gap-1.5 max-w-80"><span className="truncate">{j.memo}</span>{j.ai && <Badge tone="violet"><Sparkles size={10} />{t("AI")}</Badge>}</span> },
+            { key: "memo", header: t("Memo"), cell: (j) => <span className="flex items-center gap-1.5 max-w-80"><span className="truncate">{j.memo}</span></span> },
             { key: "src", header: t("Source"), hide: "md", sort: (j) => j.source, cell: (j) => <Badge>{t(j.source)}</Badge> },
             { key: "amt", header: t("Amount"), align: "end", sort: total, cell: (j) => fmt(total(j)) },
             { key: "st", header: t("Status"), sort: (j) => j.status, cell: (j) => <StatusBadge s={j.status} /> },
@@ -91,7 +90,7 @@ export function Ledger({ org }: { org: Org }) {
 
 export function JournalModal({ j, onClose }: { j: Journal; onClose: () => void }) {
   const store = useStore();
-  const { t, tx, accFull } = useI18n();
+  const { t, accFull } = useI18n();
   const doc = store.state.purchases.find((p) => p.id === j.docId);
   const canReverse = j.status === "POSTED" && j.source !== "REVERSAL" && USERS[store.state.session.role].firm;
   return (
@@ -108,7 +107,7 @@ export function JournalModal({ j, onClose }: { j: Journal; onClose: () => void }
           <tr className="font-semibold bg-slate-50/60"><td className="td" colSpan={2}>{t("Total")}</td><td className="td text-end num">{fmt(total(j))}</td><td className="td text-end num">{fmt(j.lines.reduce((s, l) => s + l.credit, 0))}</td></tr></tbody></table></div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-sm">
         <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100"><div className="label">{t("Audit")}</div>{t("Prepared by")} <b>{j.preparedBy}</b><br />{t("Approved by")} <b>{j.approvedBy ?? "—"}</b>{j.postedAt && <><br />{t("Posted")} <span className="num">{j.postedAt.slice(0, 16).replace("T", " ")}</span></>}</div>
-        {j.ai && <div className="rounded-xl bg-gradient-to-br from-violet-50 to-fuchsia-50/40 p-3 text-violet-900 ring-1 ring-violet-100"><div className="label !text-violet-500">{t("AI involvement · {n}%", { n: Math.round(j.ai.confidence * 100) })}</div>{tx(j.ai.reasoning)}{doc && <div className="mt-1 text-xs">{t("Source")}: {doc.fileName} · {t(`${doc.risk} risk`)}</div>}</div>}
+        {doc && <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100"><div className="label">{t("Source document")}</div>{doc.fileName ?? doc.invNo} · {t(`${doc.risk} risk`)}</div>}
       </div>
       {j.status === "POSTED" && !canReverse && j.source !== "REVERSAL" && <p className="text-xs text-slate-400 mt-3">{t("Only firm users can reverse posted journals.")}</p>}
     </Modal>
@@ -118,7 +117,7 @@ export function JournalModal({ j, onClose }: { j: Journal; onClose: () => void }
 function ManualJournal({ org, onClose }: { org: Org; onClose: () => void }) {
   const store = useStore();
   const { t, accFull } = useI18n();
-  const [date, setDate] = useState("2026-09-30");
+  const [date, setDate] = useState(today());
   const [memo, setMemo] = useState("");
   const [lines, setLines] = useState([{ account: "6010", dr: "", cr: "" }, { account: "2500", dr: "", cr: "" }]);
   const dr = lines.reduce((s, l) => s + toFils(l.dr || 0), 0), cr = lines.reduce((s, l) => s + toFils(l.cr || 0), 0);

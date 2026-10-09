@@ -3,7 +3,7 @@ import { Wand2, Upload, CheckCircle2, Link2, ArrowDownLeft, ArrowUpRight, ListCh
 import { useStore } from "../lib/store";
 import { useI18n } from "../lib/useI18n";
 import { COA } from "../lib/coa";
-import { classify } from "../lib/ai";
+import { suggestAccount } from "../lib/rules";
 import { fmt, toFils, compact } from "../lib/money";
 import { Badge, DataTable, Field, KpiGrid, Modal, PageHeader, Ring, Select, Stat } from "../components/ui";
 import type { Org, BankLine } from "../lib/types";
@@ -17,7 +17,7 @@ export function Bank({ org }: { org: Org }) {
   const [csv, setCsv] = useState("2026-09-30,DEWA BILL PAYMENT,-2450.00\n2026-09-30,CAREEM RIDE,-58.50\n2026-09-30,INWARD TT EMIRATES BUILD MART,52500.00");
   const [pick, setPick] = useState<Record<string, string>>({});
   const pct = lines.length ? Math.round(((lines.length - open.length) / lines.length) * 100) : 0;
-  const sug = (b: BankLine) => pick[b.id] ?? b.suggestion ?? (b.amount < 0 ? classify(b.desc).account : "4300");
+  const sug = (b: BankLine) => pick[b.id] ?? b.suggestion ?? (b.amount < 0 ? suggestAccount(b.desc).account : "4300");
   const parsed = csv.split("\n").map((r) => r.split(",")).filter((r) => r.length >= 3);
 
   return (
@@ -28,7 +28,7 @@ export function Bank({ org }: { org: Org }) {
         <div className="card card-hover p-3.5 sm:p-4 flex items-center gap-3 sm:gap-4 min-w-0"><Ring value={pct} size={56} stroke={7}>{pct}%</Ring><div><div className="text-xs text-slate-500">{t("Reconciled")}</div><div className="text-[22px] font-semibold num">{lines.length - open.length} / {lines.length}</div><div className="text-xs text-slate-400">{t("lines matched to ledger")}</div></div></div>
         <Stat label={t("Money in")} value={compact(lines.filter((b) => b.amount > 0).reduce((s, b) => s + b.amount, 0))} icon={<ArrowDownLeft size={16} />} tone="emerald" />
         <Stat label={t("Money out")} value={compact(-lines.filter((b) => b.amount < 0).reduce((s, b) => s + b.amount, 0))} icon={<ArrowUpRight size={16} />} tone="amber" />
-        <Stat label={t("To review")} value={String(open.length)} icon={<ListChecks size={16} />} tone="rose" hint={t("AI suggestions ready")} />
+        <Stat label={t("To review")} value={String(open.length)} icon={<ListChecks size={16} />} tone="rose" hint={t("Suggested accounts ready")} />
       </KpiGrid>
       <DataTable title={t("Statement lines")} rows={lines} rowKey={(b) => b.id} initialSort={{ key: "d", dir: "desc" }} search={(b) => b.desc}
         rowClass={(b) => (b.journalId ? "bg-emerald-50/30" : "")}
@@ -41,7 +41,7 @@ export function Bank({ org }: { org: Org }) {
           { key: "n", header: t("Narrative"), cell: (b) => <span className="font-mono text-xs" dir="ltr">{b.desc}</span> },
           { key: "a", header: t("Amount"), align: "end", sort: (b) => b.amount, cell: (b) => <span className={b.amount < 0 ? "text-rose-600" : "text-emerald-700"}>{fmt(b.amount)}</span> },
           { key: "s", header: t("Status"), sort: (b) => (b.journalId ? 1 : 0), cell: (b) => (b.journalId ? <Badge tone="emerald"><CheckCircle2 size={11} />{t("Matched")}</Badge> : <Badge tone="amber" dot>{t("Unreconciled")}</Badge>) },
-          { key: "m", header: t("Match / AI suggestion"), hide: "md", cell: (b) => { const j = store.state.journals.find((x) => x.id === b.journalId); return j ? <span className="flex items-center gap-1.5 text-slate-600 text-xs"><Link2 size={13} /><span className="font-mono" dir="ltr">{j.ref}</span> · <span className="truncate max-w-48">{j.memo}</span></span> :
+          { key: "m", header: t("Match / suggested account"), hide: "md", cell: (b) => { const j = store.state.journals.find((x) => x.id === b.journalId); return j ? <span className="flex items-center gap-1.5 text-slate-600 text-xs"><Link2 size={13} /><span className="font-mono" dir="ltr">{j.ref}</span> · <span className="truncate max-w-48">{j.memo}</span></span> :
             <Select aria-label={t("Account")} className="min-w-56" value={sug(b)} onChange={(e) => setPick({ ...pick, [b.id]: e.target.value })}>{COA.filter((a) => a.type === "EXPENSE" || a.type === "REVENUE" || a.code === "1100" || a.code === "2000").map((a) => <option key={a.code} value={a.code}>{accFull(a.code)}</option>)}</Select>; } },
         ]}
         actions={(b) => !b.journalId && <button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => store.categoriseBank(b.id, sug(b))}>{t("Post to {a}", { a: acc(sug(b)).split(" ")[0] })}</button>} />

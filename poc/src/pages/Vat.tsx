@@ -18,7 +18,7 @@ export function Vat({ org }: { org: Org }) {
   const [qk, setQk] = useState(qs[2].key);
   const q = qs.find((x) => x.key === qk)!;
   const v = useMemo(() => buildVat201(posted(store.state.journals, org.id, q.from, q.to)), [store.state.journals, org.id, q]);
-  const trend = useMemo(() => qs.map((x) => { const r = buildVat201(posted(store.state.journals, org.id, x.from, x.to)); return { q: x.label.split(" ")[0], output: r.box12 / 100, input: r.box13 / 100, net: r.box14 / 100 }; }), [store.state.journals, org.id]);
+  const trend = useMemo(() => qs.map((x) => { const r = buildVat201(posted(store.state.journals, org.id, x.from, x.to)); return { q: x.label.split(" ")[0], output: r.box12 / 100, input: r.box13 / 100, net: r.box14 / 100 }; }), [store.state.journals, org.id, qs]);
   const EK = { "1a": "AUH", "1b": "DXB", "1c": "SHJ", "1d": "AJM", "1e": "UAQ", "1f": "RAK", "1g": "FUJ" } as const;
   const em7 = (Object.keys(EK) as (keyof typeof EK)[]).map((k) => ({ k, name: em(EK[k]), v: v.boxes[k].amount })).filter((x) => x.v > 0);
   const emMax = Math.max(1, ...em7.map((x) => x.v));
@@ -27,7 +27,7 @@ export function Vat({ org }: { org: Org }) {
   const R = ({ box, b, vatCol = true }: { box: string; b: BoxVal; vatCol?: boolean }) => (
     <tr tabIndex={0} className="hover:bg-emerald-50/40 focus-visible:bg-emerald-50/60 outline-none cursor-pointer group transition-colors" onClick={() => setDrill({ title: `${t("Box")} ${box} — ${boxLabel(box)}`, b })} onKeyDown={(e) => e.key === "Enter" && setDrill({ title: `${t("Box")} ${box} — ${boxLabel(box)}`, b })}>
       <td className="td w-14"><Badge tone="indigo">{box}</Badge></td><td className="td">{boxLabel(box)} <span className="text-xs text-slate-400 num">({b.refs.length})</span></td>
-      <td className="td text-end num">{fmt(b.amount)}</td><td className="td text-end num">{vatCol ? fmt(b.vat) : "—"}</td><td className="td w-8"><ChevronRight size={15} className="text-slate-300 rtl:rotate-180 group-hover:text-emerald-600 transition" /></td>
+      <td className="td text-end num">{fmt(b.amount)}</td><td className="td text-end num">{fmt(vatCol ? b.vat : 0)}</td><td className="td w-8"><ChevronRight size={15} className="text-slate-300 rtl:rotate-180 group-hover:text-emerald-600 transition" /></td>
     </tr>
   );
   const Head = ({ c4 }: { c4: string }) => <thead><tr><th className="th">{t("Box")}</th><th className="th">{t("Description")}</th><th className="th !text-end">{t("Amount")}</th><th className="th !text-end">{c4}</th><th className="th" /></tr></thead>;

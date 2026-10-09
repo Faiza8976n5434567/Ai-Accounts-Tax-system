@@ -1,0 +1,141 @@
+# Quality gates (PLAN.md §3). Runs on every push and pull request.
+# G-6 runs the database tests on a temporary Supabase; G-7 (advisors) runs on the project after each migration.
+name: CI
+
+on:
+  push:
+    branches: [main, faizan]
+  pull_request:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: poc
+
+jobs:
+  checks:
+    name: Type check · lint · finance lint · unit tests · build · bundle scan · audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: poc/package-lock.json
+      - run: npm ci
+      - name: G-1 Type check
+        run: npm run typecheck
+      - name: G-2 Lint
+        run: npm run lint
+      - name: G-3 Finance lint
+        run: npm run check:finance
+      - name: G-5 Unit tests (≥ 95% line coverage on tax & ledger code)
+        run: npm test
+      - name: G-4 Build
+        run: npx vite build
+      - name: G-4 No secrets in the built site
+        run: npm run check:bundle
+      - name: G-8 Dependency audit (high and critical)
+        run: npm audit --audit-level=high --omit=dev
+
+  secrets:
+    name: G-8 Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  database:
+    name: G-6 Database tests (temporary Supabase)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+      # A throw-away Supabase inside the runner (D-18): migrations applied from scratch,
+      # then the pgTAP suites in supabase/tests run as real test users. Deleted after the run.
+      - name: Start temporary Supabase (database, auth, storage)
+        run: supabase start -x realtime,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: G-6 Database tests (pgTAP)
+        run: supabase test db
+      - name: NUM-05 Numbering under parallel posting
+        run: bash supabase/tests/concurrency/num05.sh
+
+  e2e-live:
+    name: G-9 Live journey on a temporary Supabase (MFA sign-in, client, journal, approval, trial balance)
+    runs-on: ubuntu-latest
+    needs: checks
+    env:
+      E2E_PASSWORD: Ledger-e2e-2026   # test-only users on a throw-away database (D-18)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: poc/package-lock.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+      - name: Start temporary Supabase (database, auth, API)
+        working-directory: .
+        run: supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Seed two test Firm Admins (maker and checker)
+        working-directory: .
+        run: |
+          eval "$(supabase status -o env)"
+          for u in maker checker; do
+            curl -sSf -X POST "$API_URL/auth/v1/admin/users" \
+              -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" -H "content-type: application/json" \
+              -d "{\"email\":\"$u@e2e.test\",\"password\":\"$E2E_PASSWORD\",\"email_confirm\":true,\"user_metadata\":{\"full_name\":\"E2E $u\"}}" > /dev/null
+          done
+          psql "$DB_URL" -v ON_ERROR_STOP=1 \
+            -c "select app.bootstrap_super_admin('maker@e2e.test')" \
+            -c "insert into public.firm_members (firm_id, user_id, role) select f.id, p.id, 'firm_admin' from public.firms f, public.profiles p where f.is_platform_owner and p.email = 'checker@e2e.test'"
+          echo "VITE_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "VITE_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test -c playwright.live.config.ts
+        env:
+          CI: "true"
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-live-traces
+          path: poc/test-results
+          retention-days: 7
+
+  e2e:
+    name: G-9 End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    needs: checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: poc/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+        env:
+          CI: "true"
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: poc/test-results
+          retention-days: 7
