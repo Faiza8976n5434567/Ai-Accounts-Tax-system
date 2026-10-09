@@ -15,10 +15,10 @@ grant execute on all functions in schema tests to authenticated;
 
 -- RBAC-20 · the full matrix, role by role, as the database applies it to client A
 select tests.login('admin2@test.local');
-select is(tests.perms(), 'approve_document,approve_refund,approve_vat,assign_staff,bank_match,export,file_vat,invite_client_users,lock_period,manage_client,manage_coa,post_journal,prepare,prepare_vat,record_payment,reopen_period,reverse_journal,upload,view,view_audit',
+select is(tests.perms(), 'approve_ct,approve_document,approve_refund,approve_vat,assign_staff,bank_match,export,file_ct,file_vat,invite_client_users,lock_period,manage_client,manage_coa,post_journal,prepare,prepare_ct,prepare_vat,record_payment,reopen_period,reverse_journal,upload,view,view_audit',
   'RBAC-20 · Firm Admin: everything');
 select tests.login('acct@test.local');
-select is(tests.perms(), 'bank_match,export,prepare,prepare_vat,record_payment,upload,view,view_audit', 'RBAC-20 · Firm Accountant: prepare, bank, VAT draft — never approve or post');
+select is(tests.perms(), 'bank_match,export,prepare,prepare_ct,prepare_vat,record_payment,upload,view,view_audit', 'RBAC-20 · Firm Accountant: prepare, bank, VAT draft — never approve or post');
 select tests.login('owner@test.local');
 select is(tests.perms(), 'approve_document,approve_refund,export,invite_client_users,prepare,record_payment,upload,view,view_audit',
   'RBAC-20 · Client Owner: own company, approve bills/invoices/refunds, invite staff');

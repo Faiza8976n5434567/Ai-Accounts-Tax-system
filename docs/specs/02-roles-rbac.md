@@ -67,6 +67,9 @@ PLAN.md. A "Firm Manager / Reviewer" role can be added later in one migration if
 | Prepare draft VAT return | ✔ | ✔ | ✔* | — | — | — |
 | Approve & freeze VAT return | ✔ | ✔ | — | — | — | — |
 | Mark return as filed (FTA ref) | ✔ | ✔ | — | — | — | — |
+| Prepare Corporate Tax return (adjustments) — `prepare_ct` | ✔ | ✔ | ✔* | — | — | — |
+| Approve & freeze CT return — `approve_ct` | ✔ | ✔ | — | — | — | — |
+| Mark CT return as filed (FTA ref) — `file_ct` | ✔ | ✔ | — | — | — | — |
 | Lock accounting period | ✔ | ✔ | — | — | — | — |
 | **Reopen** a locked period (reason required) | ✔ | ✔ | — | — | — | — |
 
@@ -90,7 +93,7 @@ PLAN.md. A "Firm Manager / Reviewer" role can be added later in one migration if
 | View audit log | ✔ (all) | ✔ (all clients) | ✔* | ✔° | — | ✔° |
 
 ### 2.4 Always-on rules (apply to every role, including Super Admin)
-- **R1 Maker-checker:** approver ≠ preparer, for journals, bills, invoices, refunds and VAT returns.
+- **R1 Maker-checker:** approver ≠ preparer, for journals, bills, invoices, refunds, VAT returns and CT returns.
 - **R2 Immutability:** posted/approved records cannot be edited or deleted — only reversed.
 - **R3 Locked periods** reject postings; reopening needs Firm Admin + reason, audit-logged.
 - **R4 No self-promotion:** nobody can change their own role or Super Admin flag.

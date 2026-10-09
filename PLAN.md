@@ -83,6 +83,10 @@
 | D-62 | **VAT rounding on sales documents** (Faizan): VAT is rounded once per tax code on the invoice / credit note total and spread over the lines by largest remainder, so every e-invoice meets the FTA rule ALIGNED-IBRP-S-09 (tax per category = taxable × rate within 0.02). Applies to all sales documents; single-line documents are unchanged; supplier bills keep the supplier's line VAT. Principle 5 (CLAUDE.md) and F-01 updated. Example: 3 × 33.33 → 5.00 (was 5.01). | 2026-10-09 |
 | D-63 | **Any accredited ASP, chosen per client** (Faizan): the MoF list (65 accredited + 5 in final assessment, 9 Oct 2026) is data (`asp_providers`, Super Admin maintains); each client records its ASP, account reference, onboarding status (not started → onboarding → sandbox → live) and live date. Hand-off is **manual for every ASP now** (download the validated PINT AE file, upload it to the ASP portal, record the ASP's reference and answer: sent → accepted / rejected with reason → fix → resend as a new attempt; file fingerprint SHA-256; records never deleted). **Automatic API connectors are added one ASP at a time** later (`connector = 'api:<name>'`), behind one common interface. | 2026-10-09 |
 | D-64 | **E-invoice fields on each invoice line** (Faizan): goods / services, HS or service code, unit and exemption reason fill in from the item but can be set or changed on the line — an item is optional. Plus an **E-invoicing** entry in each client's menu (ASP, documents by status, rejection queue). | 2026-10-09 |
+| D-65 | **Phase 5 order** (Faizan 2026-10-09, authorised ahead of the Phase 3 / 4 sign-offs): the Corporate Tax computation and return first, then fixed assets, year-end close, statements and the CT return pack. |
+| D-66 | **CT adjustments** (Faizan): automatic add-backs from CT-tagged expense accounts at the configured % (F-08), plus manual adjustment lines (add / deduct) each with a description **and** a legal reference; changeable only while the return is a draft. |
+| D-67 | **Losses and Small Business Relief** (Faizan): a loss of a period in which SBR is applied is **not** carried forward; losses from earlier standard periods are kept unused and offset in the next standard period. SBR elected but not available (revenue above the limit now or in any earlier period, or period ends after the last SBR date) → standard computation with a warning. |
+| D-68 | **Depreciation** (Faizan): straight line, **from the month of purchase** (a full month's charge in the month the asset is bought). |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -299,13 +303,17 @@ Standard: **PINT AE Billing 1.0.4** (UAE Peppol Authority, docs.peppol.eu/poac/a
 
 **Exit:** all invoice scenarios pass in the ASP sandbox; pilot clients transmitting live before the deadline.
 
-### Phase 5 — Corporate Tax & year-end · ⬜ · target 31 Jul 2027 (FY2026 returns due 30 Sep 2027)
-- [ ] Fixed asset register + depreciation (F-21)
-- [ ] Year-end close: accruals/prepayments, closing entries, retained earnings roll-forward
-- [ ] CT computation with config F-08 → F-12: add-backs, SBR / standard gates, loss carry-forward (75% cap), CT payable, due dates; manual adjustment lines with reason
-- [ ] CT return pack (Excel/PDF) with drill-down and legal references
-- [ ] IFRS for SMEs primary statements (P&L, Balance Sheet, cash flow, SOCE)
-- [ ] Test cases **CT-*** passing
+### Phase 5 — Corporate Tax & year-end · 🟡 In progress (authorised by Faizan 2026-10-09, ahead of the Phase 3 / 4 sign-offs) · target 31 Jul 2027 (FY2026 returns due 30 Sep 2027)
+
+| ID | Step | Tests | Status |
+|---|---|---|---|
+| P5-01 | **CT computation + return workflow** (F-08 → F-11, D-66, D-67): profit before tax from the books (CT expense excluded), tagged add-backs, manual adjustments with legal reference, SBR / standard gates, loss relief (75% cap), CT payable, due date; draft → approved by someone else (frozen snapshot + SHA-256 + tax-rule version) → filed (FTA reference); losses b/f from the last approved return or the client's opening losses | CT-01 → CT-10 | 🟡 database built 2026-10-09 — `…20261009100600_ct_computation.sql` (31 pgTAP tests); screen next |
+| P5-02 | Corporate Tax screen per client (computation with drill-down, adjustments, approve, file) | CT-* | ⬜ |
+| P5-03 | CT return pack (Excel / PDF) with drill-down and legal references | CT-* | ⬜ |
+| P5-04 | Fixed asset register + depreciation (F-21, D-68 from the month of purchase) | FA-* | ⬜ |
+| P5-05 | Year-end close: accruals / prepayments, closing entries, retained earnings roll-forward | YE-* | ⬜ |
+| P5-06 | IFRS for SMEs primary statements (P&L, balance sheet, cash flow, SOCE) | RPT-* | ⬜ |
+| P5-07 | Golden CT set from Faizan (Q-06) | CT-11 | ⬜ |
 
 **Exit:** FY2026 CT for pilot clients matches Faizan's manual computation.
 
@@ -410,16 +418,16 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 ### 6.6 Corporate Tax (CT) — 9% above AED 375,000
 | ID | Scenario | Expected | Type | Status |
 |---|---|---|---|---|
-| CT-01 | Taxable income 375,000 | CT 0 | U | ⬜ |
-| CT-02 | Taxable income 1,000,000 | CT 56,250 | U | ⬜ |
-| CT-03 | Entertainment expense 10,000 | Add-back 5,000 | U | ⬜ |
-| CT-04 | Fines 1,500; donation to non-qualifying body 5,000 | Add-backs 1,500 and 5,000 | U | ⬜ |
-| CT-05 | Accounting loss 200,000 | CT 0; loss 200,000 carried forward | U | ⬜ |
-| CT-06 | Loss b/f 500,000, taxable income 2,000,000 | Offset 500,000 (cap 1,500,000) → 1,500,000 → CT 101,250 | U | ⬜ |
-| CT-07 | Loss b/f 1,000,000, taxable income 800,000 | Offset capped at 600,000 → 200,000 → CT 0; 400,000 c/f | U | ⬜ |
-| CT-08 | SBR: revenue 3,000,000 this and prior periods, period within SBR window | Eligible; taxable income nil | U | 🔍 |
-| CT-09 | SBR: revenue 3,000,001 | Not eligible → standard computation | U | ⬜ |
-| CT-10 | FY ending 31 Dec 2026 | Return & payment due 30 Sep 2027 | U | ⬜ |
+| CT-01 | Taxable income 375,000 | CT 0 | U | ✅ DB (33_ct_computation) |
+| CT-02 | Taxable income 1,000,000 | CT 56,250 | U | ✅ DB (33_ct_computation) |
+| CT-03 | Entertainment expense 10,000 | Add-back 5,000 | U | ✅ DB (33_ct_computation) |
+| CT-04 | Fines 1,500; donation to non-qualifying body 5,000 | Add-backs 1,500 and 5,000 | U | ✅ DB (33_ct_computation) |
+| CT-05 | Accounting loss 200,000 | CT 0; loss 200,000 carried forward | U | ✅ DB (33_ct_computation) |
+| CT-06 | Loss b/f 500,000, taxable income 2,000,000 | Offset 500,000 (cap 1,500,000) → 1,500,000 → CT 101,250 | U | ✅ DB (33_ct_computation) |
+| CT-07 | Loss b/f 1,000,000, taxable income 800,000 | Offset capped at 600,000 → 200,000 → CT 0; 400,000 c/f | U | ✅ DB (33_ct_computation) |
+| CT-08 | SBR: revenue 3,000,000 this and prior periods, period within SBR window | Eligible; taxable income nil | U | ✅ DB · 🔍 SBR last date VERIFY |
+| CT-09 | SBR: revenue 3,000,001 | Not eligible → standard computation | U | ✅ DB (33_ct_computation) |
+| CT-10 | FY ending 31 Dec 2026 | Return & payment due 30 Sep 2027 | U | ✅ DB (33_ct_computation) |
 | CT-11 | Golden set from Faizan (Q-06) | Matches manual computation to the fils | U | ⬜ |
 
 ### 6.7 Reports (RPT)
@@ -564,3 +572,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-09 | Faizan tested the E-invoicing tab (ASP per client, hand-off, rejection queue, resend) and line-level e-invoice fields — all fine. P4-07 manual ✅. Remaining in Phase 4: automatic connector for the first ASP a client goes live with (needs its API documents), inbound e-invoices (P4-08), sandbox tests (P4-09). |
 | 2026-10-09 | P4-08 inbound e-invoices built: upload the supplier's PINT AE file → checks (addressed to this client's TRN, totals, supplier TRN) → supplier matched or created → draft bill / debit note; original file kept with fingerprint, once per UUID. 367 unit tests. |
 | 2026-10-09 | Faizan tested incoming e-invoices (import, supplier created, draft bill, credit note → debit note, duplicate and wrong-TRN refusals) — all fine. P4-08 manual ✅. Phase 4 now waits only on the first client's ASP (API connector, sandbox tests P4-09). |
+| 2026-10-09 | Phase 5 started (Faizan's go). D-65 → D-68 recorded. P5-01 CT computation + return workflow built in the database (`…20261009100600_ct_computation.sql`, 31 pgTAP tests, CT-01 → CT-10); permissions `prepare_ct` / `approve_ct` / `file_ct` added to Spec 02. |
