@@ -253,7 +253,7 @@ Every phase follows the flow in §3.2. Target dates assume Faizan reviews each p
 | P2-08 | Nightly integrity checks (pg_cron) + Integrity page | — | 🟡 built — `…20261008100300_integrity.sql` (14 pgTAP tests incl. deliberate damage caught; applied by Faizan, pg_cron job `nightly-integrity-checks` 22:00 UTC = 02:00 UAE confirmed active): 12 checks (TB, journals, AR/AP/credits/advances = control, documents = journals, numbering gaps, bank warnings), permanent results; **Integrity** page with Run now; in the live journey. E-mail alert switched on with the deployment (Resend, OA-16) |
 
 **Exit:** one pilot client's real past quarter re-keyed; Trial Balance agrees with their existing books **to the fils**.
-_Status (D-55): VAT-return part ✅ passed 2026-10-08 (pilot retail shop, Nov 2025 – Jan 2026); trial-balance part ⬜ waits for a client's trial balances + bank statements._
+_Status: **exit test passed.** VAT-return part ✅ 2026-10-08 (retail shop, Nov 2025 – Jan 2026, D-55); trial-balance part ✅ 2026-10-09 (grocery data set, D-56: opening balances, 23 settlements, cash, bank import and reconciliation; TB at 28 Feb 2026 = 233,810.00 as worked out independently). Waiting for Faizan's Phase 2 sign-off._
 
 ### Phase 3 — VAT, alerts, client logins & pilot · ⬜ · target 22 Jan 2027
 | ID | Step | Tests | Status |
@@ -526,3 +526,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-08 | Exit-test material received (retail shop, Nov 2025 – Jan 2026). D-54 "Prices include VAT" built (`…101200_prices_include_vat.sql`, applied by Faizan, test `24_prices_include_vat.sql` 9 tests, 5 unit tests, VAT-19); D-55 VAT-return exit test first. 521 database + 272 unit tests. |
 | 2026-10-08 | **Exit test — VAT quarter passed** (Faizan): 19 sales + 4 supplier invoices re-keyed (anonymised); VAT return box 1b 2,471.44 / 123.56, box 9 838.00 / 41.90, payable 81.66 — all figures as expected; integrity clean. Phase 2 exit: trial-balance part still open (D-55). |
 | 2026-10-09 | Exit-test data set received (fictitious grocery shop). D-56; keying sheet `docs/EXIT-TEST-TB-GROCERY.md` + import files in `docs/exit-test/`; expected TB at 28 Feb 2026 totals 233,810.00 (bank book 21,790.00, petty cash 5,934.50, input VAT 3,025.50, output VAT 3,436.14). No app change needed. |
+| 2026-10-09 | **Phase 2 exit test passed** (Faizan): grocery data set re-keyed — trial balance at 28 Feb 2026 matches the expected figures; bank reconciled with the answer-key items. Phase 2 awaits Faizan's sign-off. |
