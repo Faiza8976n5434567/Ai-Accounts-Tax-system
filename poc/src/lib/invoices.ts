@@ -114,7 +114,8 @@ export interface InvoiceDraft {
   doc_type: "invoice" | "credit_note"; contact_id: string; issue_date: string; due_date: string | null; supply_date: string | null;
   supply_emirate: string; currency: "AED" | "USD"; original_invoice_id: string | null; customer_reference: string; notes: string;
   prices_include_vat: boolean;
-  lines: { description: string; quantity: string; unit_price: number; account_id: string; tax_code: string }[];
+  transaction_type?: string; payment_means_code?: string | null; credit_reason_code?: string | null; incoterms?: string | null;   // P4-05
+  lines: { description: string; quantity: string; unit_price: number; account_id: string; tax_code: string; item_id?: string | null }[];
 }
 export async function saveInvoice(orgId: string, id: string | null, doc: InvoiceDraft): Promise<string> {
   const r = await db().rpc("save_sales_invoice", { p_id: id as unknown as string /* null = new */, p_organization_id: orgId, p_doc: doc as never });

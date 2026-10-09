@@ -9,6 +9,7 @@ import { friendlyDbError } from "../lib/journals";
 import { listContacts, type Contact } from "../lib/contacts";
 import type { Account, Client, Emirate, TaxPeriod } from "../lib/clients";
 import { listEmirates } from "../lib/clients";
+import { listItems, type Item } from "../lib/items";
 import {
   creditRemaining, deleteInvoice, documentTotals, documentVat, lineAmounts, listInvoices, parseQuantity, postInvoice, SALES_TAX_CODES, saveInvoice,
   sendBackInvoice, submitInvoice, taxDateWarnings, type InvoiceDraft, type InvoiceWithLines,
@@ -36,6 +37,8 @@ export function SalesTab({ client, accounts, taxPeriods, perms }: { client: Clie
   const fetchContacts = useCallback(() => listContacts(client.id), [client.id]);
   const { data, error, reload } = useLoad(fetchInvoices);
   const { data: contacts } = useLoad(fetchContacts);
+  const fetchItems = useCallback(() => listItems(client.id), [client.id]);
+  const { data: items } = useLoad(fetchItems);
   const { data: emirates } = useLoad(listEmirates);
   const [filter, setFilter] = useState<Filter>("all");
   const [open, setOpen] = useState<InvoiceWithLines | null>(null);
@@ -94,7 +97,7 @@ export function SalesTab({ client, accounts, taxPeriods, perms }: { client: Clie
       {printing && <InvoicePrint inv={printing} original={invoices.find((x) => x.id === printing.original_invoice_id)} client={client}
         customer={contacts?.find((c) => c.id === printing.contact_id)} emirates={emirates ?? []} onClose={() => setPrinting(null)} />}
 
-      {editing && contacts && emirates && <InvoiceEditor client={client} accounts={accounts} contacts={contacts} emirates={emirates} taxPeriods={taxPeriods}
+      {editing && contacts && emirates && <InvoiceEditor client={client} accounts={accounts} contacts={contacts} emirates={emirates} taxPeriods={taxPeriods} items={items ?? []}
         invoice={editing.invoice} creditFor={editing.creditFor} all={invoices} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); reload(); }} />}
     </>
   );
@@ -152,10 +155,13 @@ function InvoiceView({ inv, all, accounts, me, canPrepare, canApprove, onClose, 
 }
 
 // ── Editor ──────────────────────────────────────────────────────────────────────────────
-type EditLine = { description: string; quantity: string; price: string; accountId: string; taxCode: string };
+type EditLine = { description: string; quantity: string; price: string; accountId: string; taxCode: string; itemId?: string };
+/** BTAE-02 transaction type flags (official PINT AE list, positions 1–8). */
+const TX_FLAGS = ["Free trade zone", "Deemed supply", "Profit margin scheme", "Summary invoice", "Continuous supply", "Agent billing", "E-commerce", "Export"];
+const CREDIT_REASONS: [string, string][] = [["DL8.61.1.A", "Supply cancelled"], ["DL8.61.1.B", "Tax treatment changed (nature of supply)"], ["DL8.61.1.C", "Consideration altered (e.g. bad debt relief)"], ["DL8.61.1.D", "Goods / services returned"], ["DL8.61.1.E", "Tax charged in error"], ["VD", "Volume discount"]];
 
-function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, invoice, creditFor, all, onClose, onSaved }: {
-  client: Client; accounts: Account[]; contacts: Contact[]; emirates: Emirate[]; taxPeriods: TaxPeriod[];
+function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, items, invoice, creditFor, all, onClose, onSaved }: {
+  client: Client; accounts: Account[]; contacts: Contact[]; emirates: Emirate[]; taxPeriods: TaxPeriod[]; items: Item[];
   invoice: InvoiceWithLines | null; creditFor: InvoiceWithLines | null; all: InvoiceWithLines[]; onClose: () => void; onSaved: () => void;
 }) {
   const toast = useToast();
@@ -173,8 +179,12 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, invoi
   const [ref, setRef] = useState(invoice?.customer_reference ?? "");
   const [notes, setNotes] = useState(invoice?.notes ?? "");
   const [inclVat, setInclVat] = useState(invoice?.prices_include_vat ?? creditFor?.prices_include_vat ?? false);
-  const [lines, setLines] = useState<EditLine[]>(() => (invoice ?? (creditFor ? null : null))?.lines.map((l) => ({ description: l.description, quantity: String(Number(l.quantity)), price: fmtPlain(l.unit_price), accountId: l.account_id, taxCode: l.tax_code }))
-    ?? (creditFor ? creditFor.lines.map((l) => ({ description: `Credit: ${l.description}`, quantity: String(Number(l.quantity)), price: fmtPlain(l.unit_price), accountId: l.account_id, taxCode: l.tax_code })) : [{ description: "", quantity: "1", price: "", accountId: "", taxCode: "SR" }]));
+  const [txType, setTxType] = useState(invoice?.transaction_type ?? creditFor?.transaction_type ?? "00000000");                  // P4-05
+  const [payMeans, setPayMeans] = useState(invoice?.payment_means_code ?? client.payment_means_code ?? "30");
+  const [creditReason, setCreditReason] = useState(invoice?.credit_reason_code ?? "");
+  const [incoterms, setIncoterms] = useState(invoice?.incoterms ?? "");
+  const [lines, setLines] = useState<EditLine[]>(() => (invoice ?? (creditFor ? null : null))?.lines.map((l) => ({ description: l.description, quantity: String(Number(l.quantity)), price: fmtPlain(l.unit_price), accountId: l.account_id, taxCode: l.tax_code, itemId: l.item_id ?? undefined }))
+    ?? (creditFor ? creditFor.lines.map((l) => ({ description: `Credit: ${l.description}`, quantity: String(Number(l.quantity)), price: fmtPlain(l.unit_price), accountId: l.account_id, taxCode: l.tax_code, itemId: l.item_id ?? undefined })) : [{ description: "", quantity: "1", price: "", accountId: "", taxCode: "SR" }]));
   const [rules, setRules] = useState<{ vatBp: number; usdAed: string; issueDays: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -187,6 +197,14 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, invoi
     if (c?.default_account_id || c?.default_tax_code) setLines((ls) => ls.map((l) => (l.accountId || !c ? l : { ...l, accountId: c.default_account_id ?? "", taxCode: c.default_tax_code && SALES_TAX_CODES.some(([k]) => k === c.default_tax_code) ? c.default_tax_code : l.taxCode })));
   };
   const setLine = (i: number, patch: Partial<EditLine>) => setLines((ls) => ls.map((l, k) => (k === i ? { ...l, ...patch } : l)));
+  // P4-04: picking an item fills the line; the database keeps the item's codes on the line.
+  const pickItem = (i: number, id: string) => {
+    const it = items.find((x) => x.id === id);
+    if (!it) { setLine(i, { itemId: undefined }); return; }
+    setLine(i, { itemId: it.id, description: it.description || it.name, ...(it.default_price ? { price: fmtPlain(it.default_price) } : {}),
+      ...(it.income_account_id ? { accountId: it.income_account_id } : {}), taxCode: it.tax_code });
+  };
+  const activeItems = items.filter((x) => x.is_active || lines.some((l) => l.itemId === x.id));
 
   const fx = currency === "USD" ? rules?.usdAed ?? "3.6725" : "1";
   const calc = documentVat(lines.map((l) => {
@@ -207,7 +225,8 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, invoi
       doc_type: isCredit ? "credit_note" : "invoice", contact_id: contactId, issue_date: issueDate, due_date: dueDate || null, supply_date: supplyDate || null,
       supply_emirate: emirate, currency, original_invoice_id: isCredit ? (invoice?.original_invoice_id ?? creditFor?.id ?? null) : null,
       customer_reference: ref, notes, prices_include_vat: inclVat,
-      lines: lines.map((l) => ({ description: l.description.trim(), quantity: l.quantity.trim().replace(/,/g, ""), unit_price: parseAedToFils(l.price)!, account_id: l.accountId, tax_code: l.taxCode })),
+      transaction_type: txType, payment_means_code: payMeans || null, credit_reason_code: isCredit ? creditReason || null : null, incoterms: txType[7] === "1" ? incoterms.trim().toUpperCase() || null : null,
+      lines: lines.map((l) => ({ description: l.description.trim(), quantity: l.quantity.trim().replace(/,/g, ""), unit_price: parseAedToFils(l.price)!, account_id: l.accountId, tax_code: l.taxCode, item_id: l.itemId ?? null })),
     };
     setBusy(true);
     try {
@@ -251,11 +270,30 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, invoi
           <input type="checkbox" className="mt-0.5" checked={inclVat} disabled={isCredit} onChange={(e) => setInclVat(e.target.checked)} />
           <span><b>Prices include VAT</b> — type what the customer pays; the app works out the VAT inside it (amount × 5/105, per line) and the amount before VAT (D-54).</span></label>
       </div>
+      <details className="mb-4 rounded-xl ring-1 ring-slate-200 px-4 py-3" open={isCredit || txType !== "00000000"}>
+        <summary className="cursor-pointer text-sm font-medium text-slate-800">E-invoicing (PINT AE){isCredit && !creditReason ? " — choose the credit note reason" : ""}</summary>
+        <div className="grid gap-3 sm:grid-cols-3 mt-3">
+          {isCredit && <label className="sm:col-span-2"><span className="block text-xs font-medium text-slate-600 mb-1.5">Credit note reason</span>
+            <select aria-label="Credit note reason" className={cls} value={creditReason} onChange={(e) => setCreditReason(e.target.value)}>
+              <option value="">Choose…</option>{CREDIT_REASONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>}
+          {!isCredit && <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Payment means</span>
+            <select aria-label="Payment means" className={cls} value={payMeans} onChange={(e) => setPayMeans(e.target.value)}>
+              {[["30", "Credit transfer (bank)"], ["42", "Payment to bank account"], ["10", "Cash"], ["20", "Cheque"], ["48", "Bank card"], ["1", "Not defined"]].map(([v, t]) => <option key={v} value={v}>{t}</option>)}</select></label>}
+          <fieldset className="sm:col-span-3"><legend className="text-xs font-medium text-slate-600 mb-1.5">Transaction type (tick what applies; usually none)</legend>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">{TX_FLAGS.map((t, k) => (
+              <label key={t} className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={txType[k] === "1"}
+                onChange={(e) => setTxType((x) => x.slice(0, k) + (e.target.checked ? "1" : "0") + x.slice(k + 1))} />{t}</label>))}</div></fieldset>
+          {txType[7] === "1" && <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Incoterms (exports)</span>
+            <input aria-label="Incoterms" className={cls} maxLength={3} placeholder="e.g. CIF" value={incoterms} onChange={(e) => setIncoterms(e.target.value)} /></label>}
+        </div>
+      </details>
       <div className="overflow-x-auto"><table className="w-full min-w-[820px]">
         <thead><tr><th className="th w-[28%]">Description</th><th className="th w-20">Qty</th><th className="th w-32">Unit price ({currency}{inclVat ? ", incl. VAT" : ""})</th><th className="th">Income account</th><th className="th w-36">Tax</th><th className="th text-end">Net</th><th className="th text-end">VAT</th><th className="th w-8"><span className="sr-only">Remove</span></th></tr></thead>
         <tbody>{lines.map((l, i) => (
           <tr key={i}>
-            <td className="td"><input aria-label={`Line ${i + 1} description`} className={`${cls} !py-1.5`} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} /></td>
+            <td className="td">{activeItems.length > 0 && <select aria-label={`Line ${i + 1} item`} className={`${cls} !py-1 mb-1 text-xs`} value={l.itemId ?? ""} onChange={(e) => pickItem(i, e.target.value)}>
+                <option value="">Item… (needed for e-invoices)</option>{activeItems.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>}
+              <input aria-label={`Line ${i + 1} description`} className={`${cls} !py-1.5`} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} /></td>
             <td className="td"><input aria-label={`Line ${i + 1} quantity`} inputMode="decimal" className={`${cls} !py-1.5 text-end`} value={l.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} /></td>
             <td className="td"><input aria-label={`Line ${i + 1} unit price`} inputMode="decimal" className={`${cls} !py-1.5 text-end`} value={l.price} onChange={(e) => setLine(i, { price: e.target.value })} /></td>
             <td className="td"><select aria-label={`Line ${i + 1} account`} className={`${cls} !py-1.5`} value={l.accountId} onChange={(e) => setLine(i, { accountId: e.target.value })}>
