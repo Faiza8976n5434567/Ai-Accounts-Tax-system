@@ -93,6 +93,10 @@ function TaxRulesTab({ superAdmin }: { superAdmin: boolean }) {
   const rows = values.filter((v) => v.version_id === version?.id);
   const verifyCount = values.filter((v) => v.version_id === inForce?.id && v.needs_verification).length;
   const isDraft = version?.status === "draft";
+  const markAllVerified = async () => {
+    for (const r of rows.filter((x) => x.needs_verification))
+      await updateDraftValue(r.version_id, r.key, { value: r.value, legal_reference: r.legal_reference, last_verified: today, needs_verification: false });
+  };
 
   return (
     <div className="grid gap-5 grid-cols-[minmax(0,1fr)]">
@@ -121,11 +125,8 @@ function TaxRulesTab({ superAdmin }: { superAdmin: boolean }) {
           actions={isDraft && superAdmin && <div className="flex gap-2">
             <button className="btn-danger" onClick={async () => { try { await deleteDraftVersion(version.id); setSelected(null); toast("Draft deleted"); await load(); } catch (e) { toast(friendlyDbError(e), "err"); } }}><Trash2 size={15} />Delete draft</button>
             {rows.some((r) => r.needs_verification) && <button className="btn-ghost" onClick={async () => {
-              try {
-                for (const r of rows.filter((x) => x.needs_verification))
-                  await updateDraftValue(r.version_id, r.key, { value: r.value, legal_reference: r.legal_reference, last_verified: today, needs_verification: false });
-                toast("All VERIFY items marked as checked today — now approve the version"); await load();
-              } catch (e) { toast(friendlyDbError(e), "err"); }
+              try { await markAllVerified(); toast("All VERIFY items marked as checked today — now approve the version"); await load(); }
+              catch (e) { toast(friendlyDbError(e), "err"); }
             }}><BadgeCheck size={15} />Mark all VERIFY as checked today</button>}
             <button className="btn-primary bg-emerald-600" onClick={() => setApproving(true)}><BadgeCheck size={15} />Approve…</button>
           </div>}>
@@ -156,8 +157,9 @@ function TaxRulesTab({ superAdmin }: { superAdmin: boolean }) {
         try { const id = await createDraftVersion(label, from, base, values); setCreating(false); setSelected(id); toast(`Draft ${label} created from ${base.label}`); await load(); }
         catch (e) { toast(friendlyDbError(e), "err"); }
       }} />}
-      {approving && version && <ApproveModal version={version} onClose={() => setApproving(false)} onApprove={async (reason) => {
-        try { await approveVersion(version.id, reason); setApproving(false); toast(`${version.label} approved`); await load(); }
+      {approving && version && <ApproveModal version={version} verify={rows.filter((r) => r.needs_verification).map((r) => keys.find((k) => k.key === r.key)?.label ?? r.key)}
+        onClose={() => setApproving(false)} onApprove={async (reason, markVerified) => {
+        try { if (markVerified) await markAllVerified(); await approveVersion(version.id, reason); setApproving(false); toast(`${version.label} approved`); await load(); }
         catch (e) { toast(friendlyDbError(e), "err"); }
       }} />}
     </div>
@@ -202,20 +204,28 @@ function NewVersionModal({ versions, onClose, onCreate }: { versions: ConfigVers
       footer={<><button className="btn-ghost" onClick={onClose}>Cancel</button><button className="btn-primary bg-emerald-600" disabled={busy || !from || !label.trim()} onClick={async () => { setBusy(true); await onCreate(label.trim(), from); setBusy(false); }}>Create draft</button></>}>
       <p className="text-sm text-slate-600 mb-3">The draft starts as a copy of the rules in force on its effective date. Earlier periods keep using the older version.</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Effective from</span><input type="date" className={field} value={from} onChange={(e) => { setFrom(e.target.value); setLabel(suggestLabel(e.target.value, versions.map((v) => v.label))); }} /></label>
+        <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Effective from</span><input type="date" className={field} value={from} onChange={(e) => { setFrom(e.target.value); setLabel(suggestLabel(e.target.value, versions.map((v) => v.label))); }} />
+          {from && <span className="block text-xs text-slate-700 mt-1">Effective from <b>{shortDate(from)}</b> — check the day and month.</span>}</label>
         <label><span className="block text-xs font-medium text-slate-600 mb-1.5">Version label</span><input className={field} value={label} onChange={(e) => setLabel(e.target.value)} /></label>
       </div>
     </Modal>
   );
 }
 
-function ApproveModal({ version, onClose, onApprove }: { version: ConfigVersion; onClose: () => void; onApprove: (reason: string) => Promise<void> }) {
+function ApproveModal({ version, verify, onClose, onApprove }: { version: ConfigVersion; verify: string[]; onClose: () => void; onApprove: (reason: string, markVerified: boolean) => Promise<void> }) {
   const [reason, setReason] = useState("");
+  const [markVerified, setMarkVerified] = useState(true);
   const [busy, setBusy] = useState(false);
   return (
     <Modal open onClose={onClose} title={`Approve ${version.label}?`}
-      footer={<><button className="btn-ghost" onClick={onClose}>Cancel</button><button className="btn-primary bg-emerald-600" disabled={busy || !reason.trim()} onClick={async () => { setBusy(true); await onApprove(reason.trim()); setBusy(false); }}><BadgeCheck size={15} />Approve</button></>}>
-      <p className="text-sm text-slate-600 mb-3">From {shortDate(version.effective_from)}, every calculation for periods on or after this date uses these rules. Once approved the version is frozen. Your reason is kept in the audit trail (D-23).</p>
+      footer={<><button className="btn-ghost" onClick={onClose}>Cancel</button><button className="btn-primary bg-emerald-600" disabled={busy || !reason.trim()} onClick={async () => { setBusy(true); await onApprove(reason.trim(), verify.length > 0 && markVerified); setBusy(false); }}><BadgeCheck size={15} />Approve</button></>}>
+      <p className="text-sm text-slate-600 mb-3">From <b>{shortDate(version.effective_from)}</b>, every calculation for periods on or after this date uses these rules. Once approved the version is frozen. Your reason is kept in the audit trail (D-23).</p>
+      {verify.length > 0 && <div className="mb-3 rounded-xl bg-amber-50 ring-1 ring-amber-200 text-amber-900 px-4 py-3 text-sm">
+        <p className="mb-1"><b>{verify.length} rule{verify.length === 1 ? " is" : "s are"} still marked VERIFY:</b> {verify.join(" · ")}</p>
+        <label className="flex items-start gap-2"><input type="checkbox" className="mt-0.5" checked={markVerified} onChange={(e) => setMarkVerified(e.target.checked)} />
+          <span>I checked {verify.length === 1 ? "this rule" : "these rules"} today against the legal reference — mark {verify.length === 1 ? "it" : "them"} verified before approving.</span></label>
+        {!markVerified && <p className="mt-1 text-xs">The version will be approved with the VERIFY flags still on.</p>}
+      </div>}
       <label className="block"><span className="block text-xs font-medium text-slate-600 mb-1.5">Reason and source (e.g. Cabinet Decision, FTA guide, date checked)</span>
         <textarea className={field} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} /></label>
     </Modal>

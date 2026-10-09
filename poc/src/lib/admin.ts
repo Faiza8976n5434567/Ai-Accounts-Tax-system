@@ -92,7 +92,9 @@ export async function createDraftVersion(label: string, effectiveFrom: string, b
 }
 
 export async function updateDraftValue(versionId: string, key: string, patch: { value: Json; legal_reference: string | null; last_verified: string | null; needs_verification: boolean }) {
-  ok(await db().from("config_values").update(patch).eq("version_id", versionId).eq("key", key));
+  const saved = ok(await db().from("config_values").update(patch).eq("version_id", versionId).eq("key", key).select("key"));
+  // An update the database refuses (not a Super Admin, no two-factor, version no longer a draft) changes 0 rows without an error.
+  if (!saved || saved.length === 0) throw new Error("Not saved — only a Super Admin signed in with two-factor can change a draft version.");
 }
 export const deleteDraftVersion = async (id: string) => { ok(await db().from("config_versions").delete().eq("id", id)); };
 export const approveVersion = async (id: string, reason: string) => { ok(await db().rpc("approve_config_version", { p_version_id: id, p_reason: reason })); };
