@@ -60,8 +60,8 @@ select tests.login('acct@test.local');
 insert into si values ('inv2', public.save_sales_invoice(null, (select id from fx where k = 'orgA'),
   tests.doc('cust', '2026-10-06', array['1|3333|4000|SR|A', '1|3333|4000|SR|B', '1|3333|4000|SR|C'], '{"supply_emirate":"DXB"}')));
 select is((select string_agg(vat::text, ',' order by line_no) from public.sales_invoice_lines where sales_invoice_id = (select id from si where k = 'inv2')),
-  '167,167,167', 'VAT-09 · each 33.33 line has VAT 1.67 (half-up per line)');
-select is((select vat_total from public.sales_invoices where id = (select id from si where k = 'inv2')), 501::bigint, 'VAT-09 · total VAT 5.01');
+  '167,167,166', 'VAT-09 · D-62: VAT on the total, spread by largest remainder → 1.67, 1.67, 1.66');
+select is((select vat_total from public.sales_invoices where id = (select id from si where k = 'inv2')), 500::bigint, 'VAT-09 · D-62: total VAT = 99.99 × 5% = 4.9995 → 5.00 (rounded once)');
 select public.submit_sales_invoice((select id from si where k = 'inv2'));
 select tests.login('admin2@test.local');
 select is(public.post_sales_invoice((select id from si where k = 'inv2')), 'INV-2026-10-0002', 'NUM-02 · second October invoice');

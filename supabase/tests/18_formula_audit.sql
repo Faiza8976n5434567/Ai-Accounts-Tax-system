@@ -116,8 +116,8 @@ select is(tests.box('10', 'vat'), tests.mv('1310', '2026-07-01', '2026-09-30'), 
 select is(tests.box('1a,1b,1c,1d,1e,1f,1g,4,5', 'amount'),
   -(tests.mv('4000', '2026-07-01', '2026-09-30') + tests.mv('4010', '2026-07-01', '2026-09-30') + tests.mv('4300', '2026-07-01', '2026-09-30')),
   'Sales boxes (1a–1g, 4, 5) = net sales on the income accounts');
-select is(tests.box('1a', 'amount') || '/' || tests.box('1a', 'vat') || ' · ' || tests.box('1c', 'amount') || '/' || tests.box('1c', 'vat'), '1217250/60863 · 9999/501',
-  'Worked figures: 1a = 10,000 − 2,000 + USD 1,000 × 3.6725 + 500 = 12,172.50 / VAT 608.63; Sharjah 3 × 33.33 = 99.99 / VAT 3 × 1.67 = 5.01');
+select is(tests.box('1a', 'amount') || '/' || tests.box('1a', 'vat') || ' · ' || tests.box('1c', 'amount') || '/' || tests.box('1c', 'vat'), '1217250/60863 · 9999/500',
+  'Worked figures: 1a = 10,000 − 2,000 + USD 1,000 × 3.6725 + 500 = 12,172.50 / VAT 608.63; Sharjah 3 × 33.33 = 99.99 / VAT 5.00 (D-62, on the total)');
 select is((select sum(vat) from app.vat201_boxes((select id from fx where k = 'orgA'), '2026-07-01', '2026-09-30', null) where box_code = '14'),
   (select sum(vat) filter (where box_code = '12') - sum(vat) filter (where box_code = '13')
    from app.vat201_boxes((select id from fx where k = 'orgA'), '2026-07-01', '2026-09-30', null))::numeric, 'Box 14 = box 12 − box 13');

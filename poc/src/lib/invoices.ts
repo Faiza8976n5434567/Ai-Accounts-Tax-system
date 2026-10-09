@@ -49,6 +49,36 @@ export function lineAmounts(quantity: bigint, unitPrice: number, rateBp: number,
   return { netFcy: Number(netFcy), vatFcy: Number(vatFcy), net: Number(net), vat: Number(vat) };
 }
 
+export type LineCalc = { netFcy: number; vatFcy: number; net: number; vat: number };
+
+/** D-62 · VAT on the total of amounts, rounded half-up once, spread by largest remainder (each share rounded down; the
+ *  remaining fils to the largest fractions, then the larger amount, then the earlier line). Mirrors app.allocate_vat. */
+export function allocateVat(amounts: number[], rateBp: number, inclusive: boolean): number[] {
+  const den = BigInt(inclusive ? 10000 + rateBp : 10000), r = BigInt(rateBp);
+  const num = amounts.map((a) => BigInt(a) * r);
+  const total = (2n * num.reduce((s, x) => s + x, 0n) + den) / (2n * den);
+  const out = num.map((x) => x / den);
+  let k = Number(total - out.reduce((s, x) => s + x, 0n));
+  const order = amounts.map((a, i) => ({ i, rem: num[i] % den, a })).sort((x, y) => (y.rem > x.rem ? 1 : y.rem < x.rem ? -1 : y.a - x.a || x.i - y.i));
+  for (const o of order) { if (k <= 0) break; out[o.i] += 1n; k--; }
+  return out.map(Number);
+}
+
+/** D-62 · the document's lines after VAT is rounded once per tax code (only codes with a rate). Mirrors app.recalc_sales_invoice. */
+export function documentVat(calc: (LineCalc | null)[], taxCodes: string[], rateBp: (code: string) => number, inclusive: boolean): (LineCalc | null)[] {
+  const out = calc.map((c) => (c ? { ...c } : null));
+  for (const code of new Set(taxCodes)) {
+    const rate = rateBp(code);
+    const idx = out.flatMap((c, i) => (c && taxCodes[i] === code ? [i] : []));
+    if (rate === 0 || idx.length === 0) continue;
+    const aed = idx.map((i) => (inclusive ? out[i]!.net + out[i]!.vat : out[i]!.net));
+    const fcy = idx.map((i) => (inclusive ? out[i]!.netFcy + out[i]!.vatFcy : out[i]!.netFcy));
+    const vat = allocateVat(aed, rate, inclusive), vatF = allocateVat(fcy, rate, inclusive);
+    idx.forEach((i, k) => { out[i] = { net: inclusive ? aed[k] - vat[k] : aed[k], vat: vat[k], netFcy: inclusive ? fcy[k] - vatF[k] : fcy[k], vatFcy: vatF[k] }; });
+  }
+  return out;
+}
+
 export function documentTotals(lines: { netFcy: number; vatFcy: number; net: number; vat: number }[]) {
   const s = (k: "netFcy" | "vatFcy" | "net" | "vat") => lines.reduce((t, l) => t + l[k], 0);
   return { net: s("net"), vat: s("vat"), gross: s("net") + s("vat"), netFcy: s("netFcy"), vatFcy: s("vatFcy"), grossFcy: s("netFcy") + s("vatFcy") };

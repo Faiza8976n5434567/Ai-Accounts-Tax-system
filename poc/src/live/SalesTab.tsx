@@ -10,7 +10,7 @@ import { listContacts, type Contact } from "../lib/contacts";
 import type { Account, Client, Emirate, TaxPeriod } from "../lib/clients";
 import { listEmirates } from "../lib/clients";
 import {
-  creditRemaining, deleteInvoice, documentTotals, lineAmounts, listInvoices, parseQuantity, postInvoice, SALES_TAX_CODES, saveInvoice,
+  creditRemaining, deleteInvoice, documentTotals, documentVat, lineAmounts, listInvoices, parseQuantity, postInvoice, SALES_TAX_CODES, saveInvoice,
   sendBackInvoice, submitInvoice, taxDateWarnings, type InvoiceDraft, type InvoiceWithLines,
 } from "../lib/invoices";
 import { supabase } from "../lib/supabase";
@@ -189,10 +189,10 @@ function InvoiceEditor({ client, accounts, contacts, emirates, taxPeriods, invoi
   const setLine = (i: number, patch: Partial<EditLine>) => setLines((ls) => ls.map((l, k) => (k === i ? { ...l, ...patch } : l)));
 
   const fx = currency === "USD" ? rules?.usdAed ?? "3.6725" : "1";
-  const calc = lines.map((l) => {
+  const calc = documentVat(lines.map((l) => {
     const q = parseQuantity(l.quantity), p = parseAedToFils(l.price);
     return q !== null && p !== null && p > 0 ? lineAmounts(q, p, l.taxCode === "SR" ? rules?.vatBp ?? 0 : 0, fx, inclVat) : null;
-  });
+  }), lines.map((l) => l.taxCode), (code) => (code === "SR" ? rules?.vatBp ?? 0 : 0), inclVat);           // D-62: VAT rounded once per tax code
   const totals = documentTotals(calc.filter((c): c is NonNullable<typeof c> => c !== null));
   const remaining = creditFor ? creditRemaining(creditFor, all) : null;
   const warnings = taxDateWarnings(issueDate, supplyDate || null, taxPeriods.filter((t) => t.kind === "vat"), rules?.issueDays ?? 14);

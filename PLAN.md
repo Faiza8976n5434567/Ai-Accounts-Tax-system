@@ -80,6 +80,7 @@
 | D-59 | **E-invoicing scope** (Faizan): **B2B and B2G only**; B2C sales (consumers, e.g. walk-in customers) are not e-invoiced for now — the app marks them "not in scope". | 2026-10-09 |
 | D-60 | **Items list** (Faizan): each client keeps a list of products/services (name, description, goods/services, HS or SAC code, unit, default price, tax code, income account); invoice lines pick an item so the PINT AE codes fill in. | 2026-10-09 |
 | D-61 | **PINT AE 1.0.4 official artefacts** (rules, code lists, examples) downloaded with Faizan's permission into `poc/einvoicing/pint-ae-1.0.4`; validation runs the official rules with **Saxon-JS** (xslt3 2.7.0, Saxonica licence allows use inside an application). ASP (Q-02) not chosen yet: build P4-01 → P4-06 first. | 2026-10-09 |
+| D-62 | **VAT rounding on sales documents** (Faizan): VAT is rounded once per tax code on the invoice / credit note total and spread over the lines by largest remainder, so every e-invoice meets the FTA rule ALIGNED-IBRP-S-09 (tax per category = taxable × rate within 0.02). Applies to all sales documents; single-line documents are unchanged; supplier bills keep the supplier's line VAT. Principle 5 (CLAUDE.md) and F-01 updated. Example: 3 × 33.33 → 5.00 (was 5.01). | 2026-10-09 |
 | D-25 | **Break-glass recovery** (because there is only one Super Admin): if Faizan is locked out (lost phone/MFA), access is restored from the Supabase dashboard by the account owner following a written runbook (OWNER-ACTIONS). | 2026-10-06 |
 
 ## 2. Open questions (for Faizan)
@@ -391,7 +392,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | VAT-06 | Standard-rated expense 25,000 + 1,250 with valid tax invoice | Box 9: 25,000 / 1,250 | U | ✅ |
 | VAT-07 | Client entertainment 3,800 + 190 | Not in Box 9; expense 3,990; VAT blocked | U | ✅ |
 | VAT-08 | Bill with VAT but supplier has no TRN | VAT not recoverable; full amount expensed | U | ✅ |
-| VAT-09 | Rounding: 3 lines × 33.33 | Line VAT 1.67 each; total VAT 5.01 | U | ✅ |
+| VAT-09 | Rounding: 3 lines × 33.33 (D-62) | VAT on the total 99.99 × 5% = 5.00, spread 1.67 + 1.67 + 1.66 (was 5.01 with line rounding); 10 lines of 0.10 → 0.05 | U+DB | ✅ `30_vat_invoice_rounding.sql` |
 | VAT-10 | Credit note 2,000 against VAT-01 | Box 1: 8,000 / 400 | U+D | ✅ |
 | VAT-11 | Box 14 | = Box 12 − Box 13 (positive = payable, negative = refundable) | U | ✅ |
 | VAT-12 | Quarter Oct–Dec 2026 | Due 28 Jan 2027 | U | ✅ |
@@ -401,7 +402,7 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | VAT-16 | Plain overpayment of 500 on account | Not in any VAT box until applied to an invoice | U | ✅ |
 | VAT-18 | Quarter with no zero-rated, exempt or reverse-charge activity | Boxes 2, 3, 4, 5, 6, 7, 10 and every unused emirate box shown as 0.00 / 0.00 — none blank or hidden | U+E | ✅ |
 | VAT-17 | Advance of 10,500 received against a specific taxable supply | Output VAT 500 (10,500 × 5/105) in the period of receipt; taken back when applied to the invoice (VAT counted once) or refunded; reversal (D-40) removes it; reconciliation and 1170 integrity check agree | DB+U | ✅ `28_vat_advances.sql` (16 tests) · tested by Faizan 2026-10-09 |
-| VAT-19 | Invoice with prices including VAT (D-54): paid 60.00 | VAT 2.86, net 57.14; 19 shop invoices paid 2,595.00 → VAT 123.56, net 2,471.44; per line 15 + 45 → 0.71 + 2.14; USD 10.00 → AED 36.73, VAT 1.75 | U+DB | ✅ |
+| VAT-19 | Invoice with prices including VAT (D-54): paid 60.00 | VAT 2.86, net 57.14; 19 shop invoices paid 2,595.00 → VAT 123.56, net 2,471.44; 15 + 45 → 2.86 on the total, spread 0.72 + 2.14 (D-62); USD 10.00 → AED 36.73, VAT 1.75 | U+DB | ✅ |
 | VAT-20 | FTA Audit File for October (D-57): SR, ZR export, OS, USD invoice, credit note; SR, RCS, BLK bills, debit note | Supplies: SR 1,000/50 · ZR 2,000 GB · OS 300 · SR 367.25/18.36 USD 100/5 · SR −200/−10; purchases SR 400/20 · RC 100/5 · SR 500/25 · SR −100/−5; GL debits = credits; account balance ends at TB closing; layout per FTA Appendix 5 | DB+U | ✅ |
 
 ### 6.6 Corporate Tax (CT) — 9% above AED 375,000
@@ -553,3 +554,4 @@ Cases marked 🔍 need Faizan to confirm the expected answer.
 | 2026-10-09 | Faizan tested VAT on advances (VAT-17, D-58) — all fine. |
 | 2026-10-09 | **Phase 4 started** (Faizan authorised it ahead of the Phase 3 sign-off). D-59 (B2B/B2G only), D-60 (Items list), D-61 (official PINT AE 1.0.4 artefacts + Saxon-JS validator). **P4-01 ✅**: all 28 official examples pass both rule sets; a broken invoice is caught (IBR-144-AE). |
 | 2026-10-09 | P4-02 → P4-05 database (`…100200_einvoicing_data.sql`, not yet applied) and **P4-06 generator** (`src/lib/pint.ts`): 9 realistic scenarios pass the official PINT AE 1.0.4 rules. Found: the official rule ALIGNED-IBRP-S-09 allows only 0.02 between Σ VAT and taxable × 5% per category — line-level rounding (Principle 5) can exceed it on invoices with many lines (decision for Faizan). |
+| 2026-10-09 | **D-62** VAT rounded once per tax code on sales documents (`…20261009100300_vat_invoice_rounding.sql`, `30_vat_invoice_rounding.sql` 6 tests; VAT-09 / VAT-19 / formula-audit expectations updated deliberately); invoice screen preview mirrors it (`allocateVat`, `documentVat`, 5 unit tests). |

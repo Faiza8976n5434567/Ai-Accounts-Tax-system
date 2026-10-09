@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { creditRemaining, documentTotals, lineAmounts, parseQuantity, taxDateWarnings } from "./invoices";
+import { allocateVat, creditRemaining, documentTotals, documentVat, lineAmounts, parseQuantity, taxDateWarnings } from "./invoices";
 
 const SR = 500; // 5% in basis points (the database reads it from the tax rules)
 
@@ -57,4 +57,18 @@ describe("lineAmounts — prices include VAT (D-54, F-02; same as app.sales_line
   it("per line: 15.00 + 45.00 → 0.71 + 2.14", () => expect([1500, 4500].map((g) => lineAmounts(10000n, g, SR, "1", true).vat)).toEqual([71, 214]));
   it("USD 10.00 incl. VAT → AED 36.73: VAT 1.75, before VAT 34.98", () => expect(lineAmounts(10000n, 1000, SR, "3.6725", true)).toEqual({ netFcy: 952, vatFcy: 48, net: 3498, vat: 175 }));
   it("zero-rated: no VAT inside", () => expect(lineAmounts(20000n, 1000, 0, "1", true)).toEqual({ netFcy: 2000, vatFcy: 0, net: 2000, vat: 0 }));
+});
+
+describe("D-62 · VAT rounded once per tax code, spread by largest remainder (same as app.allocate_vat)", () => {
+  it("ten lines of 0.10 → 0.05, one fil each to the first five", () => expect(allocateVat(Array(10).fill(10), 500, false)).toEqual([1, 1, 1, 1, 1, 0, 0, 0, 0, 0]));
+  it("3 × 33.33 → 5.00 as 1.67 + 1.67 + 1.66", () => expect(allocateVat([3333, 3333, 3333], 500, false)).toEqual([167, 167, 166]));
+  it("prices incl. VAT 15.00 + 45.00 → 2.86 as 0.72 + 2.14", () => expect(allocateVat([1500, 4500], 500, true)).toEqual([72, 214]));
+  it("a single line is unchanged: 60.00 incl. → 2.86", () => expect(allocateVat([6000], 500, true)).toEqual([286]));
+  it("documentVat: zero-rated lines untouched; standard lines re-spread; incl. VAT nets follow", () => {
+    const calc = [3333, 3333, 5000, 3333].map((n, i) => ({ netFcy: n, vatFcy: i === 2 ? 0 : 167, net: n, vat: i === 2 ? 0 : 167 }));
+    expect(documentVat(calc, ["SR", "SR", "ZR", "SR"], (c) => (c === "SR" ? SR : 0), false).map((c) => c!.vat)).toEqual([167, 167, 0, 166]);
+    const incl = [1500, 4500, 1050].map((g) => lineAmounts(10000n, g, SR, "1", true));
+    const out = documentVat(incl, ["SR", "SR", "SR"], () => SR, true);
+    expect(documentTotals(out.filter((c): c is NonNullable<typeof c> => c !== null))).toMatchObject({ gross: 7050, vat: 336, net: 6714 });
+  });
 });

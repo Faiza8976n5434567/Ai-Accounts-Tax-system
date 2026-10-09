@@ -38,7 +38,9 @@ work is done. Domain rules: `docs/UAE_COMPLIANCE_RULES.md` and `docs/PRD.md`
    audit-logged.
 4. **Audit trail on everything** (who, what, when, before/after). Append-only.
 5. **Money is never a float.** Integer fils (`bigint` in Postgres, integer `number` in TS).
-   VAT rounding: half-up to 2 dp at line level. Document any other rounding rule.
+   VAT rounding: half-up to 2 dp. Sales invoices / credit notes: once per tax code on the document total, spread over
+   the lines by largest remainder (D-62, so e-invoices meet PINT AE ALIGNED-IBRP-S-09); supplier bills: the supplier's
+   line VAT. Document any other rounding rule.
 6. **Tax rules are data.** Rates, thresholds, deadlines live in a versioned settings table /
    `config` with legal reference and `lastVerified`. No hard-coded rates or business dates
    in code. Every tax output records the config version used. Items marked VERIFY need

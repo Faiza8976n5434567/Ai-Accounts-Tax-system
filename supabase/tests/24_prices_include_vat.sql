@@ -33,7 +33,7 @@ select is((select (count(*), sum(gross_total), sum(vat_total), sum(net_total))::
 -- 3 · Rounding is per line: the same 60.00 split 15.00 + 45.00 gives 0.71 + 2.14 = 2.85
 insert into pi values ('split', public.save_sales_invoice(null, (select id from fx where k = 'orgA'), tests.idoc(array['1|1500', '1|4500'])));
 select is((select string_agg(net || '+' || vat, ', ' order by line_no) from public.sales_invoice_lines where sales_invoice_id = (select id from pi where k = 'split')),
-  '1429+71, 4286+214', 'VAT is rounded on each line (principle 5): 15.00 → 0.71; 45.00 → 2.14');
+  '1428+72, 4286+214', 'D-62: VAT on the total 60.00 → 2.86, spread by largest remainder → 0.72 + 2.14');
 
 -- 4 · Quantity × price first, then F-02; zero-rated lines carry no VAT
 insert into pi values ('qty', public.save_sales_invoice(null, (select id from fx where k = 'orgA'), tests.idoc(array['3|2500', '2|1000|ZR'])));
