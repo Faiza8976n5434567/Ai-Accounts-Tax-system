@@ -4,7 +4,7 @@
  * demo screens remain available only in the demo build (`vite --mode demo`).
  */
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Banknote, BookOpen, CalendarClock, Gauge, BookOpenCheck, Building2, CalendarRange, CheckSquare, ChevronDown, Contact, FileCheck2, Landmark, LayoutDashboard, ReceiptText, LogOut, Menu, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, Users, Waypoints, X } from "lucide-react";
+import { Banknote, BookOpen, BookOpenCheck, Building2, CalendarClock, CalendarRange, CheckSquare, ChevronDown, Contact, FileCheck2, Gauge, Landmark, LayoutDashboard, LogOut, Menu, Package, ReceiptText, Scale, Settings, ShieldCheck, ShoppingCart, UserPlus, Users, Waypoints, X } from "lucide-react";
 import { useAuth } from "../components/AuthGate";
 import { cx } from "../components/ui";
 import { listClients, myFirmRole, type Client } from "../lib/clients";
@@ -52,6 +52,7 @@ export function LiveApp() {
   const clientNav: { label: string; icon: ReactNode; tab: ClientTab }[] = [
     { label: "Overview", icon: <LayoutDashboard size={17} />, tab: "overview" },
     { label: "Customers & suppliers", icon: <Contact size={17} />, tab: "contacts" },
+    { label: "Items", icon: <Package size={17} />, tab: "items" },
     { label: "Sales invoices", icon: <ReceiptText size={17} />, tab: "sales" },
     { label: "Purchase bills", icon: <ShoppingCart size={17} />, tab: "bills" },
     { label: "Receipts & payments", icon: <Landmark size={17} />, tab: "payments" },
